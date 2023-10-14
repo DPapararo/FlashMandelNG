@@ -15,6 +15,7 @@
 /* added GMP support in MandelChunk and changed ID_MAND 03-04-2020 */
 /* added Histogram mask HMASK 01-01-2021 */
 /* added Histogram function  17-01-2021 */
+/* added support for SPE 02-01-2023 */
 
 #ifndef FLASHMANDEL_H
 #define FLASHMANDEL_H
@@ -24,11 +25,11 @@
 
 #define Lib_Version 50L
 
-#define VERSION  "FlashMandelNG 4.4 "
+#define VERSION  "FlashMandelNG 4.7 "
 #define AUTHOR   "Dino Papararo"
-#define COPYRIGHT_DATE "(c)1995-2022"
+#define COPYRIGHT_DATE "(c)1995-2023"
 #define ADDRESS  "Via Manzoni, 184\n  80123 Napoli\n  Italy"
-#define EMAIL    "E-Mail address:\n  Dino.Papararo@Gmail.Com\n\n"
+#define EMAIL    "E-Mail address:\n  Dino.Papararo@GMail.Com\n\n"
 
 #define MAX_PRECISION_BITS 4096
 #define MIN_PRECISION_BITS 32
@@ -43,7 +44,7 @@
 #define DEF_ITERATIONSSTR "4096"
 #define MAX_ALLOWED_ITERATIONS 1073741824 /* (2^30) or 0X3FFFFFFF */
 
-__attribute__ ((aligned (4))) struct MandelChunk
+/*__attribute__ ((aligned (2)))*/ struct MandelChunk
 {
     int32 LeftEdge,TopEdge,Width,Height;
     uint32 ModeID;
@@ -56,7 +57,7 @@ __attribute__ ((aligned (4))) struct MandelChunk
     mpf_t GJKre,GJKim;
 };
 
-__attribute__ ((aligned (4))) struct LoadSaveFMChunk
+/*__attribute__ ((aligned (2))) */struct LoadSaveFMChunk
 {
     int32 LeftEdge,TopEdge,Width,Height;
     uint32 ModeID;
@@ -69,7 +70,7 @@ __attribute__ ((aligned (4))) struct LoadSaveFMChunk
     char GJKreSTR [MAX_MATH_DIGITS],GJKimSTR [MAX_MATH_DIGITS];
 };
 
-__attribute__ ((aligned (4))) struct UndoBuffer
+/*__attribute__ ((aligned (2))) */struct UndoBuffer
 {
     float64 AreaRange [4],JuliaConst [2]; /* rmin,rmax,imin,imax - jkre,jkim */
     uint32 Iterations,Flags;
@@ -132,11 +133,8 @@ struct Screen *OpenIdScreen (struct ILBMInfo *,int16,int16,int16,uint32);
 struct Window *OpenDisplay (struct ILBMInfo *,int16,int16,int16,uint32);
 struct BitMap *CopyBitMap (struct Window *,uint16,uint16,uint16,uint16);
 
-uint32 (*COLORREMAP) (const float64, const float64, const float64,
-              const float64, const float64);
-
-void CalcFractalMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *);
-void CalcFractalMem_GMP (struct MandelChunk *, uint32 *, uint32 *);
+void CalcFractalMem (struct MandelChunk *, struct Window *, uint32 *, uint32 *, uint32 *);
+void CalcFractalMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *);
 
 void MCPoint (struct MandelChunk *, struct RastPort *, uint32 *,
              const int16, const int16);
@@ -171,17 +169,17 @@ uint32 MandelnAltivec (uint32 *,uint32,int16,float32,float32,float32,float32,flo
 uint32 JulianAltivec (uint32 *,uint32,int16,float32,float32,float32,float32,float32,float32,float32,float32,float32,float32);
 #elif USE_POWERPC_MATH
 uint32 MandelnPPC (uint32,int16,float64,float64);
-uint32 JulianPPC  (uint32,int16,float64,float64,float64,float64);
+uint32 JulianPPC (uint32,int16,float64,float64,float64,float64);
 #elif USE_C_MATH
 uint32 Mandeln (uint32,int16,float64,float64);
-uint32 Julian  (uint32,int16,float64,float64,float64,float64);
+uint32 Julian (uint32,int16,float64,float64,float64,float64);
+#elif USE_SPE_MATH
+uint32 MandelnSPE (uint32,int16,float64,float64);
+uint32 JulianSPE (uint32,int16,float64,float64,float64,float64);
 #endif /* USE_ALTIVEC_MATH */
 
 uint32 DrawFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,int16);
 void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
-//void CalcFractal_GMP (struct ILBMInfo *,struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
-//void CalcFractalMem_GMP (struct MandelChunk *,uint32 *,uint32 *);
-void CalcFractalMem (struct MandelChunk *,uint32 *,uint32 *,uint32 *);
 int16 ModifyPalette (struct Window *,int16,int16,uint32 *);
 int16 ScalePalette (struct Window *,uint32 *,uint32,uint32);
 int16 Fade (struct Window *,uint8 *,uint32 *,uint32,uint32,int16);
@@ -336,6 +334,9 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define CMASK  0x800    // BRBitmap mask
 #define RMASK  0x1000   // RNDMEM mask
 #define AMASK  0x2000   // ARGBMEM mask
+
+#define PROPERTYFLAGS (DIPF_IS_WB|DIPF_IS_RTG)
+#define PROPERTYMASK (DIPF_IS_DUALPF|DIPF_IS_PF2PRI|DIPF_IS_HAM|DIPF_IS_EXTRAHALFBRITE|DIPF_IS_PAL)
 
 #define LOADPICTURE_MSG 0x1
 #define SAVEPICTURE_MSG 0x2

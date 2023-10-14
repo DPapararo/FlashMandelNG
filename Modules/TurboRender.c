@@ -18,12 +18,14 @@
 **  2.7 Small fixes and optimizations - Histogram coloring in test - 09-01-2021 dpapararo
 **  2.8 Small fixes and optimizations - implemented Histogram coloring - 18-01-2021 dpapararo
 **  2.9 Small fixes in prototypes parameters datatypes - 24-01-2021 dpapararo
+**  3.0 Now (*COLORREMAP) is extern to to avoid conflicts - 09-10-2022 dpapararo
+**	3.1 Mem renderings can be stopped and you can draw boxes for any rectangle processeds 07/01/2023 dpapararo
 **************************************************************************************************************/
 
-#include <stdio.h>
-#include <math.h>
 #include <exec/types.h>
-#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/gadtools.h>
+
 #include <GMP/gmp.h>
 #include "Headers/FlashMandel.h"
 
@@ -36,7 +38,9 @@ extern uint32 TwoRemap (const float64, const float64, const float64, const float
 extern uint32 ThreeRemap (const float64, const float64, const float64, const float64, const float64);
 extern uint32 FourRemap (const float64, const float64, const float64, const float64, const float64);
 
-uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
+extern uint32 MASK;
+
+extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
 
 static void MCPointMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16);
 static void JCPointMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16);
@@ -45,7 +49,7 @@ static void JVLineMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const
 static void JHLineMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16);
 static void MVLineMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16);
 static void MHLineMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16);
-static int16 RectangleDrawMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
+static int16 RectangleDrawMem (struct MandelChunk *, struct Window *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
 
 void (*C_POINT_MEM) (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16);
 void (*V_LINE_MEM) (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16);
@@ -54,19 +58,6 @@ void (*H_LINE_MEM) (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const in
 extern mpf_t gzr, gzi, gzr2, gzi2, gcre, gcim, gcre1, gcim1, gcre2, gcim2,
   				gcre3, gcim3, gjkre, gjkim, grmin, gimin, grmax, gimax, gtmp, gdist, gmaxdist,
   				gincremreal, gincremimag;
-
-#ifdef USE_POWERPC_MATH
-extern uint32 MandelnPPC (uint32, int16, float64, float64);
-extern uint32 JulianPPC (uint32, int16, float64, float64, float64, float64);
-#elif USE_C_MATH
-extern uint32 Mandeln (uint32, int16, float64, float64);
-extern uint32 Julian (uint32, int16, float64, float64, float64, float64);
-#elif USE_ALTIVEC_MATH
-extern uint32 MandelnAltivec (uint32 *, uint32, int16, float32, float32, float32, float32, float32, float32, float32, float32);
-extern uint32 JulianAltivec (uint32 *, uint32, int16, float32, float32, float32, float32, float32, float32, float32, float32, float32, float32);
-#endif /* USE_POWERPC_MATH */
-
-void CalcFractalMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *);
 
 /* We can compute the address of an element of the array by using the rows and colums of the array
    Use the following formula:
@@ -102,6 +93,8 @@ static void MCPointMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, u
   	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
   	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+	Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif /* USE_ALTIVEC_MATH */
 
   	if (Color)
@@ -179,7 +172,7 @@ static void MVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 		}
       	y--;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
   uint32 Color;
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
@@ -192,6 +185,8 @@ static void MVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
       	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
       	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+	Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));	
 #endif /* USE_POWERPC_MATH */
 
       	if (Color)
@@ -273,9 +268,10 @@ static void MHLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 		}
       	x++;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
   	uint32 Color;
-
+	;
+	
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
   	mpf_add (gcre, grmin, gtmp);
@@ -285,7 +281,9 @@ static void MHLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 #ifdef USE_POWERPC_MATH
       	Color =	MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
-      	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));;
+      	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif /* USE_POWERPC_MATH */
 
       	if (Color)
@@ -323,6 +321,8 @@ static void JCPointMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, u
   	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
   	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+	Color =	JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
 
   	if (Color)
@@ -396,9 +396,8 @@ static void JVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 		}
       	y--;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
   uint32 Color;
-
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
   	mpf_mul_ui (gtmp, gincremimag, b2);
   	mpf_sub (gcim, gimax, gtmp);
@@ -409,7 +408,9 @@ static void JVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
       	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
       	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#endif /* USE_POWERPC_MATH */
+#elif USE_SPE_MATH
+		Color =	JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#endif
 
       	if (Color)
 		{
@@ -487,9 +488,8 @@ static void JHLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 		}
       	x++;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
   	uint32 Color;
-
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
   	mpf_add (gcre, grmin, gtmp);
@@ -500,8 +500,9 @@ static void JHLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
       	Color =	JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
       	Color =	Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#endif /* USE_POWERPC_MATH */
-
+#elif USE_SPE_MATH
+		Color =	JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#endif
       	if (Color)
 		{
 	  		*(RenderMem + (y * MandelInfo->Width + x)) = Color;
@@ -542,10 +543,62 @@ int16 CheckBoxMem (struct MandelChunk *MandelInfo, uint32 * RenderMem, const int
 }
 
 /* RectangleDrawMem() */
-static int16 RectangleDrawMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
+static int16 RectangleDrawMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
 {
+  struct IntuiMessage *Message = NULL;
+  uint16 MyCode;
+  uint32 MyClass;
   int16 helpx, helpy, halfx, halfy;
   uint32 ctmp;
+  
+#ifdef DRAWBORDERS  
+  int16 Rectangle [5 * 2]; 
+  struct Border ProcessingRect = { 0, 0, 0, 0, COMPLEMENT, 5, &Rectangle, 0 };
+#endif
+
+	if (Win->UserPort->mp_SigBit)
+    {
+        while (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort))
+        {
+        	MyClass = Message->Class;
+            MyCode = Message->Code;
+            GT_ReplyIMsg ((struct IntuiMessage *) Message);
+
+            switch (MyClass) // for speed reasons return without jumps at end of function!
+            {
+				case IDCMP_MENUPICK:
+              	{
+					if (MyCode != MENUNULL)
+                	{
+                   		if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG) return TRUE;
+                	}
+				}	
+              	break;
+
+              	case IDCMP_RAWKEY:
+                {
+					if (MyCode == RAW_TAB)
+                	{
+                    	BlinkRect (Win, a1, b1, a2, b2);
+                    	return FALSE;
+                	}
+
+                	if (MyCode == RAW_ESC)
+                	{
+                    	DisplayBeep (Win->WScreen);
+                    	return TRUE;
+                	}
+				}	
+              	break;
+
+            	case IDCMP_CLOSEWINDOW:
+             	{
+					return TRUE;
+				}
+				break;				
+            }
+        }
+    }
 
 	helpy = b2 - b1; // catch edge case  
     if (helpy < MINLIMIT) return FALSE; // for speed reasons exit now no jumps at end of function!	
@@ -585,23 +638,65 @@ static int16 RectangleDrawMem (struct MandelChunk *MandelInfo, uint32 * PixelVec
 
   	(*H_LINE_MEM) (MandelInfo, PixelVecBase, RenderMem, HistogramMem, a1 + 1, halfx - 1, halfy);
   	(*V_LINE_MEM) (MandelInfo, PixelVecBase, RenderMem, HistogramMem, b1 + 1, halfy - 1, halfx);
+
+#ifdef DRAWBORDERS  	
+	Rectangle[6] = Rectangle[8] = a1;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = b1;
+  	Rectangle[2] = Rectangle[4] = halfx;
+  	Rectangle[5] = Rectangle[7] = halfy;
+  	Rectangle[0] = a1 + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);
+#endif
   	
-	if (RectangleDrawMem (MandelInfo, PixelVecBase, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE;
+	if (RectangleDrawMem (MandelInfo, Win, PixelVecBase, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE;
 
   	(*H_LINE_MEM) (MandelInfo, PixelVecBase, RenderMem, HistogramMem, halfx + 1, a2 - 1, halfy);
-  	
-	if (RectangleDrawMem (MandelInfo, PixelVecBase, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE;
+
+#ifdef DRAWBORDERS  
+	Rectangle[6] = Rectangle[8] = halfx;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = b1;
+  	Rectangle[2] = Rectangle[4] = a2;
+  	Rectangle[5] = Rectangle[7] = halfy;
+  	Rectangle[0] = halfx + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);
+#endif  	
+
+	if (RectangleDrawMem (MandelInfo, Win, PixelVecBase, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE;
 
   	(*V_LINE_MEM) (MandelInfo, PixelVecBase, RenderMem, HistogramMem, halfy + 1, b2 - 1, halfx);
-  	
-	if (RectangleDrawMem (MandelInfo, PixelVecBase, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE;
-  	if (RectangleDrawMem (MandelInfo, PixelVecBase, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE;
+
+#ifdef DRAWBORDERS  
+	Rectangle[6] = Rectangle[8] = a1;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = halfy;
+  	Rectangle[2] = Rectangle[4] = halfx;
+  	Rectangle[5] = Rectangle[7] = b2;
+  	Rectangle[0] = a1 + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);  	
+#endif
+
+	if (RectangleDrawMem (MandelInfo, Win, PixelVecBase, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE;
+
+#ifdef DRAWBORDERS  
+	Rectangle[6] = Rectangle[8] = halfx;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = halfy;
+  	Rectangle[2] = Rectangle[4] = a2;
+  	Rectangle[5] = Rectangle[7] = b2;
+  	Rectangle[0] = halfx + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);
+#endif
+
+  	if (RectangleDrawMem (MandelInfo, Win, PixelVecBase, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE;
 
   	return FALSE;
 }
 
-void CalcFractalMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem)
+void CalcFractalMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem)
 {
+  STRPTR PleaseWaitTxt = "Processing rendering in memory, please wait until it's done or press ESC to stop.";
+
+	ShowTitle (Win->WScreen, TRUE);
+	SetWindowTitles (Win, (STRPTR) ~0, PleaseWaitTxt);
+
   	if (MandelInfo->Flags & JULIA_BIT)
     {
       	C_POINT_MEM = JCPointMem;
@@ -631,5 +726,7 @@ void CalcFractalMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, uint
   	(*V_LINE_MEM) (MandelInfo, PixelVecBase, RenderMem, HistogramMem, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->Width - 1);
 
 	// start divide et impera recursively!
-  	RectangleDrawMem (MandelInfo, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
+  	RectangleDrawMem (MandelInfo, Win, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
+
+	if (! (MASK & TMASK)) ShowTitle (Win->WScreen, FALSE);
 }

@@ -1,26 +1,26 @@
 /* Gfx Render 
 ** created by Dino Papararo v 1.1 03 Dic 2021
+** Now (*COLORREMAP) is extern to to avoid conflicts 09/10*2022 dpapararo
 */
 
-#include <math.h>
-#include <exec/types.h>
-#include <proto/exec.h>
-#include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <GMP/gmp.h>
+
 #include "Headers/FlashMandel.h"
 
 extern mpf_t gzr, gzi, gzr2, gzi2, gcre, gcim, gcre1, gcim1, gcre2, gcim2, gcre3,
   		gcim3, gjkre, gjkim, grmin, gimin, grmax, gimax, gtmp, gdist, gmaxdist,
   		gincremreal, gincremimag, gpzr, gpzi;
 
+extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
+
 /* MCPoint() */
 void MCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 	 			uint32 *PixelVecBase, const int16 x, const int16 y)
 {
-  uint8 r,g,b;
-  uint32 Iteration,Color=NULL;
-
+  uint8 r, g, b;
+  uint32 Color;
+  
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
   	mpf_add (gcre, grmin, gtmp);
@@ -39,14 +39,16 @@ void MCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
 #endif 
 		  
-  	Iteration = *(PixelVecBase + 0);
+  	Color = *(PixelVecBase + 0);
 #elif USE_POWERPC_MATH
-  	Iteration = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+  	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
-  	Iteration = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+  	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+	Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif /* USE_ALTIVEC_MATH */
   
-	if (Iteration) Color = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+	if (Color) Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 
 	SetAPen (Rp, Color);		 
 	WritePixel (Rp, x, y);
@@ -56,8 +58,8 @@ void MCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 void MCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 				 	uint32 *PixelVecBase, const int16 x, const int16 y)
 {
-  uint8 r,g,b;
-  uint32 Iteration,Color_ARGB;
+  uint8 r, g, b;
+  uint32 Color, Color_ARGB;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -77,22 +79,24 @@ void MCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
 #endif
 
-  	Iteration = *(PixelVecBase + 0);
+  	Color = *(PixelVecBase + 0);
 #elif USE_POWERPC_MATH
-  	Iteration = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+  	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
-  	Iteration = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+  	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+	Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif /* USE_ALTIVEC_MATH */
 
 	Color_ARGB = 0xff000000;
   
-	if (Iteration)
+	if (Color)
 	{
-        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
 		Color_ARGB |= (r << 16);
-		g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+		g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
 		Color_ARGB |= (g << 8);
-		b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+		b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
 		Color_ARGB |= b;
 	}
 
@@ -105,7 +109,7 @@ void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 {
   uint8 *TmpArray = (PixelLine + b2 - b1);
   int16 y;
-  uint32 Iteration;
+  uint32 Color;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -184,7 +188,7 @@ void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 		*TmpArray-- = (uint8) *(PixelVecBase + 3);
       	y--;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
   	mpf_mul_ui (gtmp, gincremimag, b2);
@@ -193,13 +197,15 @@ void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
   	for (y = b2; y >= b1; y--)
   	{
 #ifdef USE_POWERPC_MATH
-    	Iteration =	MandelnPPC (MandelInfo->Iterations, MandelInfo->Power,  mpf_get_d (gcre), mpf_get_d (gcim));
+    	Color =	MandelnPPC (MandelInfo->Iterations, MandelInfo->Power,  mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
-      	Iteration = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+      	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif
-    	if (Iteration)
+    	if (Color)
 		{
-	  		*TmpArray-- = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+	  		*TmpArray-- = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 		}
 
     	else *TmpArray-- = 0;
@@ -216,9 +222,9 @@ void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, 
 					uint32 *PixelVecBase, const int16 b1, const int16 b2, const int16 x)
 {
-  uint8 r,g,b;
+  uint8 r, g, b;
   int16 y;
-  uint32 Iteration,Color_ARGB;
+  uint32 Color, Color_ARGB;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -320,7 +326,7 @@ void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *Pi
 		WritePixelColor (Rp, x, y, Color_ARGB);
 		y--;
   	}
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
   	mpf_mul_ui (gtmp, gincremimag, b2);
@@ -329,20 +335,22 @@ void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *Pi
   	for (y = b2; y >= b1; y--)
   	{
 #ifdef USE_POWERPC_MATH
-		Iteration = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+		Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
-      	Iteration = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+      	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif
 
 		Color_ARGB = 0xff000000;
 
-		if (Iteration)
+		if (Color)
 		{
-	    	r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	    	r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
 			Color_ARGB |= b;
 		}
 
@@ -361,7 +369,7 @@ void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
   uint8 *TmpArray = PixelLine;
   int16 x;
   uint32 Color;
-
+  
   	/* Cim = MandelInfo->IMax - gincremimag * y; */
   	mpf_mul_ui (gtmp, gincremimag, y);
   	mpf_sub (gcim, gimax, gtmp);
@@ -436,7 +444,7 @@ void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 	  	*TmpArray++ = (uint8) *(PixelVecBase + 3);
       	x++;
 	}
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
@@ -448,6 +456,8 @@ void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
     	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
       	Color =	Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif
 
       	if (Color)
@@ -468,9 +478,9 @@ void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 					uint8 *PixelLine, uint32 *PixelVecBase, const int16 a1, const int16 a2, const int16 y)
 { 
-  uint8 r,g,b;
+  uint8 r, g, b;
   int16 x;
-  uint32 Iteration,Color_ARGB;
+  uint32 Color, Color_ARGB;
 
   	/* Cim = MandelInfo->IMax - gincremimag * y; */
   	mpf_mul_ui (gtmp, gincremimag, y);
@@ -571,7 +581,7 @@ void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 		WritePixelColor (Rp, x, y, Color_ARGB);
     	x++;
   	}
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
@@ -580,19 +590,21 @@ void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	for (x = a1; x <= a2; x++)
   	{
 #ifdef USE_POWERPC_MATH
-      	Iteration = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+      	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
-      	Iteration = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+      	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
+		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif
-	  	Color_ARGB = 0xff000000;
+  	Color_ARGB = 0xff000000;
 
-      	if (Iteration)
+      	if (Color)
       	{
-	        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
 			Color_ARGB |= b;
 	  	}
 		
@@ -607,8 +619,8 @@ void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 /* JCPoint() */
 void JCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, const int16 x, const int16 y)
 {
-  uint8 r,g,b;
-  uint32 Iteration,Color=NULL;
+  uint8 r, g, b;
+  uint32 Color;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -625,13 +637,15 @@ void JCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *Pixel
   	JulianAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim,
 		 			(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
   	
-	Iteration = *(PixelVecBase + 0);
+	Color = *(PixelVecBase + 0);
 #elif USE_POWERPC_MATH
-  	Iteration = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+  	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-  	Iteration = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+  	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+	Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
-  	if (Iteration) Color = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+  	if (Color) Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 
 	SetAPen (Rp, Color);		 
 	WritePixel (Rp, x, y);
@@ -642,7 +656,7 @@ void JCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 	 				uint32 *PixelVecBase, const int16 x, const int16 y)
 {
   uint8 r,g,b;
-  uint32 Iteration,Color_ARGB;
+  uint32 Color,Color_ARGB;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -659,22 +673,24 @@ void JCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
  	JulianAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim,
 		 			(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
 
- 	Iteration = *(PixelVecBase + 0);
+ 	Color = *(PixelVecBase + 0);
 #elif USE_POWERPC_MATH
-  	Iteration = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+  	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-  	Iteration = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+  	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+	Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
   
 	Color_ARGB = 0xff000000;
   
-	if (Iteration)
+	if (Color)
 	{
-        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
 		Color_ARGB |= (r << 16);
-		g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+		g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
 		Color_ARGB |= (g << 8);
-		b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+		b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
 		Color_ARGB |= b;
 	}
 
@@ -687,7 +703,7 @@ void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 {
   uint8 *TmpArray = (PixelLine + b2 - b1);
   int16 y;
-  uint32 Iteration;
+  uint32 Color;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -755,7 +771,7 @@ void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 	  	*TmpArray-- = (uint8) *(PixelVecBase + 3);
       	y--;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
   	mpf_mul_ui (gtmp, gincremimag, b2);
@@ -764,13 +780,15 @@ void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
   	for (y = b2; y >= b1; y--)
   	{
 #ifdef USE_POWERPC_MATH
-      	Iteration = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+      	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-      	Iteration = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+		Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
-    	if (Iteration)
+    	if (Color)
 		{
-	  		*TmpArray-- = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+	  		*TmpArray-- = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 		}
 
     	else *TmpArray-- = 0;
@@ -787,9 +805,9 @@ void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, uint32 *PixelVecBase, 
 					const int16 b1, const int16 b2, const int16 x)
 {
-  uint8 r,g,b;
+  uint8 r, g, b;
   int16 y;
-  uint32 Iteration,Color_ARGB;
+  uint32 Color, Color_ARGB;
 
   	/* Cre = MandelInfo->RMin + gincremreal * x; */
   	mpf_mul_ui (gtmp, gincremreal, x);
@@ -886,7 +904,7 @@ void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *Pi
 		WritePixelColor (Rp, x, y, Color_ARGB);
 		y--;
   	}
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
   	mpf_mul_ui (gtmp, gincremimag, b2);
@@ -895,20 +913,22 @@ void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *Pi
   	for (y = b2; y >= b1; y--)
   	{
 #ifdef USE_POWERPC_MATH
-      	Iteration = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+      	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-      	Iteration = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+		Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
  
 		Color_ARGB = 0xff000000;
 
-		if (Iteration)
+		if (Color)
 		{
-	    	r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	    	r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
 			Color_ARGB |= b;
 		}
 
@@ -926,7 +946,7 @@ void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 {
   uint8 *TmpArray = PixelLine;
   int16 x;
-  uint32 Iteration;
+  uint32 Color;
  
   	/* Cim = MandelInfo->IMax - gincremimag * y; */
   	mpf_mul_ui (gtmp, gincremimag, y);
@@ -994,7 +1014,7 @@ void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 		*TmpArray++ = (uint8) *(PixelVecBase + 3);
       	x++;
     }
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
@@ -1003,14 +1023,15 @@ void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
   	for (x = a1; x <= a2; x++)
     {
 #ifdef USE_POWERPC_MATH
-      	Iteration = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+      	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-      	Iteration = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre),	mpf_get_d (gjkim));
+      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre),	mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+		Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
-
- 	   	if (Iteration)
+ 	   	if (Color)
 		{
-		  	*TmpArray++ = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+		  	*TmpArray++ = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 		}
 
   	    else *TmpArray++ = 0;
@@ -1027,9 +1048,9 @@ void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *PixelLin
 void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, uint32 *PixelVecBase, 
 					const int16 a1, const int16 a2, const int16 y)
 { 
-  uint8 r,g,b;
+  uint8 r, g, b;
   int16 x;
-  uint32 Iteration,Color_ARGB;
+  uint32 Color, Color_ARGB;
 
   	/* Cim = MandelInfo->IMax - gincremimag * y; */
   	mpf_mul_ui (gtmp, gincremimag, y);
@@ -1125,7 +1146,7 @@ void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *Pi
 		WritePixelColor (Rp, x, y, Color_ARGB);
     	x++;
   	}
-#elif USE_POWERPC_MATH || USE_C_MATH
+#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
@@ -1134,19 +1155,21 @@ void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *Pi
   	for (x = a1; x <= a2; x++)
   	{
 #ifdef USE_POWERPC_MATH
-      	Iteration = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
+      	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-      	Iteration = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre),	mpf_get_d (gjkim));
+      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre),	mpf_get_d (gjkim));
+#elif USE_SPE_MATH
+		Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
 	  	Color_ARGB = 0xff000000;
 
-      	if (Iteration)
+      	if (Color)
       	{
-	        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
 			Color_ARGB |= b;
 	  	}
 		

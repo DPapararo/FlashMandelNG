@@ -38,7 +38,7 @@
 **       bugfixed RectangleDraw limits, Alivec main pixel vector, Chunkypixeks modulo and others minor issues
 **       Cleaned code following C Best Practices, i.e. avoiding glodal vars and other stuff
 **  V3.2 Implemented 24bit screens rendering 24-02-2021
-**       fixed Histogram coloring algorithm
+**       fixed Histogram coloring algorithmf
 **       bugfixed recursive drawing functions 
 **       many other fixes and changes 27-03-2021
 **  V3.3 Implemented load and save pictures for 24bit screens
@@ -61,6 +61,12 @@
 **		 Fixed Orbitwindow memalloc, small code cleanups.
 **
 **  V4.4 Added scrolling and zoon in/out feature with keyboard
+**
+**  V4.5 Fixed includes dirs
+**
+**  V4.6 preliminary code for SPE native support to be tested
+**
+**  V4.7 fixed and speeded up altivec code - cleanup include files
 **		
 ******************************************************************************************************************/
 
@@ -74,43 +80,28 @@
 #include <altivec.h>
 #endif
 
-#include <exec/types.h>
-#include <exec/exec.h>
-#include <exec/exectags.h>
-#include <intuition/gadgetclass.h>
-#include <intuition/menuclass.h>
-#include <graphics/scale.h>
-#include <workbench/workbench.h>
-#include <reaction/reaction_macros.h>
-#include <utility/utility.h>
-#include <libraries/asl.h>
-#include <devices/printer.h>
-#include <classes/window.h>
-#include <classes/arexx.h>
-#include <rexx/rxslib.h>
-#include <rexx/errors.h>
-#define NO_PROTOS
-#include <iffp/ilbmapp.h>
-#undef NO_PROTOS
+//#include <exec/types.h>
+//#include <exec/exec.h>
+
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/utility.h>
+#include <proto/intuition.h>
 #include <proto/graphics.h>
-#include <proto/window.h>
+#include <proto/asl.h>
 #include <proto/diskfont.h>
 #include <proto/gadtools.h>
 #include <proto/locale.h>
-#include <proto/utility.h>
 #include <proto/iffparse.h>
-#include <proto/asl.h>
-#include <proto/wb.h>
-#define __NOLIBBASE__
 #include <proto/rexxsyslib.h>
-#include <intuition/intuition.h>
-#include <graphics/GfxBase.h>
-#include <graphics/GfxMacros.h>
-#include <proto/intuition.h>
-#include <proto/graphics.h>
-#undef  __NOLIBBASE__
+
+#include <intuition/gadgetclass.h>
+#include <devices/printer.h>
+
+
+#define NO_PROTOS
+#include "Headers/iffp/ilbmapp.h"
+#undef NO_PROTOS
 
 #include <GMP/gmp.h>
 // #include <GMP/mpfr.h>
@@ -140,7 +131,7 @@
 #include "Headers/FM_ARexx_Misc.h"
 #endif /* FM_AREXX_SUPPORT */
 
-#define VERSTAG "\0$VER: FlashMandelNG V4.4 (25.04.2022) Dino Papararo - Edgar Schwan"
+#define VERSTAG "\0$VER: FlashMandelNG V4.7 (11.10.2023) Dino Papararo - Edgar Schwan"
 #define GUIDE "SYS:Utilities/Multiview Docs/FlashMandelNG.guide"
 
 /* PALETTE PEN COLORS FOR GUI PENS */
@@ -182,7 +173,7 @@ uint32 receivedsig, wsignal, lastsignal;
 int8 allocsignal = 0;
 int16 ForceAbort = FALSE;
 int16 MX1 = 0, MY1 = 0, MX2 = 0, MY2 = 0, W = 0, H = 0;    /* changed for ARexx-support */
-int16 __attribute__ ((aligned (16))) ZOOMLINE[5 * 2], RETURNVALUE = 0, UNDOCOUNTER = 0, LEVELUNDO;
+int16 ZOOMLINE[5 * 2], RETURNVALUE = 0, UNDOCOUNTER = 0, LEVELUNDO;
 int32 PRIORITY = DEF_PRIORITY, __oslibversion = Lib_Version;
 uint32 MASK = TMASK, DELAY = DEF_DELAY, ELAPSEDTIME = NULL;
 float64 DEF_RMIN, DEF_RMAX, DEF_IMIN, DEF_IMAX, DEF_JKRE, DEF_JKIM;
@@ -190,13 +181,14 @@ uint8 *PIXMEM = NULL, *GFXMEM = NULL, *ARGBMEM = NULL;
 uint32 *PALETTE = NULL, *RNDMEM = NULL;
 CPTR *VINFO = NULL;
 // APTR LOCK = NULL;
-CONST_STRPTR __attribute__ ((aligned (16))) CPUPPC_STR[50];
-CONST_STRPTR __attribute__ ((aligned (16))) VERPPC_STR[50];
-CONST_STRPTR __attribute__ ((aligned (16))) VECPPC_STR[50];
+CONST_STRPTR CPUPPC_STR[50];
+CONST_STRPTR VERPPC_STR[50];
+CONST_STRPTR VECPPC_STR[50];
 mpf_t gzr, gzi, gzr2, gzi2, gcre, gcim, gcre1, gcim1, gcre2, gcim2, gcre3,
       gcim3, gjkre, gjkim, grmin, gimin, grmax, gimax, gtmp, gdist, gmaxdist,
       gincremreal, gincremimag, gpzr, gpzi;
 
+uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
 void (*C_POINT) (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
 void (*H_LINE) (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
 void (*V_LINE) (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
@@ -227,7 +219,7 @@ struct Chunk COPYRIGHT_CHUNK = { NULL, ID_ILBM, ID_Copyright, sizeof (COPYRIGHT_
 struct Chunk USERNAME_CHUNK = { NULL, ID_ILBM, ID_AUTH, sizeof (USERNAME_STRING), USERNAME_STRING };
 
 /* PALETTE 8BIT DEFAULT TABLE */
-uint32 __attribute__ ((aligned (16))) PALETTE256[] = {
+uint32 PALETTE256[] = {
        	256 << 16 + 0,
        	0X00000000, 0X00000000, 0X00000000, 0XFFFFFFFF, 0XFFFFFFFF,
        	0XFFFFFFFF, 0XAAAAAAAA, 0XAAAAAAAA, 0XAAAAAAAA, 0X66666666,
@@ -386,7 +378,7 @@ uint32 __attribute__ ((aligned (16))) PALETTE256[] = {
      };
 
 // ZOOM POINTER SPRITE
-uint16 __attribute__ ((aligned (16))) ZOOMPOINTER[] = {
+uint16 ZOOMPOINTER[] = {
        	0x0000, 0x0000,     /* reserved, must be NULL */
        	0x0100, 0x0000, 0x0100, 0x0000, 0x0000, 0x0100, 0x0000, 0x0100, 
        	0x0100, 0x0100, 0x0100, 0x0100, 0x0000, 0x0000, 0xCC66, 0x3C78, 
@@ -394,7 +386,7 @@ uint16 __attribute__ ((aligned (16))) ZOOMPOINTER[] = {
        	0x0000, 0x0100, 0x0100, 0x0000, 0x0100, 0x0000, 0x0000, 0x0000,
        	0x0000, 0x0000      /* reserved, must be NULL */ };
 
-/* uint16 __attribute__ ((aligned (16))) WaitPointer[] = {
+/* uint16 WaitPointer[] = {
        	0x0000, 0x0000,     // reserved, must be NULL
        	0x0400, 0x07C0, 0x0000, 0x07C0, 0x0100, 0x0380, 0x0000, 0x07E0,
        	0x07C0, 0x1FF8, 0x1FF0, 0x3FEC, 0x3FF8, 0x7FDE, 0x3FF8, 0x7FBE,
@@ -402,7 +394,7 @@ uint16 __attribute__ ((aligned (16))) ZOOMPOINTER[] = {
        	0x3FF8, 0x7FFE, 0x1FF0, 0x3FFC, 0x07C0, 0x1FF8, 0x0000, 0x07E0,
        	0x0000, 0x0000      // reserved, must be NULL}; */
 
-uint16 __attribute__ ((aligned (16))) PENS[] = { WHITE, BLACK, WHITE, LIGHT_GREY, BLACK, LIGHT_GREY, WHITE, DARK_GREY, WHITE, WHITE, DARK_GREY, BLACK, (uint16) ~ 0 };
+uint16 PENS[] = { WHITE, BLACK, WHITE, LIGHT_GREY, BLACK, LIGHT_GREY, WHITE, DARK_GREY, WHITE, WHITE, DARK_GREY, BLACK, (uint16) ~ 0 };
 
 /* PEN COLORS DESCRIPTIONS
 01 WHITE      DETAILPEN         testo (v34)
@@ -541,12 +533,12 @@ struct BitMap *MYBITMAP = NULL;
 struct TextFont *NEWFONT = NULL;
 struct ILBMInfo MYILBM = { 0 };
 
-int32 __attribute__ ((aligned (16))) IlbmProps[] = { ID_ILBM, ID_BMHD, ID_ILBM, ID_CMAP, ID_ILBM, ID_CAMG, ID_ILBM, ID_FMNG, ID_ILBM, ID_AUTH, ID_ILBM, ID_Copyright, TAG_DONE };
-int32 __attribute__ ((aligned (16))) IlbmCollects[] = { TAG_DONE };
-int32 __attribute__ ((aligned (16))) IlbmStops[] = { ID_ILBM, ID_BODY, TAG_DONE };
+int32 IlbmProps[] = { ID_ILBM, ID_BMHD, ID_ILBM, ID_CMAP, ID_ILBM, ID_CAMG, ID_ILBM, ID_FMNG, ID_ILBM, ID_AUTH, ID_ILBM, ID_Copyright, TAG_DONE };
+int32 IlbmCollects[] = { TAG_DONE };
+int32 IlbmStops[] = { ID_ILBM, ID_BODY, TAG_DONE };
 
 // #ifdef USE_ALTIVEC_MATH
-uint32 __attribute__ ((aligned (32))) PIXELVECTOR[4] = {0L, 0L, 0L, 0L}; /* Pixels colors vector */
+uint32 PIXELVECTOR[4] __attribute__ ((aligned (16))) = {0L, 0L, 0L, 0L}; /* Pixels colors vector */
 // #endif
 
 /* DisplayError() */
@@ -658,8 +650,46 @@ void CloseDownDisplay (struct Screen *screen)
 		}
     }
 }
+/*
+int OpenLibs (void)
+{
+struct Library *IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 36);
+struct Library *IFFParseBase = (struct IntuitionBase *)OpenLibrary("iffparse.library", 36);
+struct Library *GfxBase = (struct IntuitionBase *)OpenLibrary("graphics.library", 36);
+struct Library *GadToolsBase = (struct IntuitionBase *)OpenLibrary("gadtols.library", 36);
+struct Library *DiskfontBase = (struct IntuitionBase *)OpenLibrary("diskfont.library", 36);
+struct Library *AslBase = (struct IntuitionBase *)OpenLibrary("asl.library", 36);
+struct Library *LocaleBase = (struct IntuitionBase *)OpenLibrary("locale.library", 36);
+struct Library *IconBase = (struct IntuitionBase *)OpenLibrary("icon.library", 36);
+struct Library *IconBase DataTypesBase = (struct IntuitionBase *)OpenLibrary("datatypes.library", 36);
+struct Library *IconBase RexxSysBase = (struct IntuitionBase *)OpenLibrary("rexxsyslib.library", 36);
+//IntuitionBase = (struct IntuitionBase *)OpenLibrary("arexx.class.library", 36);
 
-/* main startup */
+  if (IIntuition != NULL && IGraphics != NULL && IDiskfont != NULL && IAsl != NULL)
+
+
+}
+
+int CloseLibs (void)
+{
+CloseLibrary("locale.library") [8uS]
+
+ //CloseLibrary("arexx.class") [5uS]
+ CloseLibrary("rexxsyslib.library") [40uS]
+ CloseLibrary("datatypes.library") [9uS]
+ CloseLibrary("icon.library") [9uS]
+ CloseLibrary("locale.library") [8uS]
+ CloseLibrary("asl.library") [6uS]
+ CloseLibrary("diskfont.library") [8uS]
+ CloseLibrary("gadtools.library") [7uS]
+ CloseLibrary("graphics.library") [7uS]
+ CloseLibrary("iffparse.library") [8uS]
+ CloseLibrary("intuition.library") [9uS]
+ CloseLibrary("newlib.library") [5uS]
+ CloseLibrary("utility.library") [2uS]
+}
+*/
+/*  startup */
 int main (int Argc, char **Argv)
 {
   int32 ReturnCode = 0;
@@ -728,7 +758,7 @@ int main (int Argc, char **Argv)
 
     if ((MANDChunk = (struct MandelChunk *) AllocVecTags (sizeof (struct MandelChunk),
                         									AVT_Type, MEMF_PRIVATE,	AVT_Contiguous, TRUE, 
-															AVT_Lock, TRUE, AVT_Alignment, 16,
+															AVT_Lock, TRUE, /* AVT_Alignment, 16,*/
                         									AVT_ClearWithValue, 0, TAG_DONE)) == NULL)
     {
           ReturnCode = RETURN_FAIL;
@@ -737,7 +767,7 @@ int main (int Argc, char **Argv)
 
     if ((LSFMChunk = (struct LoadSaveFMChunk *) AllocVecTags (sizeof (struct LoadSaveFMChunk), 
 																AVT_Type, MEMF_PRIVATE, AVT_Contiguous, TRUE, 
-																AVT_Lock, TRUE,	AVT_Alignment, 16, 
+																AVT_Lock, TRUE,	/* AVT_Alignment, 16, */
 																AVT_ClearWithValue, 0, TAG_DONE)) == NULL)
     {
           ReturnCode = RETURN_FAIL;
@@ -776,7 +806,7 @@ int main (int Argc, char **Argv)
     MYILBM.ParseInfo.stopchks = IlbmStops;
     MYILBM.Bmhd.pageWidth = 0;
     MYILBM.Bmhd.pageHeight = 0;
-    MYILBM.stype = CUSTOMSCREEN | SCREENQUIET | CUSTOMBITMAP;
+    MYILBM.stype = NS_EXTENDED | CUSTOMSCREEN | SCREENQUIET | CUSTOMBITMAP;
     MYILBM.TBState = TMASK & MASK;
     MYILBM.ucliptype = OSCAN_TEXT;
     MYILBM.brbitmap = NULL;
@@ -977,7 +1007,7 @@ int main (int Argc, char **Argv)
 clistart:
     if (!(UNDOBuffer = (struct UndoBuffer *) AllocVecTags ((sizeof (struct UndoBuffer) * LEVELUNDO), AVT_Type, MEMF_PRIVATE, 
 															AVT_Contiguous, TRUE, AVT_Lock, TRUE, 
-															AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE)))
+															/* AVT_Alignment, 16, */ AVT_ClearWithValue, 0, TAG_DONE)))
   	{
     	ReturnCode = RETURN_FAIL;
         goto cleanup;
@@ -992,15 +1022,18 @@ clistart:
 
     PALETTE = &PALETTE256;
 
-    MYILBM.camg = BestModeID (BIDTAG_NominalWidth, MYILBM.Bmhd.w, BIDTAG_DesiredWidth, MYILBM.Bmhd.w, 
-								BIDTAG_NominalHeight, MYILBM.Bmhd.h, BIDTAG_DesiredHeight, MYILBM.Bmhd.h, 
-								BIDTAG_Depth, MYILBM.Bmhd.nPlanes, BIDTAG_DIPFMustNotHave, (DIPF_IS_DUALPF|DIPF_IS_PF2PRI|DIPF_IS_HAM|DIPF_IS_EXTRAHALFBRITE|DIPF_IS_PAL), 
+    MYILBM.camg = BestModeID (BIDTAG_NominalWidth, MYILBM.Bmhd.w, 
+								BIDTAG_DesiredWidth, MYILBM.Bmhd.w, 
+								BIDTAG_NominalHeight, MYILBM.Bmhd.h, 
+								BIDTAG_DesiredHeight, MYILBM.Bmhd.h, 
+								BIDTAG_Depth, MYILBM.Bmhd.nPlanes, 
+								BIDTAG_DIPFMustNotHave, PROPERTYMASK,
 								TAG_DONE);
 
     
 	if ((MYILBM.camg != INVALID_ID) && ArgInt (IconToolTypes, "SMREQUESTER", TRUE))
 	{
-		if (SMReq = AllocAslRequest (ASL_ScreenModeRequest, NULL))
+		if (SMReq = (struct ScreenModeRequester *) AllocAslRequest (ASL_ScreenModeRequest, NULL))
   		{
         	if (AslRequestTags (SMReq,
 								ASLSM_TitleText, "FlashMandel ScreenMode Requester",
@@ -1013,8 +1046,8 @@ clistart:
 				            	ASLSM_DoHeight, FALSE, 
 				            	ASLSM_DoDepth, FALSE,
 				            	ASLSM_DoOverscanType, FALSE,           
-				            	ASLSM_PropertyFlags, DIPF_IS_RTG|DIPF_IS_WB,
-				            	ASLSM_PropertyMask, DIPF_IS_DUALPF|DIPF_IS_PF2PRI|DIPF_IS_HAM|DIPF_IS_EXTRAHALFBRITE|DIPF_IS_PAL,                       
+				            	ASLSM_PropertyFlags, PROPERTYFLAGS,
+				            	ASLSM_PropertyMask, PROPERTYMASK,
 				            	ASLSM_MinWidth, MIN_WIDTH, 
 				            	ASLSM_MinHeight, MIN_HEIGHT, 
 				            	ASLSM_MinDepth, MIN_DEPTH, 
@@ -1503,11 +1536,13 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
 
   	if (!Ilbm) goto ExitOpenIdScreen;
 
-  	ModeID = BestModeID (BIDTAG_NominalWidth, Width, BIDTAG_NominalHeight, Height,
-        					BIDTAG_DesiredWidth, Width, BIDTAG_DesiredHeight, Height,
-        					BIDTAG_Depth, Depth, BIDTAG_DIPFMustNotHave,
-        					(DIPF_IS_DUALPF | DIPF_IS_PF2PRI | DIPF_IS_HAM |
-	       					DIPF_IS_EXTRAHALFBRITE | DIPF_IS_PAL), TAG_DONE);
+  	ModeID = BestModeID (BIDTAG_NominalWidth, Width, 
+							BIDTAG_NominalHeight, Height,
+        					BIDTAG_DesiredWidth, Width, 
+							BIDTAG_DesiredHeight, Height,
+        					BIDTAG_Depth, Depth, 
+							BIDTAG_DIPFMustNotHave,	PROPERTYMASK,
+							TAG_DONE);
 
   	if (ModeID == INVALID_ID)
     {
@@ -1521,7 +1556,7 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
     {
       	if (Ilbm->brbitmap = AllocBitMapTags (Width, Height, Depth,
                         						BMATags_Displayable, FALSE,
-                        						BMATags_Alignment, 16,
+                        						/*BMATags_Alignment, 16,*/
                         						BMATags_ConstantBytesPerRow, TRUE, 
 												BMATags_Clear, TRUE,
                         						BMATags_PixelFormat, ((Depth == MIN_DEPTH) ? PIXF_CLUT : PIXF_A8R8G8B8),
@@ -1624,7 +1659,7 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
   	{
     	if (!(ARGBMEM = AllocVecTags ((Ilbm->Bmhd.w) * (Ilbm->Bmhd.h) * 4, AVT_Type, MEMF_PRIVATE, 
 										AVT_Contiguous, TRUE, AVT_Lock, TRUE,
-               							AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE)))
+               							/*AVT_Alignment, 16, */ AVT_ClearWithValue, 0, TAG_DONE)))
       	{
          	DisplayError (NULL, TXT_ERR_NoMem, 20L);
 			goto ExitMakeDisplay;
@@ -1635,7 +1670,7 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 
   	if (!(RNDMEM = AllocVecTags (sizeof (uint32) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h),	AVT_Type, MEMF_PRIVATE, 
 									AVT_Contiguous, TRUE, AVT_Lock, TRUE, 
-									AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE)))
+									/*AVT_Alignment, 16, */ AVT_ClearWithValue, 0, TAG_DONE)))
     {
       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
 		goto ExitMakeDisplay;
@@ -1645,7 +1680,7 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 
   	if (!(GFXMEM = AllocVecTags ((Ilbm->Bmhd.w) * (Ilbm->Bmhd.h), AVT_Type, MEMF_PRIVATE, 
 									AVT_Contiguous, TRUE, AVT_Lock, TRUE, 
-									AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE)))
+									/* AVT_Alignment, 16, */ AVT_ClearWithValue, 0, TAG_DONE)))
     {
       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
 		goto ExitMakeDisplay;     	
@@ -1655,7 +1690,7 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 
   	if (!(PIXMEM = AllocVecTags (MAX (Ilbm->Bmhd.w, Ilbm->Bmhd.h),	AVT_Type, MEMF_PRIVATE, 
 									AVT_Contiguous, TRUE, AVT_Lock, TRUE, 
-									AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE)))
+									/*AVT_Alignment, 16, */ AVT_ClearWithValue, 0, TAG_DONE)))
     {
       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
 		goto ExitMakeDisplay;
@@ -2104,7 +2139,7 @@ int16 ShowCoords (struct Window * Win)
   struct Window *GadWin = NULL;
   struct IntuiMessage *Message = NULL;
   int32 Exit = FALSE, Accept = FALSE, Reset = FALSE, Ratio = FALSE, KeepReal = TRUE;
-  uint8 __attribute__ ((aligned (16))) String[MAX_MATH_DIGITS + 2];
+  uint8 String[MAX_MATH_DIGITS + 2];
   uint16 MyCode;
   uint32 MyClass;
   mpf_t Tmp_RMIN, Tmp_IMAX, Tmp_RMAX, Tmp_IMIN, Tmp_JKRE, Tmp_JKIM;
@@ -2731,7 +2766,7 @@ void CalcFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARG
 	if (MandelInfo->Flags & JULIA_BIT)
   	{
       	if (GetBitMapAttr (Win->RPort->BitMap,BMA_DEPTH) == MAX_DEPTH)
-      	{
+		{
           	C_POINT = JCPoint24bit;
           	H_LINE = JHLine24bit;
           	V_LINE = JVLine24bit;
@@ -2792,7 +2827,7 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
 
   	if (! (HistMem = AllocVecTags (sizeof (uint32) * (MandelInfo->Iterations + 1), AVT_Type, MEMF_PRIVATE, 
 									AVT_Contiguous, TRUE, AVT_Lock, TRUE, 
-									AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE)))
+									/*AVT_Alignment, 16, */ AVT_ClearWithValue, 0, TAG_DONE)))
     {
       	DisplayError (Win, TXT_ERR_NoMem, 20L);
       	goto ExitDrawFractal; // return 0
@@ -2838,8 +2873,8 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
       	ClearMem (GfxMem, (MandelInfo->Width * MandelInfo->Height));
       	ClearMem (RndMem, sizeof (uint32) * (MandelInfo->Width * MandelInfo->Height));
 
-      	if (MandelInfo->Flags & HIGHPREC_BIT) CalcFractalMem_GMP (MandelInfo, RndMem, HistMem);
-      	else CalcFractalMem (MandelInfo, PixelVector, RndMem, HistMem);
+      	if (MandelInfo->Flags & HIGHPREC_BIT) CalcFractalMem_GMP (MandelInfo, Win, RndMem, HistMem);
+      	else CalcFractalMem (MandelInfo, Win, PixelVector, RndMem, HistMem);
 
       	if ((MandelInfo->Flags & HISTOGRAM_BIT) && (MandelInfo->Depth == MIN_DEPTH)) Histogram (MandelInfo, Win, GfxMem, RndMem, HistMem);
       	else DisplayRndMem (MandelInfo, Win, RndMem, GfxMem);
@@ -3062,7 +3097,7 @@ int16 ShowOrbit (struct MandelChunk * MandelInfo, struct Window * Win, struct Wi
 
 	if (PArray = AllocVecTags (((sizeof (int16) * (2 * MandelInfo->Iterations)) + 1),
                                 AVT_Type, MEMF_PRIVATE, AVT_Contiguous, TRUE, AVT_Lock, TRUE, 
-                                AVT_Alignment, 16, AVT_ClearWithValue, 0, TAG_DONE))
+                                /*AVT_Alignment, 16, */AVT_ClearWithValue, 0, TAG_DONE))
 	{    
     	do
         {
@@ -3186,8 +3221,8 @@ void BlinkRect (struct Window *Win, const int16 LeftEdge, const int16 TopEdge,
 }
 
 /* Preview() */
-int16 Preview (struct Window *Win, uint8 * PixelVector, uint8 * ARGBMem,
-     			uint32 * RndMem, uint8 * PixMem, uint8 * GfxMem, int16 Width, int16 Height)
+int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem,
+     			uint32 *RndMem, uint8 *PixMem, uint8 *GfxMem, int16 Width, int16 Height)
 {
   struct Window *PreviewWin = NULL;
   struct IntuiMessage *Message = NULL;
@@ -3296,7 +3331,7 @@ int16 FileRequest (struct Window *Win, STRPTR String, STRPTR DrawerTxt, int16 Dr
   BPTR MyLock;
   int16 Success = FALSE;
 
-  	if (MyFileReq = AllocAslRequest (ASL_FileRequest, 0))
+  	if (MyFileReq = (struct FileRequester *) AllocAslRequest (ASL_FileRequest, 0))
     {
 				
    		MyDir = ((DrawerType == PALETTES_DRAWER) ? PALETTESDIR : PICTURESDIR);	
@@ -3347,7 +3382,7 @@ int16 FontRequest (struct Window * Win)
   struct FontRequester *MyFontReq = NULL;
   int16 Success = FALSE;
 
-  	if (MyFontReq = AllocAslRequest (ASL_FontRequest, 0))
+  	if (MyFontReq = (struct FontRequester *) AllocAslRequest (ASL_FontRequest, 0))
     {
       	if (AslRequestTags (MyFontReq, ASLFO_Window, Win,
 			ASLFO_InitialLeftEdge, WINDOW_X_OFFSET,
@@ -3390,7 +3425,7 @@ int16 SMRequest (struct ILBMInfo * Ilbm)
   struct Window *Win = Ilbm->win;
   int16 NewScreen = FALSE;
 
-    if (SMReq = AllocAslRequest (ASL_ScreenModeRequest, NULL))
+    if (SMReq = (struct ScreenModeRequester *) AllocAslRequest (ASL_ScreenModeRequest, NULL))
     {
 		if (AslRequestTags (SMReq, ASLSM_Window, Win,
             ASLSM_SleepWindow, TRUE,
@@ -3407,8 +3442,8 @@ int16 SMRequest (struct ILBMInfo * Ilbm)
             ASLSM_DoWidth, FALSE, 
             ASLSM_DoHeight, FALSE, 
             ASLSM_DoDepth, FALSE,               
-            ASLSM_PropertyFlags, DIPF_IS_RTG|DIPF_IS_WB, 
-            ASLSM_PropertyMask, DIPF_IS_DUALPF|DIPF_IS_PF2PRI|DIPF_IS_HAM|DIPF_IS_EXTRAHALFBRITE|DIPF_IS_PAL,                       
+            ASLSM_PropertyFlags, PROPERTYFLAGS, 
+            ASLSM_PropertyMask, PROPERTYMASK,
             ASLSM_MinWidth, MIN_WIDTH, 
             ASLSM_MinHeight, MIN_HEIGHT, 
             ASLSM_MinDepth, MIN_DEPTH, 
@@ -3511,14 +3546,14 @@ int16 __attribute__ ((saveds)) SMFilterFunc (REG (a0, struct Hook *Hook), REG (a
   const DisplayInfoHandle DisplayHandle = FindDisplayInfo (DisplayID);
   struct DisplayInfo DisplayInfo;
   struct DimensionInfo DimensionInfo;
-  int16 Accept = NULL;
-
+  int16 Accept = FALSE;
+  
 	if ((DisplayHandle) && GetDisplayInfoData (DisplayHandle, (APTR) &DisplayInfo, sizeof (struct DisplayInfo), DTAG_DISP, DisplayID))
     {
         if (GetDisplayInfoData (DisplayHandle, (APTR) &DimensionInfo, sizeof (struct DimensionInfo), DTAG_DIMS, DisplayID))
         {
-            Accept = (((DimensionInfo.MaxDepth == MIN_DEPTH) || (DimensionInfo.MaxDepth == MAX_DEPTH))                 
-            			&& (DisplayInfo.PropertyFlags & (DIPF_IS_WB|DIPF_IS_RTG)));
+            if ((DimensionInfo.MaxDepth == MIN_DEPTH) || (DimensionInfo.MaxDepth == MAX_DEPTH))
+				if ((DisplayInfo.PropertyFlags & PROPERTYMASK) == (PROPERTYFLAGS & PROPERTYMASK)) Accept = TRUE;
         }
     }
 
@@ -3526,8 +3561,8 @@ int16 __attribute__ ((saveds)) SMFilterFunc (REG (a0, struct Hook *Hook), REG (a
 }
 
 /* ProcessMenu() */
-uint32 ProcessMenu (struct MandelChunk * MandelInfo, struct Window *Win, uint8 * ARGBMem, uint8 * PixMem, 
-					uint32 * PixelVector, uint32 * RndMem, uint8 * GfxMem, uint16 Code)
+uint32 ProcessMenu (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, 
+					uint32 *PixelVector, uint32 *RndMem, uint8 *GfxMem, uint16 Code)
 {
   struct MenuItem *Item = NULL;
   uint32 Choice = NULL;
@@ -4400,7 +4435,7 @@ void ProcessMouse (struct Window *Win, int16 CurMouseX, int16 CurMouseY, int32 M
 
 /* Pick() */
 int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
-        			uint8 * ARGBMem, uint8 * PixMem, uint32 * PixelVector, uint32 * RndMem, uint8 * GfxMem)
+        			uint8 *ARGBMem, uint8 *PixMem, uint32 *PixelVector, uint32 *RndMem, uint8 *GfxMem)
 {
   struct Window *JuliaPreviewWin = NULL;
   struct IntuiMessage *Message = NULL;
@@ -5084,7 +5119,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                                             	BIDTAG_NominalHeight, MandelInfo->Height,
                                                             	BIDTAG_DesiredHeight, MandelInfo->Height,
                                                             	BIDTAG_Depth, MandelInfo->Depth,
-                                                            	BIDTAG_DIPFMustNotHave, (DIPF_IS_DUALPF|DIPF_IS_PF2PRI|DIPF_IS_HAM|DIPF_IS_EXTRAHALFBRITE|DIPF_IS_PAL), 
+                                                            	BIDTAG_DIPFMustNotHave, PROPERTYMASK,
                                     							TAG_DONE);
 
                                     if (Ilbm->camg == INVALID_ID)
@@ -5423,7 +5458,7 @@ struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 W
     Depth = GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH);
 	NewBM = AllocBitMapTags (Width, Height, Depth, 
 								BMATags_Friend, Win->RPort->BitMap,	BMATags_Clear, TRUE,
-								BMATags_Displayable, TRUE, BMATags_Alignment, 16,
+								BMATags_Displayable, TRUE, /*BMATags_Alignment, 16,*/
 								BMATags_ConstantBytesPerRow, TRUE, TAG_DONE);
 
     if (NewBM)
@@ -5461,7 +5496,7 @@ int16 PasteBitMap (struct BitMap *SrcBM, struct Window *DstWin, uint16 SrcLeft, 
 
 		TmpBM = AllocBitMapTags (DstWinWidth, DstWinHeight, Depth,
 									BMATags_Friend, DstWin->RPort->BitMap, BMATags_Clear, TRUE,
-									BMATags_Displayable, TRUE, BMATags_Alignment, 16,
+									BMATags_Displayable, TRUE, /*BMATags_Alignment, 16,*/
 									BMATags_ConstantBytesPerRow, TRUE, TAG_DONE);
 
         if (TmpBM)

@@ -52,22 +52,11 @@
 /* Now logic is based on DimensionInfo struct 04.12.2021 dpapararo */
 /* Implemented ARGB fade and Random API call function 06.02.2022 dpapararo */ 
 
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
-
-#include <stdlib.h>
-#include <exec/types.h>
-#include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/utility.h>
 #include <proto/gadtools.h>
-#include <intuition/intuition.h>
-#include <graphics/gfxbase.h>
-#include <graphics/displayinfo.h>
 
 #include "Headers/FlashMandel.h"
 

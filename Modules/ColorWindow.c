@@ -10,23 +10,14 @@
 **  $ver 2.3 various fixes 19-03-2020 dpapararo
 *******************************************************************************/
 
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
-
-#include <exec/types.h>
-#include <exec/execbase.h>
-#include <intuition/intuition.h>
-#include <intuition/gadgetclass.h>
-#include <utility/utility.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/gadtools.h>
-#include <proto/utility.h>
 #include <proto/locale.h>
+
+#include <intuition/gadgetclass.h>
 
 #include "Headers/FlashMandel.h"
 // #include "Headers/CompilerSpecific.h"

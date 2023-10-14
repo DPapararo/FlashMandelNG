@@ -48,42 +48,19 @@
 
 #define NDEBUG
 
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
-
-#include <intuition/gadgetclass.h>
-#include <intuition/classusr.h>
-#include <intuition/screens.h>
-#include <classes/window.h>
-#include <gadgets/layout.h>
-#include <gadgets/button.h>
-#include <images/label.h>
-#include <dos/dos.h>
-#include <gadgets/integer.h>
-
-#ifdef __GNUC__
-#include <proto/intuition.h>
-#include <proto/exec.h>
-#include <proto/graphics.h>
-#include <proto/locale.h>
-#include <clib/alib_protos.h>
-#else /* __GNUC__ */
-#include <clib/intuition_protos.h>
-#include <clib/exec_protos.h>
-#include <clib/graphics_protos.h>
-#include <clib/locale_protos.h>
-#include <clib/alib_protos.h>
-
-#include <pragmas/intuition_pragmas.h>
-#include <pragmas/exec_pragmas.h>
-#include <pragmas/graphics_pragmas.h>
-#include <pragmas/locale_pragmas.h>
-#endif /* __GNUC__ */
-
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/graphics.h>
+#include <proto/locale.h>
+
+#include <classes/window.h>
+#include <gadgets/string.h>
+#include <gadgets/integer.h>
+#include <gadgets/layout.h>
+#include <images/label.h>
 
 #include "FM_IntegerReq_React.h"
 #include "FM_ReactionBasics.h"
@@ -1230,7 +1207,7 @@ static int32 HandlePrecReqWindow (struct Window *Win, uint32 * NewValue)
 	              	break;
 	            }
 	        break;
-        #ifndef NDEBUG
+#ifndef NDEBUG
 	        default:
 	          	Printf ("unknown result: %lX\nunknown class: %lX\n", result, result & WMHI_CLASSMASK);
         		// DisplayBeep(NULL);

@@ -1,4 +1,4 @@
-## version $VER: FlashMandelNG.catalog 4.4 (25.Apr.2022)
+## version $VER: FlashMandelNG.catalog 4.7 (11.Oct.2023)
 ## codeset 0
 ## language german
 ;
@@ -45,7 +45,7 @@ Pal_TXT_Undo
 _Undo
 ;
 Info_TXT_Info
-\n  FlashMandelNG 4.4  (c)1995-2022\n\n  Schneckenpost:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  EMail-Addresse:\n  Dino.Papararo@GMail.Com\n\n\n***********************************\n* Dieses Programm ist Giftware !! *\n***********************************\n\n\n
+\n  FlashMandelNG 4.7 (c)1995-2023\n\n  Schneckenpost:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  EMail-Addresse:\n  Dino.Papararo@GMail.Com\n\n\n***********************************\n* Dieses Programm ist Giftware !! *\n***********************************\n\n\n
 ;
 Info_TXT_OK
 _OK

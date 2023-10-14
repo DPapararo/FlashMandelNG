@@ -11,8 +11,6 @@
    $Ver:2.6 small changes - Dino Papararo 9 Jan 2021
 */
 
-#include <stdio.h>
-#include <math.h>
 #include <exec/types.h>
 
 #define MAXPERIOD 20

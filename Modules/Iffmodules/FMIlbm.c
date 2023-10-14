@@ -6,32 +6,20 @@
 /* rewritten query, load and save functions for dataypes usage - dpapararo 18.04.2021 */
 /* saved username and copyright infos inside coordinates file and palette ilbm - dpapararo 24.04.2021 */
 
-#ifdef __amigaos4__
 #define __USE_INLINE__
-//#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
 
-#include <string.h>
 #include <exec/types.h>
-#include <intuition/intuitionbase.h>
-#include <intuition/screens.h>
-#include <graphics/gfxbase.h>
-#include <datatypes/datatypes.h>
-#include <datatypes/datatypesclass.h>
+
+#include <proto/intuition.h>
+#include <proto/datatypes.h>
+#include <proto/iffparse.h>
+
 #include <datatypes/pictureclass.h> /* for struct BitMapHeader */
 #include <intuition/icclass.h>
 
 #define NO_PROTOS
 #include <iffp/Ilbmapp.h>
 #undef NO_PROTOS
-
-#include <proto/exec.h>
-#include <proto/dos.h>
-#include <proto/graphics.h>
-#include <proto/intuition.h>
-#include <proto/datatypes.h>
-#include <proto/utility.h>
-#include <proto/iffparse.h>
 
 #include "headers/FlashMandel.h"
 

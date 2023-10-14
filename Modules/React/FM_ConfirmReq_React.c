@@ -42,41 +42,19 @@
 
 #define NDEBUG
 
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
 
-#include <intuition/gadgetclass.h>
-#include <intuition/classusr.h>
-#include <intuition/screens.h>
-#include <classes/window.h>
-#include <gadgets/layout.h>
-#include <gadgets/button.h>
-#include <images/label.h>
-#include <dos/dos.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-#ifdef __GNUC__
 #include <proto/intuition.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/locale.h>
-#include <clib/alib_protos.h>
-#else /* __GNUC__ */
-#include <clib/intuition_protos.h>
-#include <clib/exec_protos.h>
-#include <clib/graphics_protos.h>
-#include <clib/locale_protos.h>
-#include <clib/alib_protos.h>
 
-#include <pragmas/intuition_pragmas.h>
-#include <pragmas/exec_pragmas.h>
-#include <pragmas/graphics_pragmas.h>
-#include <pragmas/locale_pragmas.h>
-#endif /* __GNUC__ */
-
-#include <stdlib.h>
-#include <stdio.h>
+#include <classes/window.h>
+#include <gadgets/layout.h>
+#include <gadgets/button.h>
+#include <images/label.h>
 
 #include "FM_ConfirmReq_React.h"
 #include "FM_ReactionBasics.h"

@@ -40,10 +40,12 @@
  *    Last no-cvs-release.
  */
 
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
+#include <proto/dos.h>
+#include <proto/intuition.h>
+#include <proto/exec.h>
+#include <proto/locale.h>
+#include <proto/utility.h>
+#include <proto/datatypes.h>
 
 #include <libraries/gadtools.h>
 #include <classes/window.h>
@@ -51,26 +53,6 @@
 #define NO_PROTOS
 #include <iffp/ilbmapp.h>
 #undef NO_PROTOS
-
-#ifdef __GNUC__
-#include <proto/dos.h>
-#include <proto/intuition.h>
-#include <proto/exec.h>
-#include <proto/locale.h>
-#include <proto/utility.h>
-#include <proto/datatypes.h>
-#include <clib/alib_protos.h>
-#else /* __GNUC__ */
-#include <clib/intuition_protos.h>
-#include <clib/exec_protos.h>
-#include <clib/locale_protos.h>
-#include <clib/datatypes_protos.h>
-#include <clib/alib_protos.h>
-#include <pragmas/intuition_pragmas.h>
-#include <pragmas/exec_pragmas.h>
-#include <pragmas/locale_pragmas.h>
-#include <pragmas/datatypes_pragmas.h>
-#endif /* __GNUC__ */
 
 #include "FM_ReactionBasics.h"
 #include "FM_Reaction.h"

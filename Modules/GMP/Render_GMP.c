@@ -17,19 +17,21 @@
  *    Revision 1.4 16/01/2021 dpapararo
  *    Added Histrogram coloring
  *    removed external mem vectors variables and made small bugfixes
+ *
+ *    Revision 1.5 09/10/2022 dpapararo
+ *    Now (*COLORREMAP) is extern to to avoid conflicts
+ *
+ *	  Revision 1.6 07/01/2023 dpapararo
+ *	  Mem renderings can be stopped and you can draw boxes for any rectangle processeds
+ *
  */
 
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#define __USE_BASETYPE__
-#endif /* __amigaos4__ */
-
 #include <exec/types.h>
-#include <proto/dos.h>
+
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/gadtools.h>
-#include <math.h>
+
 #include <GMP/gmp.h>
 // #include <mpfr.h>
 // #include <mpf2mpfr.h>
@@ -45,11 +47,13 @@ extern uint32 TwoRemap (const float64, const float64, const float64, const float
 extern uint32 ThreeRemap (const float64, const float64, const float64, const float64, const float64);
 extern uint32 FourRemap (const float64, const float64, const float64, const float64, const float64);
 
-uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
+extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
 
 extern int16 CheckBox (struct RastPort *, const int16, const int16, const int16, const int16);
 extern int16 CheckBoxMem (struct MandelChunk *, uint32 *, const int16, const int16, const int16, const int16);
 extern void BlinkRect (struct Window *, const int16, const int16, const int16, const int16);
+
+extern uint32 MASK;
 
 static void MCPointMem_GMP (struct MandelChunk *, uint32 *, uint32 *, const int16, const int16);
 static void JCPointMem_GMP (struct MandelChunk *, uint32 *, uint32 *, const int16, const int16);
@@ -69,11 +73,11 @@ static void JVLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *, 
 static void JHLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *,	const int16, const int16, const int16);
 static void MVLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
 static void MHLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *,	const int16, const int16, const int16);			
-static int16 RectangleDrawMem_GMP (struct MandelChunk *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
+static int16 RectangleDrawMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
 static int16 RectangleDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *,
 				const int16, const int16, const int16, const int16);
 
-void CalcFractalMem_GMP (struct MandelChunk *, uint32 *, uint32 *);
+void CalcFractalMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *);
 void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
 
 extern uint32 Mandeln_GMP (uint32, int16);
@@ -269,10 +273,65 @@ static void JHLineMem_GMP (struct MandelChunk *MandelInfo, uint32 *RenderMem, ui
 }
 
 /* RectangleDrawMem_GMP() */
-static int16 RectangleDrawMem_GMP (struct MandelChunk *MandelInfo, uint32 *RenderMem, uint32 *HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
+static int16 RectangleDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *RenderMem, uint32 *HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
 {
+  struct IntuiMessage *Message = NULL;
+  uint16 MyCode;
+  uint32 MyClass, ColorBox;
   int16 helpx, helpy, halfx, halfy;
   uint32 ctmp;
+
+#ifdef DRAWBORDERS  
+  int16 Rectangle [5 * 2]; 
+  struct Border ProcessingRect = { 0, 0, 0, 0, COMPLEMENT, 5, &Rectangle, 0 };
+#endif
+
+    if (Win->UserPort->mp_SigBit)
+    {
+      	while (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort))
+		{
+	  		MyClass = Message->Class;
+	  		MyCode = Message->Code;
+	  		GT_ReplyIMsg ((struct IntuiMessage *) Message);
+
+	  		switch (MyClass)
+	    	{
+	    		case IDCMP_MENUPICK:
+	    		{
+    				if (MyCode != MENUNULL)
+					{
+		  				if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG) return TRUE;
+					}
+				}	
+	      		break;
+
+	    		case IDCMP_RAWKEY:
+	      		{
+					switch (MyCode)
+					{
+						case RAW_TAB:
+						{
+							BlinkRect (Win, a1, b1, a2, b2);
+		  					return FALSE;
+						}
+						break;
+						
+	      				case RAW_ESC:
+						{
+		  					DisplayBeep (Win->WScreen);
+		  					return TRUE;
+						}
+						break;
+	      			}
+				}
+				break;
+
+	    		case IDCMP_CLOSEWINDOW:
+	      			return TRUE;
+				break;
+	    	}
+		}
+    }
 
 	helpy = b2 - b1; // catch edge case  
     if (helpy < MINLIMIT) return FALSE; // for speed reasons exit now no jumps at end of function!	
@@ -312,26 +371,66 @@ static int16 RectangleDrawMem_GMP (struct MandelChunk *MandelInfo, uint32 *Rende
  
   	(*H_LINE_MEM_GMP) (MandelInfo, RenderMem, HistogramMem, a1 + 1, halfx - 1, halfy);
   	(*V_LINE_MEM_GMP) (MandelInfo, RenderMem, HistogramMem, b1 + 1, halfy - 1, halfx);
+
+#ifdef DRAWBORDERS  	
+	Rectangle[6] = Rectangle[8] = a1;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = b1;
+  	Rectangle[2] = Rectangle[4] = halfx;
+  	Rectangle[5] = Rectangle[7] = halfy;
+  	Rectangle[0] = a1 + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);
+#endif
   
-  	if (RectangleDrawMem_GMP (MandelInfo, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE;
+  	if (RectangleDrawMem_GMP (MandelInfo, Win, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE;
 
   	(*H_LINE_MEM_GMP) (MandelInfo, RenderMem, HistogramMem, halfx + 1, a2 - 1, halfy);
+
+#ifdef DRAWBORDERS  
+	Rectangle[6] = Rectangle[8] = halfx;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = b1;
+  	Rectangle[2] = Rectangle[4] = a2;
+  	Rectangle[5] = Rectangle[7] = halfy;
+  	Rectangle[0] = halfx + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);
+#endif 
   
-  	if (RectangleDrawMem_GMP (MandelInfo, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE;
+  	if (RectangleDrawMem_GMP (MandelInfo, Win, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE;
 
   	(*V_LINE_MEM_GMP) (MandelInfo, RenderMem, HistogramMem, halfy + 1, b2 - 1, halfx);
+
+#ifdef DRAWBORDERS  
+	Rectangle[6] = Rectangle[8] = a1;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = halfy;
+  	Rectangle[2] = Rectangle[4] = halfx;
+  	Rectangle[5] = Rectangle[7] = b2;
+  	Rectangle[0] = a1 + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);  	
+#endif
   
-  	if (RectangleDrawMem_GMP (MandelInfo, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE;
-  	if (RectangleDrawMem_GMP (MandelInfo, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE;
+  	if (RectangleDrawMem_GMP (MandelInfo, Win, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE;
+
+#ifdef DRAWBORDERS  
+	Rectangle[6] = Rectangle[8] = halfx;
+  	Rectangle[1] = Rectangle[3] = Rectangle[9] = halfy;
+  	Rectangle[2] = Rectangle[4] = a2;
+  	Rectangle[5] = Rectangle[7] = b2;
+  	Rectangle[0] = halfx + 1;	
+	DrawBorder (Win->RPort, &ProcessingRect, 0, 0);
+#endif
+
+  	if (RectangleDrawMem_GMP (MandelInfo, Win, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE;
 
   	return FALSE;
 }
 
 /* CalcFractalMem_GMP() */
-void
-CalcFractalMem_GMP (struct MandelChunk *MandelInfo, uint32 * RenderMem,
-		    uint32 * HistogramMem)
+void CalcFractalMem_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *RenderMem, uint32 *HistogramMem)
 {
+  STRPTR PleaseWaitTxt = "Processing rendering in memory, please wait until it's done or press ESC to stop.";
+
+	ShowTitle (Win->WScreen, TRUE);
+	SetWindowTitles (Win, (STRPTR) ~0, PleaseWaitTxt);
+	
   	if (MandelInfo->Flags & JULIA_BIT)
     {
       	C_POINT_MEM_GMP = JCPointMem_GMP;
@@ -360,7 +459,9 @@ CalcFractalMem_GMP (struct MandelChunk *MandelInfo, uint32 * RenderMem,
   	(*V_LINE_MEM_GMP) (MandelInfo, RenderMem, HistogramMem, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->LeftEdge);
   	(*V_LINE_MEM_GMP) (MandelInfo, RenderMem, HistogramMem, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->Width - 1);
 
-  	RectangleDrawMem_GMP (MandelInfo, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
+  	RectangleDrawMem_GMP (MandelInfo, Win, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
+
+	if (! (MASK & TMASK)) ShowTitle (Win->WScreen, FALSE);
 }
 
 /****** No Mem ******/
