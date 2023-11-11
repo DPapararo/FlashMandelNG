@@ -1,0 +1,591 @@
+## version $VER: FlashMandelNG.catalog 4.8 (08.Nov.2023)
+## codeset 0
+## language English
+Pal_TXT_R 
+R
+;
+Pal_TXT_G 
+G
+;
+Pal_TXT_B 
+B
+;
+Pal_TXT_Accept 
+_Accept
+;
+Pal_TXT_Reset 
+Reset
+;
+Pal_TXT_Cancel 
+_Cancel
+;
+Pal_TXT_Copy 
+C_opy
+;
+Pal_TXT_Swap 
+_Swap
+;
+Pal_TXT_Spread 
+Sp_read
+;
+Pal_TXT_Invert 
+_Invert
+;
+Pal_TXT_ShiftLeft
+_<<
+;
+Pal_TXT_ShiftRight 
+_>>
+;
+Pal_TXT_Undo 
+_Undo
+;
+Info_TXT_Info 
+\n  FlashMandelNG 4.8 (c)1995-2023\n\n  Snail address:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail address:\n  Dino.Papararo@GMail.Com\n\n\n*******************************\n* This program is Giftware !! *\n*******************************\n\n\n
+;
+Info_TXT_OK
+_OK
+;
+Info_TXT_More 
+_More...
+;
+Work_TXT_Workgroup 
+\nGreetings and thanks to:\n\n  Edgar Schwan (Co-Author)\n\n\nBottomless wonders spring from simple rules, \nwhich are repeated without end.\nBenoit Mandelbrot.\n\nAmiga forever!\n\n\n\n\n
+;
+Work_TXT_OK 
+_OK
+;
+Cyc_TXT_DelayTime 
+D_elay time
+;
+Cyc_TXT_Accept
+_Accept
+;
+Cyc_TXT_Cancel 
+_Cancel
+;
+It_TXT_Iterations 
+_Iterations
+;
+SysI_TXT_CpuInfo 
+CPU Informations
+;
+SysI_TXT_PPCVER 
+None
+;
+SysI_TXT_PPCCPU 
+None
+;
+SysI_TXT_CPU_PPC 
+CPU:
+;
+SysI_TXT_PPCFPU 
+None
+;
+SysI_TXT_FPU_PPC
+FPU:
+;
+SysI_TXT_MemInfo 
+Memory Informations
+;
+SysI_TXT_Available 
+Available
+;
+SysI_TXT_AvailChip 
+Chip:
+;
+SysI_TXT_AvailFast 
+Fast:
+;
+SysI_TXT_LargestFree 
+Largest free
+;
+SysI_TXT_LargestChip 
+Chip:
+;
+SysI_TXT_LargestFast 
+Fast:
+;
+Coord_TXT_Coord 
+Coordinates
+;
+Coord_TXT_TopValue 
++1.125
+;
+Coord_TXT_Top 
+T_op
+;
+Coord_TXT_LeftValue 
+2.5
+;
+Coord_TXT_Left 
+_Left
+;
+Coord_TXT_RightValue 
++1.5
+;
+Coord_TXT_Right 
+_Right
+;
+Coord_TXT_BottomValue 
+-1.125
+;
+Coord_TXT_Bottom 
+Bo_ttom
+;
+Coord_TXT_Julia 
+Julia
+;
+Coord_TXT_JuliaRealValue 
+-0.72
+;
+Coord_TXT_JuliaReal 
+_Julia real
+;
+Coord_TXT_JuliaImagValue
+-0.26
+;
+Coord_TXT_JuliaImag
+J_ulia imag
+;
+Coord_TXT_KeepAxis 
+Keep _X axis for ratio
+;
+Coord_TXT_Accept 
+_Accept
+;
+Coord_TXT_Ratio 
+Rat_io
+;
+Coord_TXT_Default 
+_Default
+;
+Coord_TXT_Cancel 
+_Cancel
+;
+Prt_TXT_AreYouSure 
+Are you sure?
+;
+Prt_TXT_Yes 
+_Yes
+;
+Prt_TXT_No 
+_No
+;
+TITLE_WorkgroupReq 
+Workgroup Requester
+;
+TITLE_CycleDelayReq 
+Cycle-Delay Requester
+;
+TITLE_IterationsReq 
+Iterations Requester
+;
+TITLE_SysInfoReq 
+System-Info Requester
+;
+TITLE_CoordReq 
+Coordinates Requester
+;
+TITLE_PrintReq
+Print Requester
+;
+TITLE_ExitReq 
+Exit Requester
+;
+TXT_SavePicture 
+Save Picture...
+;
+TXT_Project 
+Project
+;
+TXT_About 
+About...
+;
+TXT_SystemInfo 
+System info...
+;
+TXT_Help 
+Help...
+;
+TXT_LoadPicture 
+Load Picture...
+;
+TXT_LoadPalette 
+Load Palette...
+;
+TXT_SavePalette 
+Save Palette...
+;
+TXT_Print 
+Print...
+;
+TXT_Quit 
+Quit...
+;
+TXT_Options 
+Options
+;
+TXT_Title
+Title
+;
+TXT_TitleBar 
+Title bar
+;
+TXT_LastTime 
+Last time
+;
+TXT_Limits 
+Limits...
+;
+TXT_Iterations 
+Iterations
+;
+TXT_Custom 
+Custom...
+;
+TXT_Priority 
+Priority
+;
+TXT_ColorRemap 
+Color remap
+;
+TXT_Linear 
+Linear
+;
+TXT_Repeated 
+Repeated
+;
+TXT_FractalType
+Fractal type
+;
+TXT_Julia
+Julia
+;
+TXT_Mandelbrot 
+Mandelbrot
+;
+TXT_Processor 
+Processor
+;
+TXT_Calculate 
+Calculate
+;
+TXT_Preview 
+Preview
+;
+TXT_Recalculate 
+Recalculate
+;
+NewScr_TXT_Question 
+Screen propreties are changed.\nImage and colors can be inaccurate.\n\nRecalculate ?\n
+;
+TITLE_RendReq 
+Rendering Requester
+;
+TXT_Undo 
+Undo
+;
+TXT_Zoom 
+Zoom
+;
+TXT_Stop 
+Stop
+;
+TXT_Video 
+Video
+;
+TXT_Cycle 
+Cycle
+;
+TXT_Forward 
+Forward
+;
+TXT_Backward 
+Backward
+;
+TXT_Delay 
+Delay...
+;
+TXT_Palette 
+Palette...
+;
+TXT_ScreenMode 
+Screen mode...
+;
+TXT_FontSettings 
+Font settings...
+;
+TXT_ERR_DiskFontLibrary 
+I need at least DiskFontLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_IconLibrary 
+I need at least IconLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_GadToolsLibrary 
+I need at least GadToolsibrary v39\nor better, sorry !\n
+;
+TXT_ERR_AslLibrary 
+I need at least AslLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_UtilityLibrary 
+I need at least UtilityLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_IFFParseLibrary 
+I need at least IFFParseLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_OpenDisplay 
+I need at least 8 colors, sorry.\n
+;
+TXT_ERR_NoMemForTempRastPort
+No memory for temporary RastPort!\n
+;
+TXT_ERR_Font 
+Font failed!\n
+;
+TXT_ERR_NoMonitor 
+No monitor!\n
+;
+TXT_ERR_NoChips 
+No chips!\n
+;
+TXT_ERR_NoMem 
+No memory!\n
+;
+TXT_ERR_NoChipMem 
+No chipmemory!\n
+;
+TXT_ERR_PubNotUnique 
+Pub not unique!\n
+;
+TXT_ERR_UnknownMode 
+Unknown mode!\n
+;
+TXT_ERR_ScreenToDeep 
+Screen too deep!\n
+;
+TXT_ERR_AttachScreen 
+Attach screen failed!\n
+;
+TXT_ERR_ModeNotAvailable 
+Mode not available!\n
+;
+TXT_ERR_UnknownErr 
+Unknown screen error!\n
+;
+TXT_ERR_VisualInfo 
+Visualinfo failed!\n
+;
+TXT_ERR_Window 
+Openwindow failed!\n
+;
+TXT_ERR_Menu 
+Menu failed!\n
+;
+TXT_ERR_Gadget 
+Gadget error!\n
+;
+TXT_ERR_WindowGadget 
+Window gadget error!\n
+;
+TXT_ERR_PreviewWindow 
+Preview window failed!\n
+;
+TXT_ERR_CreateDisplay 
+Createdisplay error!\n
+;
+TXT_ERR_DimensionInfo 
+Dimensioninfo error!\n
+;
+TXT_ERR_PaletteRequester 
+Palette requester error!\n
+;
+TXT_ERR_MakeDisplay 
+Display error!\n
+;
+TXT_ERR_QueryMandPic 
+Not a FlashMandel picture !\n
+;
+TXT_ERR_LoadMandPic 
+Load picture error!\n
+;
+TXT_ERR_SaveMandPic 
+Save picture error!\n
+;
+TXT_ERR_LoadMandPal 
+Load palette error!\n
+;
+TXT_ERR_SaveMandPal
+Save palette error!\n
+;
+TXT_ERR_NoMemForPPC 
+No mem for memory buffer, only Mc 68k rendering allowed!\n\n
+;
+TXT_CMD_Guide 
+SYS:Utilities/MultiView Docs/FlashMandelNG.guide\0
+;
+TXT_RenderTime 
+Rendering elapsed time:
+;
+TXT_AverageSpeed 
+%s %uh %um %us - Average speed: %.1f Pixels per second
+;
+TXT_PreviewTime
+Preview elapsed time:
+;
+TXT_LeftButtonForJulia 
+Press left button to choose the Julia constant or right button to cancel
+;
+TXT_JuliaConstant 
+Julia constant: Real %+2.30Ff Imag %+2.30Ffi
+;
+TXT_LoadPictureTitle 
+Load iff picture
+;
+TXT_SavePictureTitle 
+Save iff picture
+;
+TXT_LoadPaletteTitle 
+Load palette
+;
+TXT_SavePaletteTitle 
+Save palette
+;
+TXT_ZoomTime 
+Zoom elapsed time:
+;
+TITLE_RenderReq
+Rendering Requester
+;
+TITLE_OverwriteReq 
+Overwrite file requester
+;
+Rend_TXT_Question 
+Recalculate ?\n
+;
+OverWr_TXT_Question 
+File already exists...\n\nDo you want overwrite it ?
+;
+TXT_LastCalcTime 
+Last calculating time:
+;
+TXT_OK 
+OK
+;
+TXT_FMErrorTitle 
+FlashMandel Error
+;
+TXT_ERR_NoSignal 
+No signal available\n
+;
+TXT_ERR_CantMakeScreenPrivate
+Can't make screen private.\nPlease close all windows\n
+;
+TXT_ERR_LayoutMenu 
+Can't layout menus.\n
+;
+TXT_ScrTitle_Cyc 
+Insert cycle delay time... between 0 (fastest) and 200 (slowest)
+;
+TXT_ScrTitle_It 
+Insert new iterations... between (2^6) (64) and (2^30) (1073741823)
+;
+TXT_ERR_Displayinfo 
+Displayinfo error!\n
+;
+TXT_LessThanOne 
+%s Less than one second - Average speed: Realtime
+;
+TXT_SysInfo 
+Cpu informations\n\nPowerPc\nCpu:%s  Version:%s\n\nVector unit:%s\n\n\nMemory informations\n\nAvailable total\nChip:%ld  Fast:%ld\n\nLargest free\nChip:%ld  Fast:%ld\n
+;
+TXT_PreviewTitle 
+Preview Window
+;
+TXT_RecalculateTime
+Recalculate elapsed time:
+;
+TXT_YesNo 
+Yes|No
+;
+TXT_OKMore 
+OK|More...
+;
+TXT_Info 
+%s  %s \n\n\n  Snail address: \n  %s\n  %s\n\n\n  %s\n\n****************************\n* This program is GiftWare !! *\n****************************\n\n
+;
+TXT_None 
+None
+;
+TXT_ScrTitle_Coord 
+Insert new range...
+;
+Pal_ActKey_Red 
+R
+;
+Pal_ActKey_Green 
+G
+;
+Pal_ActKey_Blue 
+B
+;
+TITLE_PaletteReq 
+Palette Requester
+;
+TITLE_InfoReq 
+Info Reqester
+;
+TXT_ZPower 
+Power
+;
+TXT_Unknown 
+Unknown
+;
+TXT_Launch 
+Launch...
+;
+TXT_SelectRxScript 
+Please select an arexx-script!
+;
+TXT_Orbit 
+Orbit
+;
+TXT_ERR_OrbitWindow 
+Orbit window failed!
+;
+TXT_OrbitTitle 
+Orbit Window
+;
+TXT_RenderingMode 
+Rendering Mode
+;
+TITLE_PrecisionReq 
+Change Precision bits
+;
+TXT_MathMode 
+Math mode
+;
+TXT_MathMode_Fast 
+Fast
+;
+TXT_MathMode_HighPrec 
+High Precision (%ld bits)
+;
+TXT_Math_ChangePrec 
+Change Precision...
+;
+It_TXT_Accept 
+_Accept
+;
+It_TXT_Cancel
+_Cancel
+;
+Prec_TXT_NumOfDigits 
+_Number of bits
+;
+Prec_TXT_Accept 
+_Accept
+;
+Prec_TXT_Cancel 
+_Cancel
+;

@@ -1,0 +1,752 @@
+## version $VER: FlashMandelNG.catalog  4.8 (08.Nov.2023)
+## codeset 0
+## language italian
+;
+TITLE_PaletteReq
+Tavolozza dei colori
+; Palette Requester
+;
+Pal_TXT_R
+R
+; R
+;
+Pal_TXT_G
+G
+; G
+;
+Pal_TXT_B
+B
+; B
+;
+Pal_TXT_Accept
+_Accetta
+; _Accept
+;
+Pal_TXT_Reset
+Ini_zializza
+; _Reset
+;
+Pal_TXT_Cancel
+Annu_lla
+; _Cancel
+;
+Pal_TXT_Copy
+C_opia
+; C_opy
+;
+Pal_TXT_Swap
+Scam_bia
+; S_wap
+;
+Pal_TXT_Spread
+_Sfuma
+; _Spread
+;
+Pal_TXT_Invert
+_Inverti
+; _Invert
+;
+Pal_TXT_ShiftLeft
+_<<
+; _<<
+;
+Pal_TXT_ShiftRight
+_>>
+; _>>
+;
+Pal_TXT_Undo
+_Ritorna
+; _Undo
+;
+Info_TXT_Info
+\n  FlashMandelNG 4.8 (c)1995-2023\n\n  Posta ordinaria:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  Indirizzo E-Mail:\n  Dino.Papararo@GMail.Com\n\n\n**********************************\n* Questo programma è Giftware !! *\n**********************************\n\n\n
+; \n  FlashMandelNG 4.8  (c)1995-2023\n\n  Snail address:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail address:\n  Dino.Papararo@GMail.Com\n\n\n*******************************\n* This program is Giftware !! *\n*******************************\n\n\n
+;
+Info_TXT_OK
+_Va bene
+; _OK
+;
+Info_TXT_More
+_Altro...
+; _More...
+;
+Work_TXT_Workgroup
+\nSaluti e ringraziamenti a:\n\n Edgar Schwan (Co-Developer)\n\n\nBottomless wonders spring from simple rules, which are repeated without end.\nBenoit Mandelbrot.\n\nAmiga per sempre!\n\n\n\n\n
+; \nGreetings & thanks to:\n\n  Edgar Schwan (Co-Developer)\n\n\nBottomless wonders spring from simple rules, which are repeated without end.\nBenoit Mandelbrot.\n\nAmiga forever!\n\n\n\n\n
+;
+Work_TXT_OK
+_Va bene
+; _OK
+;
+Cyc_TXT_DelayTime
+Tempo di ritar_do
+; _Delay time
+;
+Cyc_TXT_Accept
+_Accetta
+; _Accept
+;
+Cyc_TXT_Cancel
+A_nnulla
+; _Cancel
+;
+It_TXT_Iterations
+_Iterazioni
+; _Iterations
+;
+SysI_TXT_CpuInfo
+Informazioni sul processore
+; CPU Informations
+;
+SysI_TXT_PPCVER
+Versione:
+;
+;SysI_TXT_PowerPC
+;PowerPC
+; PowerPc
+;
+SysI_TXT_PPCCPU
+Nessuna
+; None
+;
+SysI_TXT_CPU_PPC
+CPU:
+; CPU:
+;
+SysI_TXT_PPCFPU
+Nessuna
+; None
+;
+SysI_TXT_FPU_PPC
+FPU:
+; FPU:
+;
+SysI_TXT_MemInfo
+Informazioni sulla memoria
+; Memory Informations
+;
+SysI_TXT_Available
+Libera
+; Available
+;
+SysI_TXT_AvailChip
+Chip:
+; Chip:
+;
+SysI_TXT_AvailFast
+Fast:
+; Fast:
+;
+SysI_TXT_LargestFree
+Massima consecutiva
+; Largest free
+;
+SysI_TXT_LargestChip
+Chip:
+; Chip:
+;
+SysI_TXT_LargestFast
+Fast:
+; Fast:
+;
+Coord_TXT_Coord
+Coordinate
+; Coordinates
+;
+Coord_TXT_TopValue
++1.125
+;+1.125
+;
+Coord_TXT_Top
+S_ù
+; _Top
+;
+Coord_TXT_LeftValue
+-2.5
+;-2.5
+;
+Coord_TXT_Left
+_Sinistra
+; _Left
+;
+Coord_TXT_RightValue
++1.5
+;+1.5
+;
+Coord_TXT_Right
+Dest_ra
+; _Right
+;
+Coord_TXT_BottomValue
+-1.125
+; -1.125
+;
+Coord_TXT_Bottom
+_Giù
+; _Bottom
+;
+Coord_TXT_Julia
+Julia
+; Julia
+;
+Coord_TXT_JuliaRealValue
+-0.72
+; -0.72
+;
+Coord_TXT_JuliaReal
+_Julia reale
+; _Julia real
+;
+Coord_TXT_JuliaImagValue
+-0.26
+; -0.26
+;
+Coord_TXT_JuliaImag
+J_ulia imaginario
+; J_ulia imag
+;
+Coord_TXT_KeepAxis
+Blocca l'asse delle _X per la proporzione
+; Keep _X axis for ratio
+;
+Coord_TXT_Accept
+_Accetta
+; _Accept
+;
+Coord_TXT_Ratio
+_Proporziona
+; Rat_io
+;
+Coord_TXT_Default
+Ini_zializza
+; _Default
+;
+Coord_TXT_Cancel
+A_nnulla
+; _Cancel
+;
+Prt_TXT_AreYouSure
+Sei sicuro?
+; Are you sure?
+;
+Prt_TXT_Yes
+_Si
+; _Yes
+;
+Prt_TXT_No
+_No
+; _No
+;
+TITLE_InfoReq
+Informazioni generali
+; Info Requester
+;
+TITLE_WorkgroupReq
+Gruppo di lavoro
+; Workgroup Requester
+;
+TITLE_CycleDelayReq
+Ciclo dei colori
+; Cycle-Delay Requester
+;
+TITLE_IterationsReq
+Iterazioni
+; Iterations Requester
+;
+TITLE_SysInfoReq
+Informazioni sul sistema
+; System-Info Requester
+;
+TITLE_CoordReq
+Coordinate
+; Coordinates Requester
+;
+TITLE_PrintReq
+Stampa
+; Print Requester
+;
+TITLE_ExitReq
+Uscita dal programma
+; Exit Requester
+;
+TXT_SavePicture
+Salva immagine...
+; Save Picture...
+;
+TXT_Project
+Progetto
+; Project
+;
+TXT_About
+Informazioni generali...
+; About...
+;
+TXT_SystemInfo
+Informazioni sul sistema...
+; System info...
+;
+TXT_Help
+Guida in linea...
+; Help...
+;
+TXT_LoadPicture
+Carica immagine...
+; Load Picture...
+;
+TXT_LoadPalette
+Carica tavolozza...
+; Load Palette...
+;
+TXT_SavePalette
+Salva tavolozza...
+; Save Palette...
+;
+TXT_Print
+Stampa...
+; Print...
+;
+TXT_Quit
+Fine...
+; Quit...
+;
+TXT_Options
+Opzioni
+; Options
+;
+TXT_Title
+Titolo
+; Title
+;
+TXT_TitleBar
+Barra del titolo
+; Title bar
+;
+TXT_LastTime
+Ultimo tempo
+; Last time
+;
+TXT_Limits
+Limiti...
+; Limits...
+;
+TXT_Iterations
+Iterazioni
+; Iterations
+;
+TXT_Custom
+Personalizzato...
+; Custom...
+;
+TXT_Priority
+Priorità
+; Priority
+;
+TXT_ColorRemap
+Distribuzione dei colori
+; Color remap
+;
+TXT_Linear
+Lineare
+; Linear
+;
+TXT_Repeated
+Ripetuto
+; Repeated
+;
+TXT_FractalType
+Tipo di frattale
+; Fractal type
+;
+TXT_Julia
+Julia
+; Julia
+;
+TXT_Mandelbrot
+Mandelbrot
+; Mandelbrot
+;
+TXT_Processor
+Processore
+; Processor
+;
+TXT_Calculate
+Calcola
+; Calculate
+;
+TXT_Preview
+Anteprima
+; Preview
+;
+TXT_Recalculate
+Ricalcola
+; Recalculate
+;
+NewScr_TXT_Question
+La modalità video è cambiata, l'immagine e i colori possono essere inaccurati. Ricalcolo?
+; Screen propreties are changed.\nImage and colors can be inaccurate.\n\nRecalculate ?
+;
+TITLE_RendReq
+Tracciamento
+; Rendering Requester
+;
+TXT_Undo
+Ripristina
+; Undo
+;
+TXT_Zoom
+Ingrandisci
+; Zoom
+;
+TXT_Stop
+Ferma
+; Stop
+;
+TXT_Video
+Video
+; Video
+;
+TXT_Cycle
+Ciclo dei colori
+; Cycle
+;
+TXT_Forward
+Avanti
+; Forward
+;
+TXT_Backward
+Indietro
+; Backward
+;
+TXT_Delay
+Ritardo...
+; Delay...
+;
+TXT_Palette
+Tavolozza...
+; Palette...
+;
+TXT_ScreenMode
+Modifica schermo...
+; Screen mode...
+;
+TXT_FontSettings
+Modifica caratteri...
+; Font settings...
+;
+TXT_ERR_DiskFontLibrary
+I need at least DiskFontLibrary v39\nor better, sorry !
+;
+TXT_ERR_IconLibrary
+I need at least IconLibrary v39\nor better, sorry !
+;
+TXT_ERR_GadToolsLibrary
+I need at least GadToolsibrary v39\nor better, sorry !
+;
+TXT_ERR_AslLibrary
+I need at least AslLibrary v39\nor better, sorry !
+;
+TXT_ERR_UtilityLibrary
+I need at least UtilityLibrary v39\nor better, sorry !
+;
+TXT_ERR_IFFParseLibrary
+I need at least IFFParseLibrary v39\nor better, sorry !
+;
+TXT_ERR_OpenDisplay
+I need at least 8 colors, sorry.
+;
+TXT_ERR_NoMemForTempRastPort
+No memory for temporary RastPort!
+;
+TXT_ERR_Font
+Font failed!
+;
+TXT_ERR_NoMonitor
+No monitor!
+;
+TXT_ERR_NoChips
+No chips!
+;
+TXT_ERR_NoMem
+No memory!
+;
+TXT_ERR_NoChipMem
+No chipmemory!
+;
+TXT_ERR_PubNotUnique
+Pub not unique!
+;
+TXT_ERR_UnknownMode
+Unknown mode!
+;
+TXT_ERR_ScreenToDeep
+Screen too deep!
+;
+TXT_ERR_AttachScreen
+Attach screen failed!
+;
+TXT_ERR_ModeNotAvailable
+Mode not available!
+;
+TXT_ERR_UnknownErr
+Unknown screen error!
+;
+TXT_ERR_VisualInfo
+Visualinfo failed!
+;
+TXT_ERR_Window
+Openwindow failed!
+;
+TXT_ERR_Menu
+Menu failed!
+;
+TXT_ERR_Gadget
+Gadget error!
+;
+TXT_ERR_WindowGadget
+Window gadget error!
+;
+TXT_ERR_PreviewWindow
+Preview window failed!
+;
+TXT_ERR_CreateDisplay
+Createdisplay error!
+;
+TXT_ERR_DimensionInfo
+Dimensioninfo error!
+;
+TXT_ERR_PaletteRequester
+Palette requester error!
+;
+TXT_ERR_MakeDisplay
+Display error!
+;
+TXT_ERR_QueryMandPic
+Non è una immagine creata con FlashMandel!
+;Not a FlashMandel picture!
+;
+TXT_ERR_LoadMandPic
+Load picture error!
+;
+TXT_ERR_SaveMandPic
+Save picture error!
+;
+TXT_ERR_LoadMandPal
+Load palette error!
+;
+TXT_ERR_SaveMandPal
+Save palette error!
+;
+TXT_ERR_NoMemForPPC
+Non ho memoria per il buffer, sono permessi solo rendering con l'Mc 68k!
+;No mem for memory buffer, only Mc 68k renderings allowed!
+;
+TXT_CMD_Guide
+SYS:Utilities/MultiView Docs/FlashMandelNG.guide\0
+;
+TXT_RenderTime
+Tempo di rendering:
+; Rendering elapsed time:
+;
+TXT_AverageSpeed
+%s %uh %um %us - Velocità media: %.1f Pixel al secondo
+; %s %uh %um %us - Average speed: %.1f Pixels per second
+;
+TXT_PreviewTime
+Tempo per l'anteprima:
+; Preview elapsed time:
+;
+TXT_LeftButtonForJulia
+Premi il pulsante sinistro del mouse per la nuova costante di Julia o il desto per annullare
+; Press left button to choose the Julia constant or right button to cancel
+;
+TXT_JuliaConstant
+Costante di Julia: Reale %+2.30Ff Immaginaria %+2.30Ffi
+; Julia constant: Real %+2.30Ff Imag %+2.30Ffi
+;
+TXT_LoadPictureTitle
+Carica nuova immagine
+; Load iff picture
+;
+TXT_SavePictureTitle
+Salva immagine corrente
+; Save iff picture
+;
+TXT_LoadPaletteTitle
+Carica nuova tavolozza
+; Load palette
+;
+TXT_SavePaletteTitle
+Salva tavolozza corrente
+; Save palette
+;
+TXT_ZoomTime
+Tempo per lo zoom:
+; Zoom elapsed time:
+;
+TITLE_RenderReq
+Finestra di rendering
+; Rendering Requester
+;
+TITLE_OverwriteReq
+Sovrascrittura
+; Overwrite file requester
+;
+Rend_TXT_Question
+Ricalcolo ?
+; Recalculate ?
+;
+OverWr_TXT_Question
+File preesistente...\n\nVuoi davvero sovrascriverlo?
+; File already exists...\n\nDo you want overwrite it ?
+;
+TXT_LastCalcTime
+Tempo ultima operazione:
+; Last calculating time:
+;
+TXT_OK
+OK
+; OK
+;
+TXT_FMErrorTitle
+FlashMandel error window
+;
+TXT_ERR_NoSignal
+No signal available
+;
+TXT_ERR_CantMakeScreenPrivate
+Can't make screen private.\nPlease close all windows
+;
+TXT_ERR_LayoutMenu
+Can't layout menus.
+;
+TXT_ScrTitle_Cyc
+Inserisci il ritardo per il ciclo dei colori... tra 0 (più veloce) e 200 (più lento)
+; Insert cycle delay time... between 0 (fastest) and 200 (slowest)
+;
+TXT_ScrTitle_It
+Inserisci le nuove iterazioni... tra 2^6 (64) e 2^30 (1073741824)
+; Insert new iterations... between 2^6 (64) and 2^30 (1073741824)
+;
+TXT_ERR_Displayinfo
+Displayinfo error!
+;
+TXT_LessThanOne
+%s Meno di un secondo - Tempo medio: Approssimativamente tempo reale!
+; %s Less than one second - Average speed: Near Realtime
+;
+TXT_SysInfo
+Informazioni sul processore\n\nPowerPC\nCpu:%s  Versione:%s\nUnità Vettoriale:%s\n\n\nInformazioni sulla memoria\n\nLibera totale\nChip:%ld MByte  Fast:%ld MByte\n\nMassima libera contigua\nChip:%ld MByte  Fast:%ld MByte\n
+;Cpu informations\n\nPowerPc\nCpu:%s Version:%s\nVector Unit:%s\n\n\nMemory informations\n\nAvailable total\nChip:%ld MByte Fast:%ld MByte\n\nLargest free\nChip:%ld MByte Fast:%ld MByte\n
+;
+TXT_PreviewTitle
+Anteprima
+; Preview Window
+;
+TXT_RecalculateTime
+Tempo impiegato:
+; Recalculate elapsed time:
+;
+TXT_YesNo
+Si|No
+; Yes|No
+;
+TXT_OKMore
+Ok|Altro...
+;OK|More...
+;
+TXT_Info
+%s  %s \n\n\n  Posta ordinaria: \n  %s\n  %s\n\n\n  %s\n\n****************************\n* Questo programma è GiftWare !! *\n****************************\n\n
+;%s  %s \n\n\n  Snail address: \n  %s\n  %s\n\n\n  %s\n\n****************************\n* This program is GiftWare !! *\n****************************\n\n
+;
+TXT_None
+Nessuna
+;None
+;
+TXT_ScrTitle_Coord
+Inserisci i nuovi valori...
+;Insert new range...
+;
+Pal_ActKey_Red
+R
+;R
+;
+Pal_ActKey_Green
+G
+;G
+;
+Pal_ActKey_Blue
+B
+;B
+;
+TXT_ZPower
+Grado del polinomio
+; Power
+;
+TXT_Launch
+Esegui script...
+; Launch...
+;
+TXT_SelectRxScript
+Selezionare uno script arexx!
+; Please select an arexx-script!
+;
+TXT_Unknown
+Sconosciuta
+; Unknown
+;
+TXT_Orbit
+Orbita
+; Orbit
+;
+TXT_ERR_OrbitWindow
+Orbit window failed!
+; Orbit window failed!
+;
+TXT_OrbitTitle
+Finestra delle orbite
+; Orbit Window
+;
+TXT_RenderingMode
+Metodo di rendering
+; Rendering Mode
+;
+TITLE_PrecisionReq
+Bit di precisione
+; Change Precision
+;
+TXT_MathMode
+Modalità matematica
+; Math mode
+;
+TXT_MathMode_Fast
+Veloce
+; Fast
+;
+TXT_MathMode_HighPrec
+Elevata precisione (%ld bits)
+; High Precision (%ld bits)
+;
+TXT_Math_ChangePrec
+Cambia precisione...
+; Change Precision...
+;
+It_TXT_Accept
+_Accetta
+; _Accept
+;
+It_TXT_Cancel
+A_nnulla
+; _Cancel
+;
+Prec_TXT_NumOfDigits
+_Numero di bit
+; _Number of bits
+;
+Prec_TXT_Accept
+_Accetta
+; _Accept
+;
+Prec_TXT_Cancel
+A_nnulla
+; _Cancel
+;

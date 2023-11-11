@@ -1,0 +1,721 @@
+## version $VER: FlashMandelNG.catalog 4.8 (08.Nov.2023)
+## codeset 0
+## language german
+;
+TITLE_PaletteReq
+Paletten-Einsteller
+;
+Pal_TXT_R
+R
+;
+Pal_TXT_G
+G
+;
+Pal_TXT_B
+B
+;
+Pal_TXT_Accept
+_Akzeptieren
+;
+Pal_TXT_Reset
+Zurücksetzen
+;
+Pal_TXT_Cancel
+Abbre_chen
+;
+Pal_TXT_Copy
+K_opieren
+;
+Pal_TXT_Swap
+Tau_schen
+;
+Pal_TXT_Spread
+Ve_rlauf
+;
+Pal_TXT_Invert
+_Invertieren
+;
+Pal_TXT_ShiftLeft
+_<<
+;
+Pal_TXT_ShiftRight
+_>>
+;
+Pal_TXT_Undo
+_Undo
+;
+Info_TXT_Info
+\n  FlashMandelNG 4.8 (c)1995-2023\n\n  Schneckenpost:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  EMail-Addresse:\n  Dino.Papararo@GMail.Com\n\n\n***********************************\n* Dieses Programm ist Giftware !! *\n***********************************\n\n\n
+;
+Info_TXT_OK
+_OK
+;
+Info_TXT_More
+_Mehr...
+;
+Work_TXT_Workgroup
+\nGrüße und Dank an:\n\n  Edgar Schwan (Co-Developer)\n\n\nBottomless wonders spring from simple rules, which are repeated without end.\nBenoit Mandelbrot.\n\n\nAmiga forever.\n\n\n\n\n
+;
+Work_TXT_OK
+_OK
+;
+Cyc_TXT_DelayTime
+V_erzögerungszeit
+;
+Cyc_TXT_Accept
+_Akzeptieren
+;
+Cyc_TXT_Cancel
+Abbre_chen
+;
+It_TXT_Iterations
+_Iterationen
+;
+SysI_TXT_CpuInfo
+CPU-Informationen
+;
+SysI_TXT_PPCCPU
+Keine
+;
+SysI_TXT_CPU_PPC
+CPU:
+;
+SysI_TXT_PPCVER
+Version:
+;
+SysI_TXT_PPCFPU
+Keine
+;
+SysI_TXT_FPU_PPC
+FPU:
+;
+SysI_TXT_MemInfo
+Speicher-Informationen
+;
+SysI_TXT_Available
+Verfügbar Speicher
+;
+SysI_TXT_AvailChip
+Chip:
+;
+SysI_TXT_AvailFast
+Fast:
+;
+SysI_TXT_LargestFree
+Größter freier Block
+;
+SysI_TXT_LargestChip
+Chip:
+;
+SysI_TXT_LargestFast
+Fast:
+;
+Coord_TXT_Coord
+Koordinaten:
+;
+Coord_TXT_TopValue
++1.125
+;
+Coord_TXT_Top
+_Oben
+;
+Coord_TXT_LeftValue
+-2.0
+;
+Coord_TXT_Left
+_Links
+;
+Coord_TXT_RightValue
+1.0
+;
+Coord_TXT_Right
+_Rechts
+;
+Coord_TXT_BottomValue
+-1.125
+;
+Coord_TXT_Bottom
+Un_ten
+;
+Coord_TXT_Julia
+Julia
+;
+Coord_TXT_JuliaRealValue
+-0.72
+;
+Coord_TXT_JuliaReal
+_Julia real
+;
+Coord_TXT_JuliaImagValue
+-0.26
+;
+Coord_TXT_JuliaImag
+J_ulia imag
+;
+Coord_TXT_KeepAxis
+_X-Achse halten für Seitenverhältnis
+;
+Coord_TXT_Accept
+_Akzeptieren
+;
+Coord_TXT_Ratio
+Verhältn_is
+;
+Coord_TXT_Default
+Stan_dard
+;
+Coord_TXT_Cancel
+Abbre_chen
+;
+Prt_TXT_AreYouSure
+Sind Sie sicher?
+;
+Prt_TXT_Yes
+_Ja
+;
+Prt_TXT_No
+_Nein
+;
+TITLE_InfoReq
+Informationen
+;
+TITLE_WorkgroupReq
+Arbeitsgruppe
+;
+TITLE_CycleDelayReq
+Verzögerungszeit
+;
+TITLE_IterationsReq
+Iterationen
+;
+TITLE_SysInfoReq
+System-Informationen
+;
+TITLE_CoordReq
+Koordinaten
+;
+TITLE_PrintReq
+Drucken
+;
+TITLE_ExitReq
+FlashMandel abbrechen
+;
+TXT_SavePicture
+Bild speichern...
+; Save Picture...
+;
+TXT_Project
+Projekt
+; Project
+;
+TXT_About
+Über...
+; About...
+;
+TXT_SystemInfo
+Systeminformationen...
+; System info...
+;
+TXT_Help
+Hilfe...
+; Help...
+;
+TXT_LoadPicture
+Bild laden...
+; Load Picture...
+;
+TXT_LoadPalette
+Palette laden...
+; Load Palette...
+;
+TXT_SavePalette
+Palette speichern...
+; Save Palette...
+;
+TXT_Print
+Drucken...
+; Print...
+;
+TXT_Quit
+Beenden...
+; Quit...
+;
+TXT_Options
+Optionen
+; Options
+;
+TXT_Title
+Titel
+; Title
+;
+TXT_TitleBar
+Titel anzeigen
+; Title bar
+;
+TXT_LastTime
+Zuletzt benötigte Zeit
+; Last time
+;
+TXT_Limits
+Grenzen...
+; Limits...
+;
+TXT_Iterations
+Iterationen
+; Iterations
+;
+TXT_Custom
+Benutzerdefiniert...
+; Custom...
+;
+TXT_Priority
+Priorität
+; Priority
+;
+TXT_ColorRemap
+Farbbestimmung
+; Color remap
+;
+TXT_Linear
+Linear
+; Linear
+;
+TXT_Repeated
+Wiederholt
+; Repeated
+;
+TXT_FractalType
+Fraktal-Typ
+; Fractal type
+;
+TXT_Julia
+Julia-Menge
+; Julia
+;
+TXT_Mandelbrot
+Mandelbrot-Menge
+; Mandelbrot
+;
+TXT_Processor
+Prozessor
+; Processor
+;
+TXT_Calculate
+Berechnung
+; Calculate
+;
+TXT_Preview
+Vorschau
+; Preview
+;
+TXT_Recalculate
+Neuberechnen
+; Recalculate
+;
+NewScr_TXT_Question
+Die Eigenschaften des Bildschirmes haben sich geändert.\nDie Grafik und die Farben könnten inkorrekt sein.\n\nNeuberechnen?\n
+; Screen propreties are changed.\nImage and colors can be inaccurate.\n\nRecalculate ?\n
+;
+TITLE_RendReq
+Neuzeichnen
+; Rendering Requester
+;
+TXT_Undo
+Undo
+; Undo
+;
+TXT_Zoom
+Zoom
+; Zoom
+;
+TXT_Stop
+Stop
+; Stop
+;
+TXT_Video
+Darstellung
+; Video
+;
+TXT_Cycle
+Farbrotation
+; Cycle
+;
+TXT_Forward
+Vorwärts
+; Forward
+;
+TXT_Backward
+Rückwärts
+; Backward
+;
+TXT_Delay
+Verzögerung...
+; Delay...
+;
+TXT_Palette
+Palette...
+; Palette...
+;
+TXT_ScreenMode
+Bildschirmmodus...
+; Screen mode...
+;
+TXT_FontSettings
+Zeichensatz...
+; Font settings...
+;
+TXT_ERR_DiskFontLibrary
+Ich benötige die DiskFont-Library in der Version V39 oder höher! 
+; I need at least DiskFontLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_IconLibrary
+Ich benötige die Icon-Library in der Version V39 oder höher! 
+; I need at least IconLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_GadToolsLibrary
+Ich benötige die GadTools-Library in der Version V39 oder höher! 
+; I need at least GadToolsibrary v39\nor better, sorry !\n
+;
+TXT_ERR_AslLibrary
+Ich benötige die Asl-Library in der Version V39 oder höher! 
+; I need at least AslLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_UtilityLibrary
+Ich benötige die Utility-Library in der Version V39 oder höher! 
+; I need at least UtilityLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_IFFParseLibrary
+Ich benötige die IFFParse-Library in der Version V39 oder höher! 
+; I need at least IFFParseLibrary v39\nor better, sorry !\n
+;
+TXT_ERR_OpenDisplay
+Ich benötige mindestens 8 Farben, Sorry!\n
+; I need at least 8 colors, sorry.\n
+;
+TXT_ERR_NoMemForTempRastPort
+Kein Speicher für den temporären RastPort vorhanden!\n
+; No memory for temporary RastPort!\n
+;
+TXT_ERR_Font
+Fehler beim Öffnen des Zeichensatzes!\n
+; Font failed!\n
+;
+TXT_ERR_NoMonitor
+Monitor für gewünschte Auflösung nicht vorhanden!\n
+; No monitor!\n
+;
+TXT_ERR_NoChips
+Benötige neuere Custom-Chips für den Bildschirm!\n
+; No chips!\n
+;
+TXT_ERR_NoMem
+Zu wenig Speicher für den Bildschirm!\n
+; No memory!\n
+;
+TXT_ERR_NoChipMem
+Leider zu wenig Chip-RAM für den Bildschirm!\n
+; No chipmemory!\n
+;
+TXT_ERR_PubNotUnique
+Ein Public-Bildschirm mit dem gleichen Namen wurde schon geöffnet!\n
+; Pub not unique!\n
+;
+TXT_ERR_UnknownMode
+Anzeigemodus für den Bildschirm ist unbekannt!\n
+; Unknown mode!\n
+;
+TXT_ERR_ScreenToDeep
+Bildschirmtiefe (Farben) ist für die vorhandene Hardware zu groß!\n
+; Screen too deep!\n
+;
+TXT_ERR_AttachScreen
+Ungültige Verknüpfung bei einem Child-/ Parent-Bildschirm!\n
+; Attach screen failed!\n
+;
+TXT_ERR_ModeNotAvailable
+Bildschirm läßt sich leider nicht öffnen!\n
+; Mode not available!\n
+;
+TXT_ERR_UnknownErr
+Unbekannter Fehler beim Öffnen des Bildschirmes!\n
+; Unknown screen error!\n
+;
+TXT_ERR_VisualInfo
+Kann Bildschirminformationen nicht ermitteln!\n
+; Visualinfo failed!\n
+;
+TXT_ERR_Window
+Kann Fenster nicht öffnen!\n
+; Openwindow failed!\n
+;
+TXT_ERR_Menu
+Kann Fenster-Menü nicht erzeugen!\n
+; Menu failed!\n
+;
+TXT_ERR_Gadget
+Kann Gadget nicht erzeugen!\n
+; Gadget error!\n
+;
+TXT_ERR_WindowGadget
+Kann Fenster-Gadget nicht erzeugen!\n
+; Window gadget error!\n
+;
+TXT_ERR_PreviewWindow
+Kann Vorschau-Fenster nicht öffnen!\n
+; Preview window failed!\n
+;
+TXT_ERR_CreateDisplay
+Kann Anzeige nicht erzeugen!\n
+; Createdisplay error!\n
+;
+TXT_ERR_DimensionInfo
+Kann Dimensionen des Anzeigemodus nicht ermitteln!\n
+; Dimensioninfo error!\n
+;
+TXT_ERR_PaletteRequester
+Kann Palette-Requester nicht öffnen!\n
+; Palette requester error!\n
+;
+TXT_ERR_MakeDisplay
+Kann Anzeige nicht erzeugen!\n
+; Display error!\n
+;
+TXT_ERR_QueryMandPic
+Die Datei ist kein FlashMandel-Bild!\n
+; Not a FlashMandel picture !\n
+;
+TXT_ERR_LoadMandPic
+Kann Bild nicht laden!\n
+; Load picture error!\n
+;
+TXT_ERR_SaveMandPic
+Kann Bild nicht speichern!\n
+; Save picture error!\n
+;
+TXT_ERR_LoadMandPal
+Kann Palette nicht laden!\n
+; Load palette error!\n
+;
+TXT_ERR_SaveMandPal
+Kann Palette nicht speichern!\n
+; Save palette error!\n
+;
+TXT_ERR_NoMemForPPC
+Kein Speicher für Puffer vorhanden,\nEs kann nur im 68k-Modus gerendert werden!\n
+; No mem for memory buffer, only Mc 68k rendering allowed!\n\n
+;
+TXT_CMD_Guide
+SYS:Utilities/MultiView Docs/FlashMandelNG.guide\0
+; SYS:Utilities/MultiView Docs/FlashMandelNG.guide\0
+;
+TXT_RenderTime
+Benötigte Rechenzeit:
+; Rendering elapsed time:
+;
+TXT_AverageSpeed
+%s %uh %um %us - Höchste Geschwindigkeit: %.1f Pixels pro Sekunde
+; %s %uh %um %us - Average speed: %.1f Pixels per second
+;
+TXT_PreviewTime
+Benötigte Zeit für die Vorschau:
+; Preview elapsed time:
+;
+TXT_LeftButtonForJulia
+Drücken Sie den linken Knopf, um die Julia-Konstante zu wählen, oder den rechten, um abzubrechen.
+; Press left button to choose the Julia constant or right button to cancel
+;
+TXT_JuliaConstant
+Julia-Konstante: Real %+2.30Ff Imag %+2.30Ffi
+; Julia constant: Real %+2.30Ff Imag %+2.30Ffi
+;
+TXT_LoadPictureTitle
+Lade IFF-Grafik...
+; Load iff picture
+;
+TXT_SavePictureTitle
+Speichere IFF-Grafik...
+; Save iff picture
+;
+TXT_LoadPaletteTitle
+Lade Palette...
+; Load palette
+;
+TXT_SavePaletteTitle
+Speichere Palette...
+; Save palette
+;
+TXT_ZoomTime
+Benötigte Zeit für den Zoom:
+; Zoom elapsed time:
+;
+TITLE_RenderReq
+Rendering-Requester
+; Rendering Requester
+;
+TITLE_OverwriteReq
+Überschreiben?
+; Overwrite file requester
+;
+Rend_TXT_Question
+Neuberechnen?\n
+; Recalculate ?\n
+;
+OverWr_TXT_Question
+\nDie Datei existiert bereits...\n\nWollen Sie die Datei überschreiben?\n
+; File already exists...\n\nDo you want overwrite it ?
+;
+TXT_LastCalcTime
+Zuletzt benötigte Rechenzeit:
+; Last calculating time:
+;
+TXT_OK
+Weiter
+; _OK
+;
+TXT_FMErrorTitle
+FlashMandel-Fehler!
+; FlashMandel-Error
+;
+TXT_ERR_NoSignal
+Kein Signal-Bit verfügbar!\n
+; No signal available\n
+;
+TXT_ERR_CantMakeScreenPrivate
+Kann Public-Bildschirm nicht wieder in\nden privaten Zustand versetzen.\nBitte schließen Sie alle Fenster!\n
+; Can't make screen private.\nPlease close all windows\n
+;
+TXT_ERR_LayoutMenu
+Kann Menüs nicht layouten (GadTools)!\n
+; Can't layout menus.\n
+;
+TXT_ScrTitle_Cyc
+Geben Sie die Verzögerungszeit ein... zwischen 0 (langsam) und 200 (schnell)
+;Insert cycle delay time... between 0 (fastest) and 200 (slowest)
+;
+TXT_ScrTitle_It
+Geben Sie die Anzahl der Iterationen ein... zwischen 2^6 (64) ÷ 2^30 (1073741824)
+;Insert new iterations... between 2^6 (64) ÷ 2^30 (1073741824)
+;
+TXT_ERR_Displayinfo
+Displayinfo-Fehler!\n
+;Displayinfo error!\n
+;
+TXT_LessThanOne
+%s Weniger als eine Sekunde - Höchste Geschwindigkeit: Echtzeit!
+;%s Less than one second - Average speed: Near Realtime!
+;
+TXT_SysInfo
+Cpu-Informationen\n\nPowerPc\nCpu:%s Version:%s\nVector Unit:%s\n\n\nSpeicher-Informationen\n\nVerfügbar\nChip:%ld MByte  Fast:%ld MByte\n\nGrößter freier Block\nChip:%ld MByte  Fast:%ld MByte\n
+;Cpu informations\n\nPowerPc\nCpu:%s Version:%s\nVector Unit:%s\n\n\nMemory informations\n\nAvailable total\nChip:%ld MByte Fast:%ld MByte\n\nLargest free\nChip:%ld MByte Fast:%ld MByte\n
+;
+TXT_PreviewTitle
+Vorschau-Fenster
+;Preview Window
+;
+TXT_RecalculateTime
+Zeit für Wiederberechnung:
+;Recalculate elapsed time:
+;
+TXT_YesNo
+Ja|Nein
+;Yes|No
+;
+TXT_OKMore
+OK|Mehr...
+;OK|More...
+;
+TXT_Info
+%s  %s \n\n\n  Schneckenpost: \n  %s\n  %s\n\n\n  %s\n\n*******************************\n* Das Programm ist GiftWare ! *\n*******************************\n\n
+;%s  %s \n\n\n  Snail address: \n  %s\n  %s\n\n\n  %s\n\n*******************************\n* This program is GiftWare !! *\n*******************************\n\n
+;
+TXT_None
+Keine
+;
+TXT_ScrTitle_Coord
+Neuen Bereich eingeben...
+;Insert new range...
+;
+Pal_ActKey_Red
+R
+;R
+;
+Pal_ActKey_Green
+G
+;G
+;
+Pal_ActKey_Blue
+B
+;B
+;
+TXT_ZPower
+Exponent
+;Power
+;
+TXT_Launch
+Starten...
+;Launch...
+;
+TXT_SelectRxScript
+Wählen Sie bitte ein ARexx-Skript!
+;Please select an arexx-script!
+;
+TXT_Unknown
+Unbekannt
+;Unknown
+;
+TXT_Orbit
+Orbit
+;Orbit
+;
+TXT_ERR_OrbitWindow
+Orbit-Fenster konnte nicht geöffnet werden!
+;Orbit window failed!
+;
+TXT_OrbitTitle
+Orbit-Fenster
+;Orbit window
+;
+TXT_RenderingMode
+Rendering-Modus
+;Rendering mode
+;
+TITLE_PrecisionReq
+Präzision ändern
+;Change Precision
+;
+TXT_MathMode
+Berechnungs-Modus
+;Math mode
+;
+TXT_MathMode_Fast
+Schnell
+;Fast
+;
+TXT_MathMode_HighPrec
+Hohe Präzision (%ld Bits)
+;High Precision (%ld bits)
+;
+TXT_Math_ChangePrec
+Präzisionbits ändern...
+;Change Precision...
+;
+It_TXT_Accept
+_Akzeptieren
+;_Accept
+;
+It_TXT_Cancel
+Abbre_chen
+;_Cancel
+;
+Prec_TXT_NumOfDigits
+Anzahl der Bits
+;_Number of bits
+;
+Prec_TXT_Accept
+_Akzeptieren
+;_Accept
+;
+Prec_TXT_Cancel
+Abbre_chen
+;_Cancel
+;
