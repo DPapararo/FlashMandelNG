@@ -2,7 +2,7 @@ Short: Mandelbrot & Julia fractals AOS4
 Uploader: Dino Papararo (Dino.Papararo@Gmail.Com)
 Author: Dino Papararo (Dino.Papararo@Gmail.com)/Edgar Schwan (eds@rz-online.de)
 Type: gfx/fract
-Version: 4.7 (11-Oct-2023)
+Version: 4.8 (11-Nov-2023)
 Architecture: ppc-amigaos => 4.1
 Requires: AmigaOS4 or compatible PPC machine with Altivec/SPE support
 Replaces: FlashMandelNG_OS4.lha
@@ -70,10 +70,14 @@ FlashMandelNG_OS4 is Giftware, If you like it please sent me nice  goodies  ..An
 email or common postcard is ok too! :-) It's possible to include it in magazines
 and CDs, if so please let me to have a free copy of paper/media support ;-)
 
-Version 4.7 changes:
-Fixed and speedup altivec calculations.
-Small fixes and cleaned up include files in source code.
-A1222 version is untested and maybe need some trick due weack compiler suport.
+Version 4.8 changes:
+Added Boundary tracing and brute force algorithms,  many thanks and greetings to 
+Marcel Maci for initial source code and precious suggestions.
+Fixed Julia rendering picture when choosing a start point inside Mandelbrot set.
+Reworked again and speededup altivec code.
+Fixed an unaligned memory allocation for altivec version.
+Many small fixes and code cleanups.
+
 ***
 
 "Bottomless wonders spring from simple rules, which are repeated without end."
@@ -82,4 +86,3 @@ cit. Benoit Mandelbrot
  Enjoy,
 
 Amiga Rulez!
-
