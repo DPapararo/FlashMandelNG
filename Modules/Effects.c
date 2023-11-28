@@ -51,6 +51,8 @@
 /* Rearranged datatypes 05.01.2021, dpapararo */
 /* Now logic is based on DimensionInfo struct 04.12.2021 dpapararo */
 /* Implemented ARGB fade and Random API call function 06.02.2022 dpapararo */ 
+/* Implemented RGB16 fade function 17.11.2023 dpapararo */ 
+
 
 #include <proto/dos.h>
 #include <proto/intuition.h>
@@ -66,7 +68,7 @@
 //int16 Fade (struct Window *,uint32 *,uint32,uint32,int16);
 //int16 Cycle (struct Window *,uint32,int16);
 
-int16 Fade (struct Window *Win, uint8 *ARGBMem, uint32 *PaletteSrc, uint32 MaxStep, uint32 MyTimeDelay, int16 ToBlack)
+int16 Fade (struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint32 *PaletteSrc, uint32 MaxStep, uint32 MyTimeDelay, int16 ToBlack)
 {
 //  DisplayInfoHandle DHandle;
 //  struct DimensionInfo DimInfo;
@@ -84,15 +86,16 @@ int16 Fade (struct Window *Win, uint8 *ARGBMem, uint32 *PaletteSrc, uint32 MaxSt
 
   	if (!((DHandle) && GetDisplayInfoData (DHandle, (uint8 *) &DimInfo, sizeof (struct DimensionInfo), DTAG_DIMS, ModeID))) goto ExitFade;
 */	
+
 	DstWinWidth = ((Win->Flags & WFLG_GIMMEZEROZERO) ? Win->GZZWidth : Win->Width);
-    DstWinHeight = ((Win->Flags & WFLG_GIMMEZEROZERO) ? Win->GZZHeight : Win->Height);	
+    DstWinHeight = ((Win->Flags & WFLG_GIMMEZEROZERO) ? Win->GZZHeight : Win->Height);
 	Depth = GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH);
 	
 	if (Depth == MIN_DEPTH) // 8 bit screens
     {
 	    if (ToBlack)
 		{
-      		Range = (1L << Depth) - 4L; 
+      		Range = (1L << Depth) - 4L;
       		PaletteTmp [0L] = (Range << 16L) + 4L;
       		GetRGB32 (((struct ViewPort *) ViewPortAddress (Win))->ColorMap, 4L, Range, &PaletteTmp [1L]);
       		PaletteTmp [3L * Range + 1L] = NULL;
@@ -140,7 +143,62 @@ int16 Fade (struct Window *Win, uint8 *ARGBMem, uint32 *PaletteSrc, uint32 MaxSt
 		goto ExitFade;		
     }
 	
-	else if (Depth == MAX_DEPTH) // 24bit screens
+	else if (Depth == MID_DEPTH) // 16bit screens
+	{ 
+		if (ToBlack)
+		{				
+			Modulo = DstWinWidth;
+				
+			ReadPixelArray (Win->RPort, 0, 0, RGBMem, Win->LeftEdge, Win->TopEdge,
+							Modulo * 2, PIXF_R5G6B5, DstWinWidth, DstWinHeight);
+
+			for (Step = 0L; Step <= MaxStep; Step++)
+	    	{
+				for (Cols = Win->TopEdge; Cols < (DstWinHeight * 2); Cols += 2)
+    			{
+      				for (Rows = Win->LeftEdge; Rows < (DstWinWidth * 2); Rows += 2) // unroll loop twice
+        			{
+						R = (uint8) (*(RGBMem + (Cols * Modulo + (Rows + 0))) >> 3);
+        				if (R) R = (uint8) ((R * (MaxStep - Step)) / MaxStep);	
+							
+						G = (uint8) ((*(RGBMem + (Cols * Modulo + (Rows + 0))) & 0X07) << 3) | (*(RGBMem + (Cols * Modulo + (Rows + 1))) >> 5);
+						if (G) G = (uint8) ((G * (MaxStep - Step)) / MaxStep);
+
+						B = (uint8) (*(RGBMem + (Cols * Modulo + (Rows + 1))) & 0X1F);
+        				if (B) B = (uint8) ((B * (MaxStep - Step)) / MaxStep);	
+
+						*(RGBMem + (Cols * Modulo + (Rows + 0))) = (uint8) ((R << 3) | (G >> 3));
+						*(RGBMem + (Cols * Modulo + (Rows + 1))) = (uint8) ((G << 5) | (B));
+						/* RGB_R5G6B5: rrrrrggg gggbbbbb 2 bytes per pixel 	*/
+						/*        0X07 00000111 00011111 0X1F 				*/
+					}
+   				}	
+	
+				WaitTOF ();
+   				WritePixelArray (RGBMem, 0, 0, Modulo * 2, PIXF_R5G6B5,
+									Win->RPort, Win->LeftEdge, Win->TopEdge, DstWinWidth, DstWinHeight);
+				Delay (MyTimeDelay);
+			}
+		}
+		
+		else 
+		{
+			for (Cols = Win->TopEdge; Cols < DstWinHeight; Cols += 2)
+			{
+				for (Rows = Win->LeftEdge; Rows < DstWinWidth; Rows += 4) // unroll loop twice
+				{
+					WritePixelColor (Win->RPort, Rows, Cols, 0XFF000000);
+					WritePixelColor (Win->RPort, Rows + 2, Cols, 0XFF000000);
+				}
+			
+				Delay (MyTimeDelay / 2);
+			}		
+		}
+		
+		Success = TRUE;
+	}	
+	
+	else if (Depth == MAX_DEPTH) // 32bit screens
 	{ 
 		if (ToBlack)
 		{				
@@ -179,8 +237,8 @@ int16 Fade (struct Window *Win, uint8 *ARGBMem, uint32 *PaletteSrc, uint32 MaxSt
 			{
 				for (Rows = Win->LeftEdge; Rows < DstWinWidth; Rows += 4) // unroll loop twice
 				{
-					WritePixelColor (Win->RPort, Rows, Cols, 0xff000000);
-					WritePixelColor (Win->RPort, Rows + 2, Cols, 0xff000000);
+					WritePixelColor (Win->RPort, Rows, Cols, 0XFF000000);
+					WritePixelColor (Win->RPort, Rows + 2, Cols, 0XFF000000);
 				}
 			
 				Delay (MyTimeDelay / 2);
