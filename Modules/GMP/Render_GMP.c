@@ -71,29 +71,29 @@ static void JVLine_GMP (struct RastPort *, struct MandelChunk *, uint8 *, const 
 static void JHLine_GMP (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
 static void MVLine_GMP (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
 static void MHLine_GMP (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
-static void MCPoint_GMP_24bit (struct MandelChunk *, struct RastPort *, const int16, const int16);
-static void JCPoint_GMP_24bit (struct MandelChunk *, struct RastPort *, const int16, const int16);
-static void JVLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
-static void JHLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *,	const int16, const int16, const int16);
-static void MVLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
-static void MHLine_GMP_24bit (struct RastPort *, struct MandelChunk *, uint8 *,	const int16, const int16, const int16);		
+static void MCPoint_GMP_16_32bit (struct MandelChunk *, struct RastPort *, const int16, const int16);
+static void JCPoint_GMP_16_32bit (struct MandelChunk *, struct RastPort *, const int16, const int16);
+static void JVLine_GMP_16_32bit (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
+static void JHLine_GMP_16_32bit (struct RastPort *, struct MandelChunk *, uint8 *,	const int16, const int16, const int16);
+static void MVLine_GMP_16_32bit (struct RastPort *, struct MandelChunk *, uint8 *, const int16, const int16, const int16);
+static void MHLine_GMP_16_32bit (struct RastPort *, struct MandelChunk *, uint8 *,	const int16, const int16, const int16);		
 
 static int16 BoundaryDrawMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *);
 static uint32 LoadMem_GMP (struct MandelChunk *, uint32 *, uint32 *, uint32);
 static void ScanMem_GMP (struct MandelChunk *, uint32 *, uint32 *, uint32, uint32);
 
-static int16 BoundaryDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
+static int16 BoundaryDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
 static void Scan_GMP (struct MandelChunk *, struct RastPort *, uint32 *, uint32, uint32 , int16);
 static uint32 Load_GMP (struct MandelChunk *, struct RastPort *, uint32 *, uint32, int16);
 
 static int16 RectangleDrawMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
-static int16 RectangleDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *,	const int16, const int16, const int16, const int16);
+static int16 RectangleDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *,	const int16, const int16, const int16, const int16);
 
 static int16 BruteDrawMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
-static int16 BruteDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *,	const int16, const int16, const int16, const int16);
+static int16 BruteDraw_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *,	const int16, const int16, const int16, const int16);
 
 void CalcFractalMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *);
-void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
+void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
 
 extern uint32 Mandeln_GMP (uint32, int16);
 extern uint32 Julian_GMP (uint32, int16);
@@ -317,7 +317,7 @@ static int16 BruteDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Wi
 		    		{
 	    				if (MyCode != MENUNULL)
 						{
-			  				if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG) 
+			  				if (ProcessMenu (MandelInfo, Win, 0, 0, 0,  NULL, NULL, 0, MyCode) & STOP_MSG) 
 							{
 								DisplayBeep (Win->WScreen);			  
 								return TRUE;
@@ -473,7 +473,7 @@ int16 BoundaryDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Win, u
 					{
 						if (MyCode != MENUNULL)
                     	{
-                   			if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG)							
+                   			if (ProcessMenu (MandelInfo, Win, 0, 0, 0,  NULL, NULL, 0, MyCode) & STOP_MSG)							
 							{
                     			DisplayBeep (Win->WScreen);					  							
 								DeallocateBoundary();										
@@ -557,7 +557,7 @@ static int16 RectangleDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window
 	    		{
     				if (MyCode != MENUNULL)
 					{
-		  				if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG) 
+		  				if (ProcessMenu (MandelInfo, Win, 0, 0, 0,  NULL, NULL, 0, MyCode) & STOP_MSG) 
 						{
 							DisplayBeep (Win->WScreen);					  
 							return TRUE;
@@ -894,10 +894,10 @@ static void JHLine_GMP (struct RastPort *Rp, struct MandelChunk *MandelInfo, uin
   	WriteChunkyPixels (Rp, a1, y, a2, y, PixelLine, a2 - a1 + 1);
 }
 
-/* 24bit rendering */
+/* 16_32bit rendering */
 
-/* MCPoint_GMP_24bit() */
-static void MCPoint_GMP_24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, const int16 x, const int16 y)
+/* MCPoint_GMP_16_32bit() */
+static void MCPoint_GMP_16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, const int16 x, const int16 y)
 {
   uint8 r,g,b;
   uint32 Iteration,Color_ARGB=0xff000000;
@@ -914,19 +914,19 @@ static void MCPoint_GMP_24bit (struct MandelChunk *MandelInfo, struct RastPort *
 
   	if (Iteration)
   	{
-        	r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+        	r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
   	}
 
   	WritePixelColor (Rp, x, y, Color_ARGB);
 }
 
-/* MVLine_GMP_24bit() */
-static void MVLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 b1, const int16 b2, const int16 x)
+/* MVLine_GMP_16_32bit() */
+static void MVLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 b1, const int16 b2, const int16 x)
 {
   uint8 r,g,b;
   int16 y;
@@ -947,11 +947,11 @@ static void MVLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
 
       	if (Iteration)
       	{
-	    	r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	    	r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
       	}
 
@@ -962,8 +962,8 @@ static void MVLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
     }
 }
 
-/* MHLine_GMP_24bit() */
-static void MHLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 a1, const int16 a2, const int16 y)
+/* MHLine_GMP_16_32bit() */
+static void MHLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 a1, const int16 a2, const int16 y)
 {
   uint8 r,g,b;
   int16 x;
@@ -984,11 +984,11 @@ static void MHLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
 
       	if (Iteration)
       	{
-	        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 	  	}
 		
@@ -999,8 +999,8 @@ static void MHLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
     }
 }
 
-/* JCPoint_GMP_24bit() */
-static void JCPoint_GMP_24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, const int16 x, const int16 y)
+/* JCPoint_GMP_16_32bit() */
+static void JCPoint_GMP_16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, const int16 x, const int16 y)
 {
   uint8 r,g,b;
   uint32 Iteration,Color_ARGB=0xff000000;
@@ -1017,19 +1017,19 @@ static void JCPoint_GMP_24bit (struct MandelChunk *MandelInfo, struct RastPort *
 
   	if (Iteration)
   	{
-        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+        r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
 		Color_ARGB |= (r << 16);
-		g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+		g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
 		Color_ARGB |= (g << 8);
-		b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+		b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
 		Color_ARGB |= b;
   	}
 
   	WritePixelColor (Rp, x, y, Color_ARGB);
 }
 
-/* JVLine_GMP_24bit() */
-static void JVLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 b1, const int16 b2, const int16 x)
+/* JVLine_GMP_16_32bit() */
+static void JVLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 b1, const int16 b2, const int16 x)
 {
   uint8 r,g,b;
   int16 y;
@@ -1050,11 +1050,11 @@ static void JVLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
 
 	  	if (Iteration)
       	{
-	    	r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	    	r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
       	}
 
@@ -1065,8 +1065,8 @@ static void JVLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
     }      
 }
 
-/* JHLine_GMP_24bit() */
-static void JHLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 a1, const int16 a2, const int16 y)
+/* JHLine_GMP_16_32bit() */
+static void JHLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *MandelInfo, uint8 *PixelLine, const int16 a1, const int16 a2, const int16 y)
 {
   uint8 r,g,b;
   int16 x;
@@ -1087,11 +1087,11 @@ static void JHLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
 
       	if (Iteration)
       	{
-	        r = (uint8) lround ((sin(0.016 * (float64) Iteration + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Iteration + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Iteration + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 	  	}
 		
@@ -1102,7 +1102,7 @@ static void JHLine_GMP_24bit (struct RastPort *Rp, struct MandelChunk *MandelInf
    	}
 }
 
-uint32 Load_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 P, int16 TrueColor) 
+uint32 Load_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 P, int16 HiTrueColor) 
 {
   int16 X, Y;
   uint32 ResX, ResY, Color, Color_ARGB;
@@ -1119,10 +1119,10 @@ uint32 Load_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *Pi
 			
     DONE [P] |= Loaded;
     
-	return DATA [P] = ((TrueColor) ? ReadPixelColor (Rp, X, Y) : ReadPixel (Rp, X, Y));
+	return DATA [P] = ((HiTrueColor) ? ReadPixelColor (Rp, X, Y) : ReadPixel (Rp, X, Y));
 }
 
-void Scan_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 QueueSize, uint32 P, int16 TrueColor)
+void Scan_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 QueueSize, uint32 P, int16 HiTrueColor)
 {
   uint32 Center;
   int32 LL, RR, UU, DD;
@@ -1130,7 +1130,7 @@ void Scan_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *Pixe
   uint32 ResX, ResY;
   uint32 X, Y;
 
-	Center = Load_GMP (MandelInfo, Rp, PixelVecBase, P, TrueColor);
+	Center = Load_GMP (MandelInfo, Rp, PixelVecBase, P, HiTrueColor);
 	ResX = MandelInfo->Width - MandelInfo->LeftEdge;
  	ResY = MandelInfo->Height - MandelInfo->TopEdge;
 	X = P % ResX;
@@ -1141,10 +1141,10 @@ void Scan_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *Pixe
 	DD = Y < ResY - 1L;
 	
 	/* booleans */
-   	L = LL && Load_GMP (MandelInfo, Rp, PixelVecBase, P - 1L, TrueColor) != Center;
-    R = RR && Load_GMP (MandelInfo, Rp, PixelVecBase, P + 1L, TrueColor) != Center;
-    U = UU && Load_GMP (MandelInfo, Rp, PixelVecBase, P - ResX, TrueColor) != Center;
-    D = DD && Load_GMP (MandelInfo, Rp, PixelVecBase, P + ResX, TrueColor) != Center;
+   	L = LL && Load_GMP (MandelInfo, Rp, PixelVecBase, P - 1L, HiTrueColor) != Center;
+    R = RR && Load_GMP (MandelInfo, Rp, PixelVecBase, P + 1L, HiTrueColor) != Center;
+    U = UU && Load_GMP (MandelInfo, Rp, PixelVecBase, P - ResX, HiTrueColor) != Center;
+    D = DD && Load_GMP (MandelInfo, Rp, PixelVecBase, P + ResX, HiTrueColor) != Center;
 	
     /* process the queue (which is actuaLLy a ring buffer) */
     if (L) AddQueue (QueueSize, P - 1L);
@@ -1160,14 +1160,14 @@ void Scan_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *Pixe
 }
 /* end boundary trace functions */
 
-int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, uint8 *GfxMem,
+int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
                     	uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem)
 {
   uint16 MyCode;
   uint32 MyClass;  
   struct IntuiMessage *Message;
 
-  int16 Flag = 0, TrueColor;
+  int16 Flag = 0, LoColor = 0, HiColor = 0, TrueColor = 0;
   uint32 P, QueueTail, QueueSize;
   uint32 X, Y, ResX, ResY;
  
@@ -1177,6 +1177,8 @@ int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint
 	QueueTail = 0L;
 	QueueSize = sizeof (int32) * ResX * ResY * 4L;
 	TrueColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MAX_DEPTH) ? 1 : 0;
+	HiColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MID_DEPTH) ? 1 : 0;	
+	LoColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH) ? 1 : 0;
 	
 	/* allocation check */
 	if (! AllocateBoundary (ResX, ResY)) return FALSE;
@@ -1205,7 +1207,7 @@ int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint
 		
 		else P = QUEUE [--QueueHead];
         
-		Scan_GMP (MandelInfo, Win->RPort, PixelVecBase, QueueSize, P, TrueColor);
+		Scan_GMP (MandelInfo, Win->RPort, PixelVecBase, QueueSize, P, TrueColor || HiColor);
 		
 		if (Win->UserPort->mp_SigBit)
   		{
@@ -1221,7 +1223,7 @@ int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint
 					{
 						if (MyCode != MENUNULL)
                     	{
-							if (ProcessMenu (MandelInfo, Win, ARGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
+							if (ProcessMenu (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
 							{
                     			DisplayBeep (Win->WScreen);					  							
 								DeallocateBoundary();										
@@ -1266,14 +1268,14 @@ int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint
         	if (! (DONE [P + 1L] & Loaded)) 
 			{
             	DATA [P + 1L] = DATA [P];
-	
-				if (TrueColor) WritePixelColor (Win->RPort, (P + 1L) % ResX, (P + 1L) / ResX, DATA [P]);
-					
-				else
+				
+				if (TrueColor || HiColor) WritePixelColor (Win->RPort, (P + 1L) % ResX, (P + 1L) / ResX, DATA [P]);
+						
+				else if (LoColor)
 				{			
 					SetAPen (Win->RPort, DATA [P]);			
 					WritePixel (Win->RPort, (P + 1L) % ResX, (P + 1L) / ResX);
-				}
+				}		
 					
 				DONE [P + 1L] |= Loaded;
         	}
@@ -1285,7 +1287,7 @@ int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint
 }
 
 /* RectangleDraw_GMP() */
-static int16 RectangleDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 * ARGBMem, uint8 * PixMem, uint8 * GfxMem, uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
+static int16 RectangleDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem, uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
 {
   struct IntuiMessage *Message = NULL;
   uint16 MyCode;
@@ -1311,7 +1313,7 @@ static int16 RectangleDraw_GMP (struct MandelChunk *MandelInfo, struct Window *W
 	    		{
 					if (MyCode != MENUNULL)
 					{
-		  				if (ProcessMenu (MandelInfo, Win, ARGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
+		  				if (ProcessMenu (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
 						{
                     		DisplayBeep (Win->WScreen);					  
 							return TRUE;
@@ -1375,21 +1377,21 @@ static int16 RectangleDraw_GMP (struct MandelChunk *MandelInfo, struct Window *W
  
   	(*H_LINE_GMP) (Win->RPort, MandelInfo, PixMem, a1 + 1, halfx - 1, halfy); // don't recalc center point
   	(*V_LINE_GMP) (Win->RPort, MandelInfo, PixMem, b1 + 1, halfy - 1, halfx);
-  	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE;
+  	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE;
 
   	(*H_LINE_GMP) (Win->RPort, MandelInfo, PixMem, halfx + 1, a2 - 1, halfy);
-  	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE;
+  	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE;
 
   	(*V_LINE_GMP) (Win->RPort, MandelInfo, PixMem, halfy + 1, b2 - 1, halfx); 
 	
-	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE;
-  	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE;
+	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE;
+  	if (RectangleDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE;
 
   	return FALSE;
 }
 
 /* BruteDraw_GMP() */
-static int16 BruteDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, uint8 *GfxMem, uint32 * PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
+static int16 BruteDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem, uint32 * PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
 {
   struct IntuiMessage *Message = NULL;
   uint16 MyCode;
@@ -1412,7 +1414,7 @@ static int16 BruteDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, 
 		    		{
 						if (MyCode != MENUNULL)
 						{
-			  				if (ProcessMenu (MandelInfo, Win, ARGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
+			  				if (ProcessMenu (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
 							{
     	                		DisplayBeep (Win->WScreen);					  
 								return TRUE;
@@ -1461,18 +1463,18 @@ static int16 BruteDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, 
 }
 
 /* CalcFractal_GMP() */
-void CalcFractal_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 * ARGBMem, uint8 * PixMem, uint8 * GfxMem, uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem)
+void CalcFractal_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem, uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem)
 {
   	if (MandelInfo->Flags & JULIA_BIT)
   	{  
-      	if (GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MAX_DEPTH)
+      	if ((GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MAX_DEPTH) || (GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MID_DEPTH))
 	  	{
-          	C_POINT_GMP = JCPoint_GMP_24bit;
-	      	H_LINE_GMP = JHLine_GMP_24bit;
-	      	V_LINE_GMP = JVLine_GMP_24bit;
+          	C_POINT_GMP = JCPoint_GMP_16_32bit;
+	      	H_LINE_GMP = JHLine_GMP_16_32bit;
+	      	V_LINE_GMP = JVLine_GMP_16_32bit;
 	  	}
 	  
-	  	else
+	  	else if (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH)
 	  	{
       	  	C_POINT_GMP = JCPoint_GMP;
       	  	H_LINE_GMP = JHLine_GMP;
@@ -1482,14 +1484,15 @@ void CalcFractal_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 
 	
   	else if (MandelInfo->Flags & MANDEL_BIT)
     {
-		if (GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MAX_DEPTH)
+		if ((GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MAX_DEPTH) || (GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MID_DEPTH))
     	{
-   		   	C_POINT_GMP = MCPoint_GMP_24bit;
-	       	H_LINE_GMP = MHLine_GMP_24bit;
-	       	V_LINE_GMP = MVLine_GMP_24bit;
+   		   	C_POINT_GMP = MCPoint_GMP_16_32bit;
+	       	H_LINE_GMP = MHLine_GMP_16_32bit;
+	       	V_LINE_GMP = MVLine_GMP_16_32bit;
   		}
 		
-  		else
+       	else if (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH)
+
         {
 		   	C_POINT_GMP = MCPoint_GMP;
            	H_LINE_GMP = MHLine_GMP;
@@ -1508,7 +1511,7 @@ void CalcFractal_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 
 
 	if ((MandelInfo->Flags & BOUNDARY_BIT) && (MandelInfo->Flags & MANDEL_BIT))
 	{ 
-		BoundaryDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem);
+		BoundaryDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem);
 	}
     
 	else if (MandelInfo->Flags & TILING_BIT)
@@ -1519,11 +1522,11 @@ void CalcFractal_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint8 
   		(*V_LINE_GMP) (Win->RPort, MandelInfo, PixMem, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->LeftEdge);
   		(*V_LINE_GMP) (Win->RPort, MandelInfo, PixMem, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->Width - 1);
 		// start divide et impera recursively!
-  		RectangleDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
+  		RectangleDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
 	}
 	
 	else if (MandelInfo->Flags & BRUTE_BIT)
 	{
-		BruteDraw_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
+		BruteDraw_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
 	}
 }
