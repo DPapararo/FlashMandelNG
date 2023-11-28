@@ -1,12 +1,3 @@
-Short: Mandelbrot & Julia fractals AOS4
-Uploader: Dino Papararo (Dino.Papararo@Gmail.Com)
-Author: Dino Papararo (Dino.Papararo@Gmail.com)/Edgar Schwan (eds@rz-online.de)
-Type: gfx/fract
-Version: 4.8 (11-Nov-2023)
-Architecture: ppc-amigaos => 4.1
-Requires: AmigaOS4 or compatible PPC machine with Altivec/SPE support
-Replaces: FlashMandelNG_OS4.lha
-
 FlashMandel is "THE" Mandelbrot and Julia fractals  rendering  program  for  the
 AmigaOS4 platforms :-) It's a very long time project, development started in the
 end of '90 when I was sixteen and learned about fractals reading and looking  on
@@ -60,7 +51,7 @@ switch sooner to higher precision GMP Library math calculations.
 In version 4.5 I have introduced A1222/Tabor compatiiblity with full SPE support
 this version should be faster than FPU one and slower than Altivec one.
 Anyway it's only supposed because I'm not an owner of A1222/Tabor machine and so
-it's all still untested!
+it's all still untested and could not work as expected!
 
 About precision, one of main features of FlashMandel,  is  the  ability  to  use
 arbitrary precision math. To archieve this I used GMP library, Edgar did a great
@@ -70,19 +61,14 @@ FlashMandelNG_OS4 is Giftware, If you like it please sent me nice  goodies  ..An
 email or common postcard is ok too! :-) It's possible to include it in magazines
 and CDs, if so please let me to have a free copy of paper/media support ;-)
 
-Version 4.8 changes:
-Added Boundary tracing and brute force algorithms,  many thanks and greetings to 
-Marcel Maci for initial source code and precious suggestions.
-Fixed Julia rendering picture when choosing a start point inside Mandelbrot set.
-Reworked again and speededup altivec code.
-Fixed an unaligned memory allocation for altivec version.
-Many small fixes and code cleanups.
+Version 4.9 changes:
+Added 16 bit 'HiColor' screenmodes, mainly for QEMU and 'low end' systems users.
 
 ***
 
 "Bottomless wonders spring from simple rules, which are repeated without end."
 cit. Benoit Mandelbrot
-
  Enjoy,
+
 
 Amiga Rulez!
