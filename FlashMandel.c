@@ -62,6 +62,7 @@
 **  V4.6 Preliminary code for SPE native support to be tested
 **  V4.7 Fixed and speeded up altivec code - cleanup include files
 **  V4.8 Added Boundary Trace algorithm, fixed Julia pick, fixed ghosted menus 
+**  V4.9 Added 16 bit screenmodes (HiColor) 
 ******************************************************************************************************************/
 
 #include <stdio.h>
@@ -124,7 +125,7 @@
 #include "Headers/FM_ARexx_Misc.h"
 #endif /* FM_AREXX_SUPPORT */
 
-#define VERSTAG "\0$VER: FlashMandelNG V4.8 (03.11.2023) Dino Papararo - Edgar Schwan"
+#define VERSTAG "\0$VER: FlashMandelNG V4.9 (19.11.2023) Dino Papararo - Edgar Schwan"
 #define GUIDE "SYS:Utilities/Multiview Docs/FlashMandelNG.guide"
 
 /* PALETTE PEN COLORS FOR GUI PENS */
@@ -153,9 +154,9 @@ extern uint32 AREXXSIGNAL;
 extern struct List AREXXEVENTLIST;
 #endif /* FM_AREXX_SUPPORT */
 
-extern void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
+extern void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
 extern void CalcFractalMem (struct MandelChunk *, struct Window *, uint32 *, uint32 *, uint32 *);
-extern void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
+extern void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
 extern void CalcFractalMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *);
 
 STRPTR USED VER = (STRPTR) VERSTAG;
@@ -175,7 +176,8 @@ int16 ZOOMLINE[(5 * 2) + 2], RETURNVALUE = 0, UNDOCOUNTER = 0, LEVELUNDO;
 int32 PRIORITY = DEF_PRIORITY, __oslibversion = Lib_Version;
 uint32 MASK = TMASK, DELAY = DEF_DELAY, ELAPSEDTIME = NULL;
 float64 DEF_RMIN, DEF_RMAX, DEF_IMIN, DEF_IMAX, DEF_JKRE, DEF_JKIM;
-uint8 *PIXMEM = NULL, *GFXMEM = NULL, *ARGBMEM = NULL;
+uint8 *PIXMEM = 0, *GFXMEM = 0, *ARGBMEM = 0, *RGBMEM = 0;
+uint8 BYTESPERPIXEL = 4; /* default to 24bit screens */
 uint32 *PALETTE = NULL, *RNDMEM = NULL;
 CPTR *VINFO = NULL;
 
@@ -853,11 +855,16 @@ int main (int Argc, char **Argv)
 
     MYILBM.Bmhd.w = ArgInt (IconToolTypes, "SCREENWIDTH", DEF_WIDTH);
     MYILBM.Bmhd.w = MIN (MAX_WIDTH, MAX (MYILBM.Bmhd.w, MIN_WIDTH));
+	
     MYILBM.Bmhd.h = ArgInt (IconToolTypes, "SCREENHEIGHT", DEF_HEIGHT);
     MYILBM.Bmhd.h = MIN (MAX_HEIGHT, MAX (MYILBM.Bmhd.h, MIN_HEIGHT));
-    MYILBM.Bmhd.nPlanes = ArgInt (IconToolTypes, "SCREENDEPTH", DEF_DEPTH);
-    MYILBM.Bmhd.nPlanes = MIN (MAX_DEPTH, MAX (MYILBM.Bmhd.nPlanes, MIN_DEPTH));
-
+    
+	MYILBM.Bmhd.nPlanes = ArgInt (IconToolTypes, "SCREENDEPTH", DEF_DEPTH);    
+	if ((MYILBM.Bmhd.nPlanes != MIN_DEPTH) || (MYILBM.Bmhd.nPlanes != MID_DEPTH) || (MYILBM.Bmhd.nPlanes != MAX_DEPTH)) 
+	{ 
+		MYILBM.Bmhd.nPlanes = DEF_DEPTH;
+	}
+	
 #ifndef NDEBUG
 	//  printf("SCREENWIDTH: %ld\n", MYILBM.Bmhd.w); //DEBUG
 	//  printf("SCREENHEIGHT: %ld\n", MYILBM.Bmhd.h); //DEBUG
@@ -1173,7 +1180,7 @@ clistart:
     mpf_set_d (MANDChunk->GJKim, MANDChunk->JKim);
 
     PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
-    ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+    ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
     ClearPointer (MYILBM.win);
 
     SetMenuStart (&MYILBM, UNDOCOUNTER);
@@ -1211,7 +1218,7 @@ clistart:
     Clear_UNDOBuffer_GMP (UNDOCOUNTER); /* if there's something inside Undo buffer free it */
     Clear_GMP ();
 	/* close screen */
-    Fade (MYILBM.win, ARGBMEM, PALETTE, 50L, 1L, TOBLACK);
+    Fade (MYILBM.win, ARGBMEM, RGBMEM, PALETTE, 50L, 1L, TOBLACK);
     CloseDisplay (&MYILBM);
 	/* free all memory allocated */
 cleanup:
@@ -1268,7 +1275,7 @@ int32 MainProg (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 					MASK &= ~BMASK;
 				}
 
-                Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+                Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
                 CloseDisplay (Ilbm);
 
                 if (! MakeDisplay (Ilbm))
@@ -1317,7 +1324,7 @@ int32 MainProg (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                 {
                     SetMenuStop (Ilbm);
                     PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
-                    ELAPSEDTIME =  DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
+                    ELAPSEDTIME =  DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
                     SetMenuStart (Ilbm, UNDOCOUNTER);
                     ShowTime (Ilbm->win, CATSTR (TXT_RenderTime), ELAPSEDTIME);
                 }
@@ -1590,7 +1597,7 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
   struct Screen *Scr = NULL;
   struct Task *task = NULL; /* new for reaction-support */
   int32 ErrorCode = NULL;
-  uint32 BitMapTag, PassedTags;
+  uint32 BitMapTag, PassedTags, PixelFormat = PIXF_CLUT;
 
   	if (!Ilbm) goto ExitOpenIdScreen;
 
@@ -1612,12 +1619,24 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
 
   	if (Ilbm->stype & CUSTOMBITMAP)
     {
+		switch (Depth)
+		{
+			case MIN_DEPTH: { PixelFormat = PIXF_CLUT; } 
+			break;
+			
+			case MID_DEPTH: { PixelFormat = PIXF_R5G6B5; }
+			break;
+			
+			case MAX_DEPTH: { PixelFormat = PIXF_A8R8G8B8; } 
+			break;
+		}				
+	
       	if (Ilbm->brbitmap = AllocBitMapTags (Width, Height, Depth,
                         						BMATags_Displayable, FALSE,
                         						/*BMATags_Alignment, 16,*/
                         						BMATags_ConstantBytesPerRow, TRUE, 
 												BMATags_Clear, TRUE,
-                        						BMATags_PixelFormat, ((Depth == MIN_DEPTH) ? PIXF_CLUT : PIXF_A8R8G8B8),
+                        						BMATags_PixelFormat, PixelFormat,
                         						BMATags_ModeWidth, Width,
                         						BMATags_ModeHeight, Height,
                         						BMATags_DisplayID, ModeID, TAG_DONE))
@@ -1713,21 +1732,34 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
   	Ilbm->Bmhd.h = MIN (MAX_HEIGHT, MAX (MIN_HEIGHT, Ilbm->Bmhd.h));
   	Ilbm->Bmhd.nPlanes = MIN (MAX_DEPTH, MAX (MIN_DEPTH, Ilbm->Bmhd.nPlanes));
 
-	// if (Ilbm->Bmhd.nPlanes == MAX_DEPTH)
-  	{
-    	if (!(ARGBMEM = (uint8 *) AllocVecTags (sizeof (uint8) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h) * 4, 
-												AVT_Type, MEMF_PRIVATE, 
-												AVT_Contiguous, TRUE, 
-												AVT_Lock, TRUE,
-               									/*AVT_Alignment, 16, */ 
-												AVT_ClearWithValue, 0, TAG_DONE)))
-      	{
-         	DisplayError (NULL, TXT_ERR_NoMem, 20L);
-			goto ExitMakeDisplay;
-      	}
-  	}
+	if (Ilbm->Bmhd.nPlanes == MID_DEPTH) BYTESPERPIXEL = 2; /* 16bit screenmodes */
+	else if (Ilbm->Bmhd.nPlanes == MID_DEPTH) BYTESPERPIXEL = 4; /* 32bit screenmodes */
+	
+   	if (!(ARGBMEM = (uint8 *) AllocVecTags (sizeof (uint8) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h) * 4,
+											AVT_Type, MEMF_PRIVATE, 
+											AVT_Contiguous, TRUE, 
+											AVT_Lock, TRUE,
+           									/*AVT_Alignment, 16, */ 
+											AVT_ClearWithValue, 0, TAG_DONE)))
+   	{
+       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+		goto ExitMakeDisplay;
+	}  	
 
   	MASK |= AMASK;
+	
+	if (!(RGBMEM = (uint8 *) AllocVecTags (sizeof (uint8) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h) * 2,
+											AVT_Type, MEMF_PRIVATE, 
+											AVT_Contiguous, TRUE, 
+											AVT_Lock, TRUE,
+           									/*AVT_Alignment, 16, */ 
+											AVT_ClearWithValue, 0, TAG_DONE)))
+   	{
+       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+		goto ExitMakeDisplay;
+	}  	
+
+  	MASK |= DMASK;	
 
   	if (!(RNDMEM = (uint32 *) AllocVecTags (sizeof (uint32) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h),	
 											AVT_Type, MEMF_PRIVATE, 
@@ -1888,6 +1920,16 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		MASK &= ~AMASK;
     	}
     }
+	
+	if (DMASK & MASK)
+    {
+      	if (RGBMEM)
+    	{
+      		FreeVec (RGBMEM);
+      		ARGBMEM = NULL;
+      		MASK &= ~DMASK;
+    	}
+    }	
 
   	if (RMASK & MASK)
     {
@@ -2712,10 +2754,10 @@ void AddQueue (uint32 QueueSize, uint32 P)
     if (QueueHead == QueueSize) QueueHead = 0L;
 }
 
-uint32 Load (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 P, int16 TrueColor) 
+uint32 Load (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 P, int16 HiTrueColor) 
 {
   int16 X, Y;
-  uint32 ResX, ResY, Color, Color_ARGB;
+  uint32 ResX, ResY;
 
 	ResX = MandelInfo->Width - MandelInfo->LeftEdge;
  	ResY = MandelInfo->Height - MandelInfo->TopEdge;		
@@ -2729,10 +2771,10 @@ uint32 Load (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelV
 			
     DONE [P] |= Loaded;
     
-	return DATA [P] = ((TrueColor) ? ReadPixelColor (Rp, X, Y) : ReadPixel (Rp, X, Y));
+	return DATA [P] = ((HiTrueColor) ? ReadPixelColor (Rp, X, Y) : ReadPixel (Rp, X, Y));
 }
 
-void Scan (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 QueueSize, uint32 P, int16 TrueColor)
+void Scan (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVecBase, uint32 QueueSize, uint32 P, int16 HiTrueColor)
 {
   uint32 Center;
   int32 LL, RR, UU, DD;
@@ -2740,7 +2782,7 @@ void Scan (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVec
   uint32 ResX, ResY;
   uint32 X, Y;
 
-	Center = Load (MandelInfo, Rp, PixelVecBase, P, TrueColor);
+	Center = Load (MandelInfo, Rp, PixelVecBase, P, HiTrueColor);
 	ResX = MandelInfo->Width - MandelInfo->LeftEdge;
  	ResY = MandelInfo->Height - MandelInfo->TopEdge;
 	X = P % ResX;
@@ -2751,10 +2793,10 @@ void Scan (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVec
 	DD = Y < ResY - 1L;
 	
 	/* booleans */
-   	L = LL && Load (MandelInfo, Rp, PixelVecBase, P - 1L, TrueColor) != Center;
-    R = RR && Load (MandelInfo, Rp, PixelVecBase, P + 1L, TrueColor) != Center;
-    U = UU && Load (MandelInfo, Rp, PixelVecBase, P - ResX, TrueColor) != Center;
-    D = DD && Load (MandelInfo, Rp, PixelVecBase, P + ResX, TrueColor) != Center;
+   	L = LL && Load (MandelInfo, Rp, PixelVecBase, P - 1L, HiTrueColor) != Center;
+    R = RR && Load (MandelInfo, Rp, PixelVecBase, P + 1L, HiTrueColor) != Center;
+    U = UU && Load (MandelInfo, Rp, PixelVecBase, P - ResX, HiTrueColor) != Center;
+    D = DD && Load (MandelInfo, Rp, PixelVecBase, P + ResX, HiTrueColor) != Center;
 	
     /* process the queue (which is actuaLLy a ring buffer) */
     if (L) AddQueue (QueueSize, P - 1L);
@@ -2771,7 +2813,7 @@ void Scan (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVec
 /* end boundary trace functions */
 
 /* DrawFractal() */
-uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, uint8 *GfxMem,
+uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
          uint32 *PixelVector, uint32 *RndMem, int16 BeepWhenReady)
 {
   uint32 StartSecs = NULL, EndSecs = NULL, DummyMicros = NULL;
@@ -2799,7 +2841,7 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
 //	UnlockBitMap (LOCK);
 
   	CurrentTime (&StartSecs, &DummyMicros); // start measuring time
-		
+		 
   	/* copy Z coordinates into global vars */
   	mpf_set (gimin, MandelInfo->GIMin);
   	mpf_set (grmin, MandelInfo->GRMin);
@@ -2827,20 +2869,31 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
       	// memset (RndMem, 0L, sizeof (uint32) * (MandelInfo->Width * MandelInfo->Height));
 
       	ClearMem (ARGBMem, (MandelInfo->Width * MandelInfo->Height) * 4);
+		ClearMem (RGBMem, (MandelInfo->Width * MandelInfo->Height) * 2);
       	ClearMem (GfxMem, (MandelInfo->Width * MandelInfo->Height));
       	ClearMem (RndMem, sizeof (uint32) * (MandelInfo->Width * MandelInfo->Height));
 
       	if (MandelInfo->Flags & HIGHPREC_BIT) CalcFractalMem_GMP (MandelInfo, Win, RndMem, HistMem);
       	else CalcFractalMem (MandelInfo, Win, PixelVector, RndMem, HistMem);
 
-      	if ((MandelInfo->Flags & HISTOGRAM_BIT) && (MandelInfo->Depth == MIN_DEPTH)) Histogram (MandelInfo, Win, GfxMem, RndMem, HistMem);
+      	if ((MandelInfo->Flags & HISTOGRAM_BIT) && (MandelInfo->Depth == MIN_DEPTH)) 
+		{
+		  	SNPrintf (BAR_STRING, sizeof (BAR_STRING), "Appling histogram coloring algorithm, it may take very long time on slow systems and for high iterations. Please wait...");
+  			SetWindowTitles (Win, (STRPTR) ~0, BAR_STRING);	
+			ShowTitle (Win->WScreen, TRUE);
+	
+			Histogram (MandelInfo, Win, GfxMem, RndMem, HistMem);
+			
+			if (!(TMASK & MASK)) ShowTitle (Win->WScreen, FALSE);
+		}
+		
       	else DisplayRndMem (MandelInfo, Win, RndMem, GfxMem);
     }
 
   	else
     {
-    	if (MandelInfo->Flags & HIGHPREC_BIT) CalcFractal_GMP (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVector, RndMem, HistMem);
-      	else CalcFractal (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVector, RndMem, HistMem);
+    	if (MandelInfo->Flags & HIGHPREC_BIT) CalcFractal_GMP (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVector, RndMem, HistMem);
+      	else CalcFractal (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVector, RndMem, HistMem);
     }
 
   	CurrentTime (&EndSecs, &DummyMicros); // stop timer
@@ -2898,10 +2951,12 @@ void LandscapeRender (struct MandelChunk *MandelInfo, struct Window *Win, uint32
 	}		
 }*/
 
+
 /* DisplayRndmem() */
 void DisplayRndMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *RndMem, uint8 *GfxMem)
 {
-  uint32 Rows, Cols, Color;
+  uint8 R, G, B; // A for alpha not needed due RndMem initizlized to 0
+  uint32 Rows, Cols, Color; 
 
   	if (MandelInfo->Depth == MAX_DEPTH)
     {
@@ -2911,16 +2966,45 @@ void DisplayRndMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *
         	{
           		if (Color = *(RndMem + ((Cols / 4) * MandelInfo->Width + (Rows / 4))))
         		{
-          			*(ARGBMEM + (Cols * MandelInfo->Width + Rows + 1)) = (uint8) lround ((sin (0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
-          			*(ARGBMEM + (Cols * MandelInfo->Width + Rows + 2)) = (uint8) lround ((sin (0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
-          			*(ARGBMEM + (Cols * MandelInfo->Width + Rows + 3)) = (uint8) lround ((sin (0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
-        		}
+					R = (uint8) lround ((sin (0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
+					G = (uint8) lround ((sin (0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
+					B = (uint8) lround ((sin (0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
+
+          			// *(ARGBMEM + (Cols * MandelInfo->Width + Rows + 0)) = A; // not needed
+          			*(ARGBMEM + (Cols * MandelInfo->Width + Rows + 1)) = R;
+          			*(ARGBMEM + (Cols * MandelInfo->Width + Rows + 2)) = G;
+          			*(ARGBMEM + (Cols * MandelInfo->Width + Rows + 3)) = B;
+        			/* ARGB_A8R8G8B8 aaaaaaaa rrrrrrrr gggggggg bbbbbbbb 4 bytes per pixel*/
+				} 	
         	}
     	}
 
       	WritePixelArray (ARGBMEM, 0, 0, MandelInfo->Modulo * 4, PIXF_A8R8G8B8, 
 							Win->RPort, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width, MandelInfo->Height);
     }
+	
+	if (MandelInfo->Depth == MID_DEPTH)
+    {
+      	for (Cols = MandelInfo->TopEdge; Cols < MandelInfo->Height * 2; Cols += 2)
+    	{
+      		for (Rows = MandelInfo->LeftEdge; Rows < MandelInfo->Width * 2; Rows += 2)
+        	{
+          		if (Color = *(RndMem + ((Cols / 2) * MandelInfo->Width + (Rows / 2))))
+        		{
+          			R = (uint8) lround ((sin (0.016f * (float64) Color + 0.20f) * 15.5f + 15.5f));
+					G = (uint8) lround ((sin (0.013f * (float64) Color + 0.15f) * 31.5f + 31.5f));  
+					B = (uint8) lround ((sin (0.010f * (float64) Color + 0.10f) * 15.5f + 15.5f));
+					
+					*(RGBMEM + (Cols * MandelInfo->Width + Rows + 0)) = (uint8) ((R << 3) | (G >> 3));
+					*(RGBMEM + (Cols * MandelInfo->Width + Rows + 1)) = (uint8) ((G << 5) | (B));
+					/* RGB_R5G6B5: rrrrrggg gggbbbbb 2 bytes per pixel */
+        		}
+        	}
+    	}
+
+      	WritePixelArray (RGBMEM, 0, 0, MandelInfo->Modulo * 2, PIXF_R5G6B5, 
+							Win->RPort, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width, MandelInfo->Height);
+    }	
 
   	else if (MandelInfo->Depth == MIN_DEPTH)
     {
@@ -2939,42 +3023,6 @@ void DisplayRndMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *
       	WriteChunkyPixels (Win->RPort, MandelInfo->LeftEdge, MandelInfo->TopEdge, 
 							MandelInfo->Width - 1, MandelInfo->Height - 1, GfxMem, MandelInfo->Modulo);
     }
-}
-
-/*  Histogram() */
-void Histogram (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *GfxMem, uint32 *RndMem, uint32 *HistogramMem)
-{
-  uint32 Iterations, Rows, Cols, Result, Total = 0L;
-  float64 Normalized;
-
-  	SNPrintf (BAR_STRING, sizeof (BAR_STRING), "Appling histogram coloring algorithm, it may take very long time on slow systems and for high iterations. Please wait...");
-  	SetWindowTitles (Win, (STRPTR) ~0, BAR_STRING);
-  	ShowTitle (Win->WScreen, TRUE);
-
-  	for (Iterations = 1L; Iterations <= MandelInfo->Iterations; Iterations++) // Iterations=number of pixels reached that iteration before bailout
-    	Total += *(HistogramMem + Iterations); // Total=sum of all stored values outside mandelbrot or julia set
-
-  	for (Cols = MandelInfo->TopEdge; Cols < MandelInfo->Height; Cols++)
-    {
-      	for (Rows = MandelInfo->LeftEdge; Rows < MandelInfo->Width; Rows++)
-    	{
-      		if (Result = *(RndMem + (Cols * MandelInfo->Width + Rows)))
-        	{
-				Normalized = 0.0f;
-			
-          		for (Iterations = 1L; Iterations <= Result; Iterations++)
-        		{
-          			Normalized += (float64) (*(HistogramMem + Iterations)) / (float64) Total;
-        		}
-
-          		*(GfxMem + (Cols * MandelInfo->Width + Rows)) = COLORREMAP (Normalized, 0.0f, 1.0f, 4.0f, 255.0f);
-        	}
-    	}
-    }
-
-  	if (!(TMASK & MASK)) ShowTitle (Win->WScreen, FALSE);
-  	WriteChunkyPixels (Win->RPort, MandelInfo->LeftEdge, MandelInfo->TopEdge,
-             MandelInfo->Width - 1, MandelInfo->Height - 1, GfxMem, MandelInfo->Modulo);
 }
 
 void DrawAxis (struct Window *Win, int16 StepX, int16 StepY)
@@ -3186,7 +3234,7 @@ void BlinkRect (struct Window *Win, const int16 LeftEdge, const int16 TopEdge,
 }
 
 /* Preview() */
-int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem,
+int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem, uint8 *RGBMem, 
      			uint32 *RndMem, uint8 *PixMem, uint8 *GfxMem, int16 Width, int16 Height)
 {
   struct Window *PreviewWin = NULL;
@@ -3217,7 +3265,7 @@ int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem,
            				(uint16) (ZOOMLINE [5] - ZOOMLINE [3] + 1));    	
 		
 		PutPointer (PreviewWin, 0, 0, 0, 0, 0, BUSY_POINTER);
-      	ELAPSEDTIME = DrawFractal (MANDChunk, PreviewWin, ARGBMem, PixMem, GfxMem, PixelVector, RndMem, FALSE);
+      	ELAPSEDTIME = DrawFractal (MANDChunk, PreviewWin, ARGBMem, RGBMem, PixMem, GfxMem, PixelVector, RndMem, FALSE);
       	ClearPointer (PreviewWin);
       	ShowTime (PreviewWin, CATSTR (TXT_PreviewTime), ELAPSEDTIME);
 
@@ -3435,7 +3483,7 @@ void SetMenuStart (struct ILBMInfo *Ilbm, int16 UndoBuffer)
     if (UndoBuffer > 0) OnMenu (Ilbm->win, FULLMENUNUM (2, 4, NOSUB));
     else OffMenu (Ilbm->win, FULLMENUNUM (2, 4, NOSUB));
 
-    if (Ilbm->Bmhd.nPlanes == MAX_DEPTH)
+    if ((Ilbm->Bmhd.nPlanes == MID_DEPTH) || (Ilbm->Bmhd.nPlanes == MAX_DEPTH))
 	{
         OffMenu (Ilbm->win, FULLMENUNUM (0, 8, NOSUB));
         OffMenu (Ilbm->win, FULLMENUNUM (0, 9, NOSUB));
@@ -3511,14 +3559,23 @@ int16 __attribute__ ((saveds)) SMFilterFunc (REG (a0, struct Hook *Hook), REG (a
   const DisplayInfoHandle DisplayHandle = FindDisplayInfo (DisplayID);
   struct DisplayInfo DisplayInfo;
   struct DimensionInfo DimensionInfo;
+  uint32 PixelFormat; // 32 bit PIXF_A8R8G8B8 - 16 bit PIXF_R5G6B5 - 8 bit PIXF_CLUT - Error PIXF_NONE
   int16 Accept = FALSE;
   
 	if ((DisplayHandle) && GetDisplayInfoData (DisplayHandle, (APTR) &DisplayInfo, sizeof (struct DisplayInfo), DTAG_DISP, DisplayID))
     {
         if (GetDisplayInfoData (DisplayHandle, (APTR) &DimensionInfo, sizeof (struct DimensionInfo), DTAG_DIMS, DisplayID))
         {
-            if ((DimensionInfo.MaxDepth == MIN_DEPTH) || (DimensionInfo.MaxDepth == MAX_DEPTH))
-				if ((DisplayInfo.PropertyFlags & PROPERTYMASK) == (PROPERTYFLAGS & PROPERTYMASK)) Accept = TRUE;
+            if ((DimensionInfo.MaxDepth == MIN_DEPTH) || (DimensionInfo.MaxDepth == MID_DEPTH) || (DimensionInfo.MaxDepth == MAX_DEPTH))
+			{				
+				if ((DisplayInfo.PropertyFlags & PROPERTYMASK) == (PROPERTYFLAGS & PROPERTYMASK))
+				{				
+					if ((DisplayInfo.PixelFormat == PIXF_CLUT) || (DisplayInfo.PixelFormat == PIXF_R5G6B5 ) || (DisplayInfo.PixelFormat == PIXF_A8R8G8B8))
+					{
+						Accept = TRUE;
+					}
+				}
+			}
         }
     }
 
@@ -3526,7 +3583,7 @@ int16 __attribute__ ((saveds)) SMFilterFunc (REG (a0, struct Hook *Hook), REG (a
 }
 
 /* ProcessMenu() */
-uint32 ProcessMenu (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, 
+uint32 ProcessMenu (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, 
 					uint32 *PixelVector, uint32 *RndMem, uint8 *GfxMem, uint16 Code)
 {
   struct MenuItem *Item = NULL;
@@ -3871,7 +3928,7 @@ uint32 ProcessMenu (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
 										MandelInfo->Flags |= TILING_BIT;
 									}
 
-                                    if (PickJuliaK (MandelInfo, Win, ARGBMem, PixMem, PixelVector, RndMem, GfxMem))
+                                    if (PickJuliaK (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVector, RndMem, GfxMem))
                                     {
                                         MandelInfo->Flags &= ~(JULIA_BIT);
                                     	MandelInfo->Flags |= MANDEL_BIT;
@@ -4358,7 +4415,7 @@ void CheckMenu (struct Window *Win)
 		OffMenu (Win, FULLMENUNUM (1, 7, 1));	
 	
 	/* Histogram */
-  	if ((MANDChunk->Flags & TURBO_BIT) && (GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MIN_DEPTH))
+  	if ((MANDChunk->Flags & TURBO_BIT) && (GetBitMapAttr(Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH))
 		OnMenu (Win, FULLMENUNUM (1, 7, 6));
 	else	
 		OffMenu (Win, FULLMENUNUM (1, 7, 6));
@@ -4500,7 +4557,7 @@ void ProcessMouse (struct Window *Win, int16 CurMouseX, int16 CurMouseY, int32 M
 
 /* Pick() */
 int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
-        			uint8 *ARGBMem, uint8 *PixMem, uint32 *PixelVector, uint32 *RndMem, uint8 *GfxMem)
+        			uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint32 *PixelVector, uint32 *RndMem, uint8 *GfxMem)
 {
   struct Window *JuliaPreviewWin = NULL;
   struct IntuiMessage *Message = NULL;
@@ -4569,7 +4626,7 @@ int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
                     mpf_swap (MandelInfo->GJKre, RCoord);
                     mpf_swap (MandelInfo->GJKim, ICoord);
                     WaitTOF ();
-                    DrawFractal (MandelInfo, JuliaPreviewWin, ARGBMem, PixMem, GfxMem, PixelVector, RndMem, FALSE);
+                    DrawFractal (MandelInfo, JuliaPreviewWin, ARGBMem, RGBMem, PixMem, GfxMem, PixelVector, RndMem, FALSE);
                     WaitTOF ();
                     mpf_swap (MandelInfo->GJKre, RCoord);
                     mpf_swap (MandelInfo->GJKim, ICoord);
@@ -4979,7 +5036,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 						
                 	case IDCMP_MENUPICK:
                     {
-						MyMenu = ProcessMenu (MandelInfo, Ilbm->win, ARGBMEM, PIXMEM, PIXELVECTOR, RNDMEM, GFXMEM, MyCode);
+						MyMenu = ProcessMenu (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, PIXELVECTOR, RNDMEM, GFXMEM, MyCode);
 
                         if (MyMenu & EXIT_MSG) break;
 
@@ -5207,7 +5264,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                     Ilbm->Bmhd.nPlanes = MandelInfo->Depth;
 									// if (MandelInfo->Depth == MAX_DEPTH)  MandelInfo->Flags |= TURBO_BIT;
 
-                                    Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+                                    Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
                                     CloseDisplay (Ilbm);
 
                                     if (!MakeDisplay (Ilbm))
@@ -5296,7 +5353,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 
                                 if (Ilbm->ParseInfo.iff = AllocIFF ())
                               	{
-                                    Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);								
+                                    Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);								
                                     if (LoadPalette (Ilbm, MYPATH)) DisplayError (Ilbm->win, TXT_ERR_LoadMandPal, 5L);
                                   	GetRGB32 (Ilbm->vp->ColorMap, 0, Ilbm->vp->ColorMap->Count, (PALETTE + 1L));
                                     FreeIFF (Ilbm->ParseInfo.iff);
@@ -5333,7 +5390,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                            		ClearZoomFrame (Ilbm->wrp);                                
  
                                 MYBITMAP = CopyBitMap (Ilbm->win, (uint16) Ilbm->win->LeftEdge, (uint16) Ilbm->win->TopEdge, (uint16) Ilbm->win->GZZWidth, (uint16) Ilbm->win->GZZHeight);
-                                Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+                                Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
                                 CloseDisplay (Ilbm);
 
                                 if (!(MakeDisplay (Ilbm)))
@@ -5390,7 +5447,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                 ModifyIDCMP (Ilbm->win, NULL);
                                 ClearMenuStrip (Ilbm->win);
                                 PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
-                                Preview (Ilbm->win, PIXELVECTOR, ARGBMEM, RNDMEM, PIXMEM, GFXMEM, Ilbm->win->GZZWidth, Ilbm->win->GZZHeight);
+                                Preview (Ilbm->win, PIXELVECTOR, ARGBMEM, RGBMEM, RNDMEM, PIXMEM, GFXMEM, Ilbm->win->GZZWidth, Ilbm->win->GZZHeight);
                                 ResetMenuStrip (Ilbm->win, MAINMENU);
                                 ModifyIDCMP (Ilbm->win, IDCMP_STANDARD);
                                 RestoreCoords (Ilbm->win);
@@ -5447,7 +5504,7 @@ REDRAW:
  
                            SetMenuStop (Ilbm);
                            PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
-                           ELAPSEDTIME = DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
+                           ELAPSEDTIME = DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
                            SetMenuStart (Ilbm, UNDOCOUNTER);
                            ShowTime (Ilbm->win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME);
                            break;
@@ -5463,7 +5520,7 @@ DRAW:
                                PasteBitMap (MYBITMAP, Ilbm->win, (uint16) Ilbm->win->LeftEdge, (uint16) Ilbm->win->TopEdge, (uint16) (ZOOMLINE [4] - ZOOMLINE [6] + 1), (uint16) (ZOOMLINE [5] - ZOOMLINE [3] + 1));
                                SetMenuStop (Ilbm);
                                PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
-                               ELAPSEDTIME = DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
+                               ELAPSEDTIME = DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
                                SetMenuStart (Ilbm, UNDOCOUNTER);
                                ShowTime (Ilbm->win, CATSTR (TXT_ZoomTime), ELAPSEDTIME);
                            }
@@ -5527,12 +5584,24 @@ void FreeBitMapSafety (struct BitMap *Bitmap)
 struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 Width, uint16 Height)
 {
   struct BitMap *NewBM = NULL;
-  int16 Depth;
+  int32 SrcType, DstType;
+  uint32 SrcDepth, SrcPixelFormat;
   
-    Depth = GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH);
-	NewBM = AllocBitMapTags (Width, Height, Depth, 
-								BMATags_Friend, Win->RPort->BitMap,	BMATags_Clear, TRUE,
-								BMATags_Displayable, TRUE, /*BMATags_Alignment, 16,*/
+  	SrcType = BLITT_BITMAP;
+	DstType = BLITT_BITMAP;
+	
+    SrcDepth = GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH);
+	SrcPixelFormat = GetBitMapAttr (Win->RPort->BitMap, BMA_PIXELFORMAT);
+	
+	if (SrcPixelFormat == PIXF_A8R8G8B8) SrcType = DstType = BLITT_ARGB32;
+	else if (SrcPixelFormat == PIXF_R5G6B5) SrcType = DstType = BLITT_RGB16;
+	
+	NewBM = AllocBitMapTags (Width, Height, SrcDepth, 
+								BMATags_Friend, Win->RPort->BitMap,	
+//								BMATags_PixelFormat, SrcPixelFormat,
+								BMATags_Clear, TRUE,
+								BMATags_Displayable, TRUE, 
+								BMATags_Alignment, 16L,
 								BMATags_ConstantBytesPerRow, TRUE, TAG_DONE);
 
     if (NewBM)
@@ -5544,7 +5613,7 @@ struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 W
 							BLITA_DestX, 0, BLITA_DestY, 0,
 							BLITA_Width, Width, BLITA_Height, Height,
 							BLITA_Source, Win->RPort->BitMap, BLITA_Dest, NewBM,
-							BLITA_SrcType, BLITT_BITMAP, BLITA_DestType, BLITT_BITMAP,
+//							BLITA_SrcType, SrcType, BLITA_DestType, DstType,
 							BLITA_Minterm, 0XC0, BLITA_Mask, 0XFF, TAG_DONE);
 														
         if (TMASK & MASK) ShowTitle (Win->WScreen, TRUE);
@@ -5558,19 +5627,25 @@ struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 W
 /* PasteBitMap() */
 int16 PasteBitMap (struct BitMap *SrcBM, struct Window *DstWin, uint16 SrcLeft, uint16 SrcTop, uint16 SrcWidth, uint16 SrcHeight)
 {
-  int16 Depth, Success = FALSE;
+  int16 Success = FALSE;
   uint16 DstWinWidth, DstWinHeight;
+  uint32 DstDepth, DstPixelFormat;
+  
   struct BitMap *TmpBM = NULL;
 
 	if (SrcBM && (MASK & BMASK))
     {
         DstWinWidth = ((DstWin->Flags & WFLG_GIMMEZEROZERO) ? DstWin->GZZWidth : DstWin->Width);
         DstWinHeight = ((DstWin->Flags & WFLG_GIMMEZEROZERO) ? DstWin->GZZHeight : DstWin->Height);
-        Depth = GetBitMapAttr (DstWin->RPort->BitMap, BMA_DEPTH);
+        DstDepth = GetBitMapAttr (DstWin->RPort->BitMap, BMA_DEPTH);
+		DstPixelFormat = GetBitMapAttr (DstWin->RPort->BitMap, BMA_PIXELFORMAT);
 
-		TmpBM = AllocBitMapTags (DstWinWidth, DstWinHeight, Depth,
-									BMATags_Friend, DstWin->RPort->BitMap, BMATags_Clear, TRUE,
-									BMATags_Displayable, TRUE, /*BMATags_Alignment, 16,*/
+		TmpBM = AllocBitMapTags (DstWinWidth, DstWinHeight, DstDepth,
+									BMATags_Friend, DstWin->RPort->BitMap, 
+//									BMATags_PixelFormat, DstPixelFormat,									
+									BMATags_Clear, TRUE,
+									BMATags_Displayable, TRUE, 
+									BMATags_Alignment, 16L,
 									BMATags_ConstantBytesPerRow, TRUE, TAG_DONE);
 
         if (TmpBM)
