@@ -675,7 +675,7 @@ int16 BoundaryDrawMem (struct MandelChunk *MandelInfo, struct Window *Win, uint3
 					{
 						if (MyCode != MENUNULL)
                     	{
-                   			if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG)							
+                   			if (ProcessMenu (MandelInfo, Win, 0, 0, 0, NULL, NULL, 0, MyCode) & STOP_MSG)							
 							{
                     			DisplayBeep (Win->WScreen);					  							
 								DeallocateBoundary();										
@@ -751,7 +751,7 @@ int16 BruteDrawMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 *
     	          	{
 						if (MyCode != MENUNULL)
     	            	{
-                   			if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG) 
+                   			if (ProcessMenu (MandelInfo, Win, 0, 0, 0, NULL, NULL, 0, MyCode) & STOP_MSG) 
 							{
 								DisplayBeep (Win->WScreen);
 								return TRUE;
@@ -818,7 +818,7 @@ static int16 RectangleDrawMem (struct MandelChunk *MandelInfo, struct Window *Wi
               	{
 					if (MyCode != MENUNULL)
                 	{
-                   		if (ProcessMenu (MandelInfo, Win, NULL, NULL, NULL, NULL, NULL, MyCode) & STOP_MSG)
+                   		if (ProcessMenu (MandelInfo, Win, 0, 0, 0, NULL, NULL, 0, MyCode) & STOP_MSG)
 						{
 							DisplayBeep (Win->WScreen);
 							return TRUE;
