@@ -26,7 +26,7 @@
 
 #define Lib_Version 50L
 
-#define VERSION  "FlashMandelNG 4.8 "
+#define VERSION  "FlashMandelNG 4.9 "
 #define AUTHOR   "Dino Papararo"
 #define COPYRIGHT_DATE "(c)1995-2023"
 #define ADDRESS  "Via Manzoni, 184\n  80123 Napoli\n  Italy"
@@ -104,7 +104,7 @@ void CloseDisplay (struct ILBMInfo *);
 int32 MakeDisplay (struct ILBMInfo *);
 int16 NewCoords (struct Window *,const int16,const int16,const int16,const int16);
 int16 DrawFrame (struct Window *,const int16,const int16,const int16,const int16);
-int16 Preview (struct Window *,uint8 *,uint8 *,uint32 *,uint8 *,uint8 *,int16,int16);
+int16 Preview (struct Window *,uint8 *,uint8*,uint8 *,uint32 *,uint8 *,uint8 *,int16,int16);
 int16 Orbit (struct Window *,int16,int16);
 void DrawAxis (struct Window *,int16,int16);
 int16 ShowOrbit (struct MandelChunk *,struct Window *,struct Window *);
@@ -124,8 +124,8 @@ void SetMenuStart (struct ILBMInfo *, int16 UndoBuffer);
 void SetMenuStop (struct ILBMInfo *);
 void DisplayRndMem (struct MandelChunk *,struct Window *,uint32 *,uint8 *);
 void Histogram (struct MandelChunk *,struct Window *,uint8 *,uint32 *,uint32 *);
-uint32 ProcessMenu (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint32 *,uint32 *,uint8 *,uint16);
-int16 PickJuliaK (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint32 *,uint32 *,uint8 *);
+uint32 ProcessMenu (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint8 *,uint16);
+int16 PickJuliaK (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8*,uint32 *,uint32 *,uint8 *);
 void Scan (struct MandelChunk *, struct RastPort *, uint32 *, uint32, uint32 , int16);
 uint32 Load (struct MandelChunk *, struct RastPort *, uint32 *, uint32, int16);
 void AddQueue (uint32, uint32);
@@ -141,9 +141,9 @@ struct Screen *OpenIdScreen (struct ILBMInfo *,int16,int16,int16,uint32);
 struct Window *OpenDisplay (struct ILBMInfo *,int16,int16,int16,uint32);
 struct BitMap *CopyBitMap (struct Window *,uint16,uint16,uint16,uint16);
 
-void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
+void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
 void CalcFractalMem (struct MandelChunk *, struct Window *, uint32 *, uint32 *, uint32 *);
-void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
+void CalcFractal_GMP (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
 void CalcFractalMem_GMP (struct MandelChunk *, struct Window *, uint32 *, uint32 *);
 
 #ifdef USE_ALTIVEC_MATH
@@ -160,10 +160,10 @@ uint32 MandelnSPE (uint32,int16,float64,float64);
 uint32 JulianSPE (uint32,int16,float64,float64,float64,float64);
 #endif /* USE_ALTIVEC_MATH */
 
-uint32 DrawFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,int16);
+uint32 DrawFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,int16);
 int16 ModifyPalette (struct Window *,int16,int16,uint32 *);
 int16 ScalePalette (struct Window *,uint32 *,uint32,uint32);
-int16 Fade (struct Window *,uint8 *,uint32 *,uint32,uint32,int16);
+int16 Fade (struct Window *,uint8 *,uint8 *,uint32 *,uint32,uint32,int16);
 int16 Cycle (struct Window *,uint32,int16);
 int32 QueryMandFile (struct ILBMInfo *,struct LoadSaveFMChunk *,STRPTR);
 int32 QueryMandPic (struct ILBMInfo *,struct LoadSaveFMChunk *,STRPTR);
@@ -193,16 +193,16 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define MAX_LEVELUNDO 1000L
 #define DEF_LEVELUNDO 50L
 
-#define INIT_DEF_RMIN      -2.5
-#define INIT_DEF_RMAX      +1.5
-#define INIT_DEF_IMIN      -1.125
-#define INIT_DEF_IMAX      +1.125
+#define INIT_DEF_RMIN      -2.5f
+#define INIT_DEF_RMAX      +1.5f
+#define INIT_DEF_IMIN      -1.125f
+#define INIT_DEF_IMAX      +1.125f
 #define INIT_DEF_RMINSTR   "-2.5"
 #define INIT_DEF_RMAXSTR   "+1.5"
 #define INIT_DEF_IMINSTR   "-1.125"
 #define INIT_DEF_IMAXSTR   "+1.125"
-#define INIT_DEF_JKRE      -0.72
-#define INIT_DEF_JKIM      -0.26
+#define INIT_DEF_JKRE      -0.72f
+#define INIT_DEF_JKIM      -0.26f
 #define INIT_DEF_JKRESTR   "-0.72"
 #define INIT_DEF_JKIMSTR   "-0.26"
 
@@ -230,6 +230,7 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define DEF_HEIGHT 720
 
 #define MIN_DEPTH 8
+#define MID_DEPTH 16
 #define MAX_DEPTH 24 // A8R8G8B8 Truecolor support
 #define DEF_DEPTH 8
 
@@ -318,7 +319,8 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define UMASK  0x400
 #define CMASK  0x800    // BRBitmap mask
 #define RMASK  0x1000   // RNDMEM mask
-#define AMASK  0x2000   // ARGBMEM mask
+#define DMASK  0x2000   // RGBMEM mask
+#define AMASK  0x4000   // ARGBMEM mask
 
 #define PROPERTYFLAGS (DIPF_IS_WB|DIPF_IS_RTG)
 #define PROPERTYMASK (DIPF_IS_DUALPF|DIPF_IS_PF2PRI|DIPF_IS_HAM|DIPF_IS_EXTRAHALFBRITE|DIPF_IS_PAL)
