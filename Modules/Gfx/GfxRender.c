@@ -36,10 +36,10 @@ uint32 ThreeRemap (const float64, const float64, const float64, const float64, c
 uint32 FourRemap (const float64, const float64, const float64, const float64, const float64);
 
 int16 CheckBox (struct RastPort *, const int16, const int16, const int16, const int16);
-static int16 RectangleDraw (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
-static int16 BruteDraw (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
-static int16 BoundaryDraw (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *);
-void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
+static int16 RectangleDraw (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
+static int16 BruteDraw (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *, uint8 *, uint32 *, uint32 *, uint32 *, const int16, const int16, const int16, const int16);
+static int16 BoundaryDraw (struct MandelChunk *, struct Window *, uint8 *, uint8 *, uint8 *,uint8 *, uint32 *, uint32 *, uint32 *);
+void CalcFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint32 *);
 
 static void MCPoint (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
 static void JCPoint (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
@@ -49,13 +49,13 @@ static void MVLine (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, 
 static void JHLine (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
 static void JVLine (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
 
-static void MCPoint24bit (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
-static void JCPoint24bit (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
+static void MCPoint16_32bit (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
+static void JCPoint16_32bit (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
 
-static void MHLine24bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
-static void MVLine24bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
-static void JHLine24bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
-static void JVLine24bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
+static void MHLine16_32bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
+static void MVLine16_32bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
+static void JHLine16_32bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
+static void JVLine16_32bit (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, const int16, const int16, const int16);
 
 extern uint8 *DONE;
 extern uint32 *DATA, *QUEUE;
@@ -157,8 +157,8 @@ static void MCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 	WritePixel (Rp, x, y);
 }
 
-/* MCPoint24bit() */
-static void MCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
+/* MCPoint16_32bit() */
+static void MCPoint16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 				 	uint32 *PixelVecBase, const int16 x, const int16 y)
 {
   uint8 r, g, b;
@@ -195,11 +195,11 @@ static void MCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   
 	if (Color)
 	{
-        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
+        r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
 		Color_ARGB |= (r << 16);
-		g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
+		g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
 		Color_ARGB |= (g << 8);
-		b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
+		b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
 		Color_ARGB |= b;
 	}
 
@@ -321,8 +321,8 @@ static void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	WriteChunkyPixels (Rp, x, b1, x, b2, PixelLine, 1);
 }
 
-/* MVLine24bit() */
-static void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, 
+/* MVLine16_32bit() */
+static void MVLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, 
 					uint32 *PixelVecBase, const int16 b1, const int16 b2, const int16 x)
 {
   uint8 r, g, b;
@@ -370,11 +370,11 @@ static void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	  
 		if (*(PixelVecBase + 0))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 0) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 0) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 0) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 	   
@@ -386,11 +386,11 @@ static void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	
 		if (*(PixelVecBase + 1))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 1) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 1) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 1) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -402,11 +402,11 @@ static void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	
 		if (*(PixelVecBase + 2))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 2) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 2) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 2) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -418,11 +418,11 @@ static void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	
 		if (*(PixelVecBase + 3))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 3) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 3) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 3) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 	    
@@ -449,11 +449,11 @@ static void MVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 
 		if (Color)
 		{
-	    	r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
+	    	r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 
@@ -577,8 +577,8 @@ static void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	WriteChunkyPixels (Rp, a1, y, a2, y, PixelLine, a2 - a1 + 1);
 }
 
-/* MHLine24bit() */
-static void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
+/* MHLine16_32bit() */
+static void MHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 					uint8 *PixelLine, uint32 *PixelVecBase, const int16 a1, const int16 a2, const int16 y)
 { 
   uint8 r, g, b;
@@ -625,11 +625,11 @@ static void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 
 		if (*(PixelVecBase + 0))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 0) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 0) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 0) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -641,11 +641,11 @@ static void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 
 		if (*(PixelVecBase + 1))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 1) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 1) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 1) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -657,11 +657,11 @@ static void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 
 		if (*(PixelVecBase + 2))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 2) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 2) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 2) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -673,11 +673,11 @@ static void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 		
 		if (*(PixelVecBase + 3))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 3) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 3) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 3) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -703,11 +703,11 @@ static void MHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 
       	if (Color)
       	{
-	        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 	  	}
 		
@@ -754,8 +754,8 @@ static void JCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32
 	WritePixel (Rp, x, y);
 }
 
-/* JCPoint24bit() */
-static void JCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
+/* JCPoint16_32bit() */
+static void JCPoint16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 	 				uint32 *PixelVecBase, const int16 x, const int16 y)
 {
   uint8 r,g,b;
@@ -789,11 +789,11 @@ static void JCPoint24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   
 	if (Color)
 	{
-        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
+        r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
 		Color_ARGB |= (r << 16);
-		g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
+		g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
 		Color_ARGB |= (g << 8);
-		b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
+		b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
 		Color_ARGB |= b;
 	}
 
@@ -904,8 +904,8 @@ static void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	WriteChunkyPixels (Rp, x, b1, x, b2, PixelLine, 1);
 }
 
-/* JVLine24bit() */
-static void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, uint32 *PixelVecBase, 
+/* JVLine16_32bit() */
+static void JVLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, uint32 *PixelVecBase, 
 					const int16 b1, const int16 b2, const int16 x)
 {
   uint8 r, g, b;
@@ -948,11 +948,11 @@ static void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	  
 		if (*(PixelVecBase + 0))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 0) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 0) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 0) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 	   
@@ -964,11 +964,11 @@ static void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	
 		if (*(PixelVecBase + 1))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 1) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 1) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 1) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -980,11 +980,11 @@ static void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	
 		if (*(PixelVecBase + 2))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 2) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 2) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 2) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -996,11 +996,11 @@ static void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 	
 		if (*(PixelVecBase + 3))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 3) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 3) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 3) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 	    
@@ -1027,11 +1027,11 @@ static void JVLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 
 		if (Color)
 		{
-	    	r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
+	    	r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 
@@ -1147,8 +1147,8 @@ static void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	WriteChunkyPixels (Rp, a1, y, a2, y, PixelLine, a2 - a1 + 1);
 }
 
-/* JHLine24bit() */
-static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, uint32 *PixelVecBase, 
+/* JHLine16_32bit() */
+static void JHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint8 *PixelLine, uint32 *PixelVecBase, 
 					const int16 a1, const int16 a2, const int16 y)
 { 
   uint8 r, g, b;
@@ -1190,11 +1190,11 @@ static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 
 		if (*(PixelVecBase + 0))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 0) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 0) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 0) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -1206,11 +1206,11 @@ static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 
 		if (*(PixelVecBase + 1))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 1) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 1) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 1) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -1222,11 +1222,11 @@ static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 
 		if (*(PixelVecBase + 2))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 2) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 2) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 2) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -1238,11 +1238,11 @@ static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 		
 		if (*(PixelVecBase + 3))
 		{
-	        r = (uint8) lround ((sin(0.016 * (float64) *(PixelVecBase + 3) + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) *(PixelVecBase + 3) + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) *(PixelVecBase + 3) + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 		}
 		    
@@ -1268,11 +1268,11 @@ static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 
       	if (Color)
       	{
-	        r = (uint8) lround ((sin(0.016 * (float64) Color + 0.20) * 127.5 + 127.5));
+	        r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013 * (float64) Color + 0.15) * 127.5 + 127.5));
+			g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010 * (float64) Color + 0.10) * 127.5 + 127.5));
+			b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
 			Color_ARGB |= b;
 	  	}
 		
@@ -1284,15 +1284,46 @@ static void JHLine24bit (struct MandelChunk *MandelInfo, struct RastPort *Rp, ui
 #endif
 }
 
-static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, uint8 *GfxMem,
+/*  Histogram() */
+void Histogram (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *GfxMem, uint32 *RndMem, uint32 *HistogramMem)
+{
+  uint32 Iterations, Rows, Cols, Result, Total = 0L;
+  float64 Normalized;
+
+  	for (Iterations = 1L; Iterations <= MandelInfo->Iterations; Iterations++) // Iterations=number of pixels reached that iteration before bailout
+    	Total += *(HistogramMem + Iterations); // Total=sum of all stored values outside mandelbrot or julia set
+
+  	for (Cols = MandelInfo->TopEdge; Cols < MandelInfo->Height; Cols++)
+    {
+      	for (Rows = MandelInfo->LeftEdge; Rows < MandelInfo->Width; Rows++)
+    	{
+      		if (Result = *(RndMem + (Cols * MandelInfo->Width + Rows)))
+        	{
+				Normalized = 0.0f;
+			
+          		for (Iterations = 1L; Iterations <= Result; Iterations++)
+        		{
+          			Normalized += (float64) (*(HistogramMem + Iterations)) / (float64) Total;
+        		}
+
+          		*(GfxMem + (Cols * MandelInfo->Width + Rows)) = COLORREMAP (Normalized, 0.0f, 1.0f, 4.0f, 255.0f);
+        	}
+    	}
+    }
+
+  	WriteChunkyPixels (Win->RPort, MandelInfo->LeftEdge, MandelInfo->TopEdge,
+             MandelInfo->Width - 1, MandelInfo->Height - 1, GfxMem, MandelInfo->Modulo);
+}
+
+static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
                     	uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem)
 {
   uint16 MyCode;
-  uint32 MyClass;  
+  uint32 MyClass;
   struct IntuiMessage *Message;
 
-  int16 Flag = 0, TrueColor;
-  uint32 P, QueueTail, QueueSize;
+  int16 Flag = 0, LoColor = 0, HiColor = 0, TrueColor = 0;
+  uint32 Color, P, QueueTail, QueueSize;
   uint32 X, Y, ResX, ResY;
  
  	ResX = MandelInfo->Width - MandelInfo->LeftEdge;
@@ -1301,35 +1332,37 @@ static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, u
 	QueueTail = 0L;
 	QueueSize = sizeof (int32) * ResX * ResY * 4L;
 	TrueColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MAX_DEPTH) ? 1 : 0;
+	HiColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MID_DEPTH) ? 1 : 0;	
+	LoColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH) ? 1 : 0;
 	
 	/* allocation check */
 	if (! AllocateBoundary (ResX, ResY)) return FALSE;
     
 	/* (1) begin by adding the screen edges into the queue */
-    for (Y = 0L; Y < ResY; ++Y) 
+    for (Y = 0L; Y < ResY; ++Y)
 	{
-        AddQueue (QueueSize, Y * ResX /*+ 0L*/);		
+        AddQueue (QueueSize, Y * ResX /*+ 0L*/);
         AddQueue (QueueSize, Y * ResX + (ResX - 1L));
     }
 	
-    for (X = 1L; X < (ResX - 1L); ++X) 
+    for (X = 1L; X < (ResX - 1L); ++X)
 	{
         AddQueue (QueueSize, /*0L*Width* +*/ X);
         AddQueue (QueueSize, (ResY - 1L) * ResX + X);
     }
 	
-	/* (2) process the queue (which is actually a ring buffer) */	
-    while (QueueTail != QueueHead) 
+	/* (2) process the queue (which is actually a ring buffer) */
+    while (QueueTail != QueueHead)
 	{
         if ((QueueHead <= QueueTail) || (++Flag & 3))
 		{
             P = QUEUE [QueueTail++];
             if (QueueTail == QueueSize) QueueTail = 0L;
-        } 
+        }
 		
 		else P = QUEUE [--QueueHead];
         
-		Scan (MandelInfo, Win->RPort, PixelVecBase, QueueSize, P, TrueColor);
+		Scan (MandelInfo, Win->RPort, PixelVecBase, QueueSize, P, TrueColor || HiColor);
 		
 		if (Win->UserPort->mp_SigBit)
   		{
@@ -1341,11 +1374,11 @@ static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, u
 
         		switch (MyClass)
 				{
-        			case IDCMP_MENUPICK : 
+        			case IDCMP_MENUPICK:
 					{
 						if (MyCode != MENUNULL)
                     	{
-							if (ProcessMenu (MandelInfo, Win, ARGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
+							if (ProcessMenu (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
 							{
                     			DisplayBeep (Win->WScreen);					  							
 								DeallocateBoundary();										
@@ -1389,15 +1422,15 @@ static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, u
         	if (! (DONE [P + 1L] & Loaded)) 
 			{
             	DATA [P + 1L] = DATA [P];
-	
-				if (TrueColor) WritePixelColor (Win->RPort, (P + 1L) % ResX, (P + 1L) / ResX, DATA [P]);
-					
-				else
+				
+				if (TrueColor || HiColor) WritePixelColor (Win->RPort, (P + 1L) % ResX, (P + 1L) / ResX, DATA [P]);
+				
+				else if (LoColor)
 				{			
 					SetAPen (Win->RPort, DATA [P]);			
 					WritePixel (Win->RPort, (P + 1L) % ResX, (P + 1L) / ResX);
-				}
-					
+				}						
+				
 				DONE [P + 1L] |= Loaded;
         	}
 		}
@@ -1408,8 +1441,8 @@ static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, u
 }
 
 /* BruteDraw() */
-static int16 BruteDraw (struct MandelChunk * MandelInfo, struct Window * Win, uint8 * ARGBMem, uint8 * PixMem, uint8 * GfxMem,
-                    	uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
+static int16 BruteDraw (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
+                    	uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
 {
   struct IntuiMessage *Message = NULL;
   int16 helpy;
@@ -1432,7 +1465,7 @@ static int16 BruteDraw (struct MandelChunk * MandelInfo, struct Window * Win, ui
     	          	{
 						if (MyCode != MENUNULL)
     	            	{
-    	               		if (ProcessMenu (MandelInfo, Win, ARGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
+    	               		if (ProcessMenu (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
 							{
 								DisplayBeep (Win->WScreen);
 								return TRUE;
@@ -1507,8 +1540,8 @@ int16 CheckBox (struct RastPort *Rp, const int16 a1, const int16 b1, const int16
 }	
 
 /* RectangleDraw() */
-static int16 RectangleDraw (struct MandelChunk * MandelInfo, struct Window * Win, uint8 * ARGBMem, uint8 * PixMem, uint8 * GfxMem,
-                    	uint32 * PixelVecBase, uint32 * RenderMem, uint32 * HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
+static int16 RectangleDraw (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
+                    	uint32 *PixelVecBase, uint32 *RenderMem, uint32 * HistogramMem, const int16 a1, const int16 b1, const int16 a2, const int16 b2)
 {
   struct IntuiMessage *Message = NULL;
   int16 helpx, helpy, halfx, halfy;
@@ -1534,7 +1567,7 @@ static int16 RectangleDraw (struct MandelChunk * MandelInfo, struct Window * Win
               	{
 					if (MyCode != MENUNULL)
                 	{
-                   		if (ProcessMenu (MandelInfo, Win, ARGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
+                   		if (ProcessMenu (MandelInfo, Win, ARGBMem, RGBMem, PixMem, PixelVecBase, RenderMem, GfxMem, MyCode) & STOP_MSG) 
 						{
 							DisplayBeep (Win->WScreen);
 							return TRUE;
@@ -1600,32 +1633,32 @@ static int16 RectangleDraw (struct MandelChunk * MandelInfo, struct Window * Win
     (*H_LINE) (MandelInfo, Win->RPort, PixMem, PixelVecBase, a1 + 1, halfx - 1, halfy); // don't recalc center point
     (*V_LINE) (MandelInfo, Win->RPort, PixMem, PixelVecBase, b1 + 1, halfy - 1, halfx); // don't recalc center point
 
-    if (RectangleDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE; // rectangle 1 sx upper
+    if (RectangleDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, b1, halfx, halfy)) return TRUE; // rectangle 1 sx upper
     (*H_LINE) (MandelInfo, Win->RPort, PixMem, PixelVecBase, halfx + 1, a2 - 1, halfy);
 
-    if (RectangleDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE; // rectangle 2 dx upper
+    if (RectangleDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, b1, a2, halfy)) return TRUE; // rectangle 2 dx upper
     (*V_LINE) (MandelInfo, Win->RPort, PixMem, PixelVecBase, halfy + 1, b2 - 1, halfx);
 
-    if (RectangleDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE; // rectangle 3 sx bottom
-    if (RectangleDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE; // rectangle 4 dx bottom
+    if (RectangleDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, a1, halfy, halfx, b2)) return TRUE; // rectangle 3 sx bottom
+    if (RectangleDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, halfx, halfy, a2, b2)) return TRUE; // rectangle 4 dx bottom
 
     return FALSE;
 }
 
 /* CalcFractal() */
-void CalcFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *PixMem, uint8 *GfxMem,
+void CalcFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
          			uint32 *PixelVecBase, uint32 *RenderMem, uint32 *HistogramMem)
 {
 	if (MandelInfo->Flags & JULIA_BIT)
   	{
-      	if (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MAX_DEPTH)
+      	if ((GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MAX_DEPTH) ||	(GetBitMapAttr(Win->RPort->BitMap,BMA_DEPTH) == MID_DEPTH))
 		{
-          	C_POINT = JCPoint24bit;
-          	H_LINE = JHLine24bit;
-          	V_LINE = JVLine24bit;
+          	C_POINT = JCPoint16_32bit;
+          	H_LINE = JHLine16_32bit;
+          	V_LINE = JVLine16_32bit;
       	}
       
-      	else
+       	else if (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH)      	
       	{
            	C_POINT = JCPoint;
             H_LINE = JHLine;
@@ -1635,15 +1668,15 @@ void CalcFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARG
 
   	else if (MandelInfo->Flags & MANDEL_BIT)
   	{  
-           	if (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MAX_DEPTH)
+           	if ((GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MAX_DEPTH) || (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MID_DEPTH))
         	{
-          		C_POINT = MCPoint24bit;
-           		H_LINE = MHLine24bit;
-           		V_LINE = MVLine24bit;
+          		C_POINT = MCPoint16_32bit;
+           		H_LINE = MHLine16_32bit;
+           		V_LINE = MVLine16_32bit;
           	}
-      
-          	else
-          	{
+ 			
+          	else if (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH)
+			{
               	C_POINT = MCPoint;
               	H_LINE = MHLine;
            		V_LINE = MVLine;
@@ -1661,7 +1694,7 @@ void CalcFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARG
 
 	if ((MandelInfo->Flags & BOUNDARY_BIT) && (MandelInfo->Flags & MANDEL_BIT))
 	{ 
-		BoundaryDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem);
+		BoundaryDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem);
 	}
     
 	else if (MandelInfo->Flags & TILING_BIT)
@@ -1672,13 +1705,13 @@ void CalcFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARG
   		(*V_LINE) (MandelInfo, Win->RPort, PixMem, PixelVecBase, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->LeftEdge);
   		(*V_LINE) (MandelInfo, Win->RPort, PixMem, PixelVecBase, MandelInfo->TopEdge + 1, MandelInfo->Height - 2, MandelInfo->Width - 1);
 		// start divide et impera recursively!
-  		RectangleDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge,
+  		RectangleDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge,
          				MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
 	}
 	
 	else if (MandelInfo->Flags & BRUTE_BIT)
 	{
-		BruteDraw (MandelInfo, Win, ARGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge,
+		BruteDraw (MandelInfo, Win, ARGBMem, RGBMem, PixMem, GfxMem, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge,
     			MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
 	}
 }
