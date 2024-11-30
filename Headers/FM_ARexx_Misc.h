@@ -36,13 +36,13 @@
 #include <classes/arexx.h>
 
 /* Prototypes */
-BOOL LaunchARexxScript(struct ILBMInfo *Ilbm);
-BOOL CreateARexxMenu(struct DiskObject *dobj);
-BOOL SetARexxMenu(struct ILBMInfo *Ilbm);
-void RemoveARexxMenu(struct ILBMInfo *Ilbm);
-void FreeARexxMenu(void);
-void HandleARexxMenu(struct ILBMInfo *Ilbm, UWORD MenuCode);
-void LaunchIt(struct ILBMInfo *Ilbm, char *cmd, char *dir);
+BOOL LaunchARexxScript (struct ILBMInfo *Ilbm);
+BOOL CreateARexxMenu (struct DiskObject *dobj);
+BOOL SetARexxMenu (struct ILBMInfo *Ilbm);
+int16 RemoveARexxMenu (struct ILBMInfo *Ilbm);
+int16 FreeARexxMenu (void);
+void HandleARexxMenu (struct ILBMInfo *Ilbm, UWORD MenuCode);
+void LaunchIt (struct ILBMInfo *Ilbm, char *cmd, char *dir);
 
 /* Defines */
 #define REXX_MENU_ID 0x10000000

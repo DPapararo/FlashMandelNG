@@ -26,11 +26,15 @@
 
 #define Lib_Version 50L
 
-#define VERSION  "FlashMandelNG 4.9 "
-#define AUTHOR   "Dino Papararo"
-#define COPYRIGHT_DATE "(c)1995-2023"
-#define ADDRESS  "Via Manzoni, 184\n  80123 Napoli\n  Italy"
+#define VERSION  "FlashMandelNG 5.1 "
+#define AUTHOR   "Dino Papararo "
+#define COPYRIGHT_DATE "(c)1995-2024 "
+#define ADDRESS  "Via Manzoni, 184\n  80123 Napoli\n  Italy "
 #define EMAIL    "E-Mail address:\n  Dino.Papararo@GMail.Com\n\n"
+
+#define ARG_TEMPLATE "BENCHMARKMODE/T"
+#define ARG_MAX  4
+#define OPT_BENCHMARK 0
 
 #define MAX_PRECISION_BITS 4096
 #define MIN_PRECISION_BITS 32
@@ -97,24 +101,24 @@ int16 ClearZoomFrame (struct RastPort *);
 void PutPointer (struct Window *,uint16 *,int16,int16,int16,int16,uint8);
 int32 About (struct Window *);
 void AdjustRatio (mpf_t *,mpf_t *,mpf_t *,mpf_t *,int16,int16,int16);
-void ShowTime (struct Window *,STRPTR,int32);
-uint32 IntegerGad (struct Window *,STRPTR,STRPTR,STRPTR,uint32);
+int16 ShowTime (struct Window *,STRPTR,int32,int16);
+int32 IntegerGad (struct Window *,STRPTR,STRPTR,STRPTR,uint32);
 int32 Choice (struct Window *,STRPTR,STRPTR);
 void CloseDisplay (struct ILBMInfo *);
 int32 MakeDisplay (struct ILBMInfo *);
 int16 NewCoords (struct Window *,const int16,const int16,const int16,const int16);
 int16 DrawFrame (struct Window *,const int16,const int16,const int16,const int16);
-int16 Preview (struct Window *,uint8 *,uint8*,uint8 *,uint32 *,uint8 *,uint8 *,int16,int16);
-int16 Orbit (struct Window *,int16,int16);
+int32 Preview (struct Window *,uint8 *,uint8*,uint8 *,uint32 *,uint8 *,uint8 *,int16,int16);
+int32 Orbit (struct Window *,int16,int16);
 void DrawAxis (struct Window *,int16,int16);
-int16 ShowOrbit (struct MandelChunk *,struct Window *,struct Window *);
+int32 ShowOrbit (struct MandelChunk *,struct Window *,struct Window *);
 int16 CheckBox (struct RastPort *, const int16, const int16, const int16, const int16);
 int16 CheckBoxMem (struct MandelChunk *, uint32 *, const int16, const int16, const int16, const int16);
 uint32 CalcMandelnOrbit (int16 *,uint32,int16,int16,int16,float64,float64);
 uint32 CalcMandelnOrbit_GMP (int16 *,uint32,int16,int16,int16,mpf_t,mpf_t);
 uint32 CalcJulianOrbit (int16 *,uint32,int16,int16,int16,float64,float64,float64,float64);
 uint32 CalcJulianOrbit_GMP (int16 *,uint32,int16,int16,int16,mpf_t,mpf_t,mpf_t,mpf_t);
-int16 ShowCoords (struct Window *);
+int32 ShowCoords (struct Window *);
 int32 SaveCoords (struct Window *);
 int32 RestoreCoords (struct Window *);
 int16 FileRequest (struct Window *,STRPTR,STRPTR,int16,int16);
@@ -125,18 +129,18 @@ void SetMenuStop (struct ILBMInfo *);
 void DisplayRndMem (struct MandelChunk *,struct Window *,uint32 *,uint8 *);
 void Histogram (struct MandelChunk *,struct Window *,uint8 *,uint32 *,uint32 *);
 uint32 ProcessMenu (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,uint8 *,uint16);
-int16 PickJuliaK (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8*,uint32 *,uint32 *,uint8 *);
+int32 PickJuliaK (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8*,uint32 *,uint32 *,uint8 *);
 void Scan (struct MandelChunk *, struct RastPort *, uint32 *, uint32, uint32 , int16);
 uint32 Load (struct MandelChunk *, struct RastPort *, uint32 *, uint32, int16);
 void AddQueue (uint32, uint32);
-int16 AllocateBoundary (uint32, uint32);
+int32 AllocateBoundary (uint32, uint32);
 void DeallocateBoundary (void); 
 void CheckMenu (struct Window *);
 void ProcessMouse (struct Window *,int16,int16,int32);
 uint32 HandleEvents (struct ILBMInfo *,struct MandelChunk *);
 int32 WinDump (struct Window *);
 int32 MainProg (struct ILBMInfo *,struct MandelChunk *);
-int16 PasteBitMap (struct BitMap *,struct Window *,uint16,uint16,uint16,uint16);
+int32 PasteBitMap (struct BitMap *,struct Window *,uint16,uint16,uint16,uint16);
 struct Screen *OpenIdScreen (struct ILBMInfo *,int16,int16,int16,uint32);
 struct Window *OpenDisplay (struct ILBMInfo *,int16,int16,int16,uint32);
 struct BitMap *CopyBitMap (struct Window *,uint16,uint16,uint16,uint16);
@@ -158,6 +162,9 @@ uint32 Julian (uint32,int16,float64,float64,float64,float64);
 #elif USE_SPE_MATH
 uint32 MandelnSPE (uint32,int16,float64,float64);
 uint32 JulianSPE (uint32,int16,float64,float64,float64,float64);
+unsigned MandelnSPE_Core (uint32,int16,int32 *,int32 *);
+unsigned JulianSPE_Core (uint32,int16,int32 *,int32 *,int32 *,int32 *);
+
 #endif /* USE_ALTIVEC_MATH */
 
 uint32 DrawFractal (struct MandelChunk *,struct Window *,uint8 *,uint8 *,uint8 *,uint8 *,uint32 *,uint32 *,int16);
@@ -213,7 +220,7 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define DEF_MONITOR       ~0
 #define DEF_MONITORSTR    "~0"
 
-#define DEF_USERNAMESTR "Amiga rulez!"
+#define DEF_USERNAMESTR " Amiga rulez! "
 
 #define DEF_FONTNAMESTR "topaz.font"
 #define DEF_FONTSIZE 8
@@ -221,13 +228,21 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define MIN_FONTSIZE 8
 
 #define MARGIN 25 /* margin in pixels */
-#define MIN_WIDTH 800
-#define MAX_WIDTH 16368
-#define DEF_WIDTH 1280
+#define MIN_GDW_WIDTH 640 /* for Gadtools windows */
+#define MAX_GDW_WIDTH 1280
+#define DEF_GDW_WIDTH 800
 
-#define MIN_HEIGHT 600
+#define MIN_GDW_HEIGHT 480
+#define MAX_GDW_HEIGHT 720
+#define DEF_GDW_HEIGHT 600
+
+#define MIN_WIDTH 640
+#define MAX_WIDTH 16368
+#define DEF_WIDTH 800
+
+#define MIN_HEIGHT 480
 #define MAX_HEIGHT 16384
-#define DEF_HEIGHT 720
+#define DEF_HEIGHT 600
 
 #define MIN_DEPTH 8
 #define MID_DEPTH 16
@@ -276,6 +291,7 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 
 #define VAN_ESC     0x01B
 
+#define BENCHREPEATTIMES 20
 #define BLINKTIMES 5L
 
 #define ONESEC (50L * 1L)
@@ -284,8 +300,8 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define SHIFTRIGHT FALSE
 #define SHIFTLEFT TRUE
 
-#define WINDOW_X_OFFSET 55
-#define WINDOW_Y_OFFSET 65
+#define WINDOW_X_OFFSET 25
+#define WINDOW_Y_OFFSET 25
 
 #define INITIALZOOM  18
 
@@ -366,7 +382,7 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 
 #define DATE __DATE__
 
-#define HISTOGRAM_BIT (1L << 9)
+#define HISTOGRAM_BIT  (1L << 9)
 #define TITLE_BIT     (1L << 10)
 #define BRUTE_BIT     (1L << 11)
 #define TILING_BIT    (1L << 12)
