@@ -259,7 +259,7 @@
 #define Pal_TXT_ShiftLeft_STR "_<<"
 #define Pal_TXT_ShiftRight_STR "_>>"
 #define Pal_TXT_Undo_STR "_Undo"
-#define Info_TXT_Info_STR "\nFlashMandelNG 4.9  (c)1995-2023\n\n  Snail address:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail address:\n  Dino.Papararo@GMail.Com\n\n\n****************************\n*This program is Giftware !!*\n****************************\n"
+#define Info_TXT_Info_STR "\nFlashMandelNG 5.0  (c)1995-2024\n\n  Snail address:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail address:\n  Dino.Papararo@GMail.Com\n\n\n****************************\n*This program is Giftware !!*\n****************************\n"
 #define Info_TXT_OK_STR "_OK"
 #define Info_TXT_More_STR "_More..."
 #define Work_TXT_Workgroup_STR "\nGreetings and thanks to:\n\n  Edgar Schwan (Co-Author)\n\n\nBottomless wonders spring from simple rules, \nwhich are repeated without end.\nBenoit Mandelbrot.\n\nAmiga forever!\n\n\n\n\n"

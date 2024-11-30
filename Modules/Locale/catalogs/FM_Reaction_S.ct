@@ -1,4 +1,4 @@
-## version $VER: FlashMandelNG.catalog 4.9 (19.Nov.2023)
+## version $VER: FlashMandelNG.catalog 5.1 (11.Nov.2024)
 ## codeset 0
 ## language spanish
 ;
@@ -56,8 +56,8 @@ _Deshacer
 ; _Undo
 ;
 Info_TXT_Info
-\n  FlashMandelNG 4.9 (c)1995-2023\n\n  Dirección postal:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail:\n  Dino.Papararo@GMail.Com\n\n\n*********************************\n* ¡Este programa es Giftware !! *\n*********************************\n
-; \nFlashMandelNG 4.9 (c)1995-2023\n\n  Snail address:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail address:\n  Dino.Papararo@GMail.Com\n\n\n*******************************\n* This program is Giftware !! *\n*******************************\n
+\n  FlashMandelNG 5.1 (c)1995-2024\n\n  Dirección postal:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail:\n  Dino.Papararo@GMail.Com\n\n\n*********************************\n* ¡Este programa es Giftware !! *\n*********************************\n
+; \nFlashMandelNG 5.1 (c)1995-2024\n\n  Snail address:\n  Dino Papararo\n  Via Manzoni, 184\n  80123 Napoli\n  Italia\n\n\n  E-Mail address:\n  Dino.Papararo@GMail.Com\n\n\n*******************************\n* This program is Giftware !! *\n*******************************\n
 ;
 Info_TXT_OK
 _Aceptar
