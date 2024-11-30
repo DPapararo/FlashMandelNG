@@ -1,8 +1,8 @@
 /*
    MandelnAltivec main loop, C function for OS4 version
-   $Ver 1.5 Dino Papararo 03 Feb 2019
-   all altivec functions are tested with a powermac g5 quad and xcode 3 with asciimandelbrot test program :-)
-   Ver 1.6 Dino Papararo 16 Jan 2020 normalized types, small changes to loops
+   
+   Ver 1.5 all altivec functions are tested with a powermac g5 quad and xcode 3 with asciimandelbrot test program :-) - Dino Papararo 03 Feb 2019
+   Ver 1.6 normalized types, small changes to loops - Dino Papararo 16 Jan 2020
    Ver 2.1 reworked code to look like asm handmade code present in mandelnppc.s - Dino Papararo 20 Jan 2020
    Ver 2.2 added periodicity check - Dino Papararo 19 Apr 2020
    Ver 2.3 small improvements - Dino Papararo 05 May 2020
@@ -10,11 +10,14 @@
    Ver 2.5 using intrinsics for vector assignments - Dino Papararo 15 May 2020
    Ver 2.6 improved periodicity, implemented simpler and faster method - Dino Papararo 23 Dic 2020
    Ver 2.7 rearranged datatypes - Dino Papararo 5 Jan 2021
-   Ver 2.8 removed external Pixel vector - Dino Papararo 16 Jan 2021
-   Ver 2.9 Rearranged some instructions to gain some cpu cycles - Dino Papararo 02 Dic 2021
+   Ver:2.8 removed external Pixel vector - Dino Papararo 16 Jan 2021
+   Ver:2.9 Rearranged some instructions to gain some cpu cycles - Dino Papararo 02 Dic 2021
    Ver:3.0 Fixed vec_cmpgt and removed periodicity check and int16 controls - Dino Papararo 04 Jun 2023
    Ver:3.1 readded int16 controls to speedup - Dino Papararo 28 jul 2023
-   $Ver:3.3 values from/to memory are loaded/stored at star/end od calculatione - Dino Papararo 05 nov 2023   
+   Ver:3.3 values from/to memory are loaded/stored at star/end od calculatione - Dino Papararo 05 nov 2023   
+   Ver:3.4 initialized VZr2 and VZi2 to zero - Dino Papararo 11 Feb 2024
+   Ver:3.5 reimplemented old code, faster and more precise - Dino Papararo 25 mar 2024
+   $Ver:3.6 Fixed regression, no more scalar now use higly optimized altivec code with periodicity check - Dino Papararo 08 nov 2024
 */
 
 #pragma altivec_codegen on
@@ -24,74 +27,83 @@
 #include <altivec.h>
 #include <exec/types.h>
 
+#define MAXPERIOD 25 // intervallo di controllo di periodicità 
+#define TOLERANCE 0.00001f // tolerance for precision check - set from 1e-5 to 1e-15 
+// 0.0000610352 is lowest decimal numder with float16 altivec
+
 uint32 MandelnAltivec (uint32 *PixelVecBase, uint32 Iterations, int16 Power,
-                        float32 Cre, float32 Cim, float32 Cre1, float32 Cim1,
-                        float32 Cre2, float32 Cim2, float32 Cre3, float32 Cim3)
+                      float32 Cre, float32 Cim, float32 Cre1, float32 Cim1,
+                      float32 Cre2, float32 Cim2, float32 Cre3, float32 Cim3)
 {
-  register int16 Exp, ll = 0, lh = 0, hl = 0, hh = 0;
+    int16 Exp, PLoop;
+    
+    vector bool int VMask, VPeriodicityMask;
+    vector bool int VExitMask = (vector bool int) vec_splat_u32 (0L); // Vettore per memorizzare i pixel che hanno superato il limite    
+    const vector bool int VNegOne = (vector bool int) vec_splat_u32 (-1L);
 
-  vector bool int VMask;
-  const vector bool int VMask_ll = ((vector bool int) { 0xffffffffffffffff, 0L, 0L, 0L });
-  const vector bool int VMask_lh = ((vector bool int) { 0L, 0xffffffffffffffff, 0L, 0L });
-  const vector bool int VMask_hl = ((vector bool int) { 0L, 0L, 0xffffffffffffffff, 0L });
-  const vector bool int VMask_hh = ((vector bool int) { 0L, 0L, 0L, 0xffffffffffffffff });
+   	vector unsigned int VIIterations = (vector unsigned int) {Iterations, Iterations, Iterations, Iterations};
+    vector unsigned int VIResult = vec_splat_u32 (0L);
+	const vector unsigned int VIZero = vec_splat_u32 (0L);
+	const vector unsigned int VIOne = vec_splat_u32 (1L);
 
-  vector float VZr, VZi, VZi2, VZr2, VDist;
- 
-  const vector float VCre  = ((vector float) { Cre, Cre1, Cre2, Cre3 });
-  const vector float VCim = ((vector float) { Cim, Cim1, Cim2, Cim3 });
-  const vector float VMaxDist = vec_ctf (vec_splat_u32 (4L), 0); /* ((vector float) { 4.0, 4.0, 4.0, 4.0 }); */
-  const vector float VFZero  = vec_xor (VFZero, VFZero); 
-     
-  const vector unsigned int VIOne = vec_splat_u32 (1L); 
+    vector float VZr, VZi, VZr2, VZi2x2, VZrZi, VDist, VPZr, VPZi, VDiffZr, VDiffZi;
+    const vector float VCre = (vector float) {Cre, Cre1, Cre2, Cre3};
+    const vector float VCim = (vector float) {Cim, Cim1, Cim2, Cim3};
+    const vector float VMaxDist = (vector float) {4.0f, 4.0f, 4.0f, 4.0f};
+    const vector float VFZero = (vector float) vec_splat_u32 (0L);
+    const vector float VTolerance = (vector float) vec_splats (TOLERANCE);
 
-  vector unsigned int VIIterations = ((vector unsigned int) { Iterations, Iterations, Iterations, Iterations }); 
-  vector unsigned int VIResult = vec_splat_u32 (0L);
+    VZr = VCre;
+    VZi = VCim;
+	PLoop = MAXPERIOD;
+	VPZr = VCre;
+	VPZi = VCim;
 
-    VZr = vec_or (VFZero, VCre); /* faster than load */
-    VZi = vec_or (VFZero, VCim);
-	    
-    do
-    {
-      	for (Exp = Power; Exp > 0; Exp--)
+    do 
+	{
+     	for (Exp = Power; Exp > 0; Exp--)
 		{
-			VZi2 = vec_madd (VZi, VZi, VFZero);
-	  		VZr2 = vec_madd (VZr, VZr, VFZero);
-	  		VZi = vec_madd (VZi, VZr, VFZero);
-	  		VZr = vec_sub (VZr2, VZi2);
-	  		VZi = vec_add (VZi, VZi);
+	  		VZr2 = vec_madd (VZr, VZr, VFZero); // Zr^2
+			VZi2x2 = vec_madd (VZi, VZi, VFZero);// Zi^2			
+	  		VZrZi = vec_madd (VZi, VZr, VFZero); // Zi * Zr
+	  		VZr = vec_sub (VZr2, VZi2x2); // Zr = Zr^2 - Zi^2
+	  		VZi = vec_add (VZrZi, VZrZi); // Zi = 2 * Zi * Zr
+		}
+		// Calcola la distanza Zr^2 + Zi^2
+        VDist = vec_add (VZr2, VZi2x2);	
+		// Verifica se ogni pixel supera il limite di distanza
+        VMask = vec_cmpgt (VDist, VMaxDist); 
+		// Aggiorna il risultato solo per i pixel che superano il limite
+        VIResult = vec_sel (VIResult, VIIterations, VMask);
+		// Mantiene traccia di quali pixel sono usciti
+        VExitMask = vec_or (VExitMask, VMask);
+		// Se tutti i pixel hanno superato il limite, usciamo dal ciclo
+        if (vec_all_eq (VExitMask, VNegOne)) break;						
+		// Controllo di periodicità
+       	if (PLoop-- <= 0) 
+		{
+			VDiffZr = vec_abs (vec_sub (VZr, VPZr));
+			VDiffZi = vec_abs (vec_sub (VZi, VPZi));		
+            VPeriodicityMask = vec_and (vec_cmplt (VDiffZr, VTolerance), vec_cmplt (VDiffZi, VTolerance));
+            if (vec_all_eq (VPeriodicityMask, VNegOne)) break;
+					
+			// Aggiorna i valori precedenti di Zr e Zi ed azzera il loop
+            VPZr = VZr;  
+            PLoop = MAXPERIOD;
+            VPZi = VZi;			
 		}
 
-      	VDist = vec_add (VZr2, VZi2);
-
-      	if (vec_all_gt (VDist, VMaxDist))
-		{
-			VIResult = VIIterations;
-	  		break;
-		}
-
-        if (vec_any_gt (VDist, VMaxDist)) /* start fine tuning for each quartet of pixel */
-        {  
-			VMask = vec_cmpgt (VDist, VMaxDist);
-
-			if ((ll) && (hh) && (hl) && (lh)) break;
-
-			if (! ll) { if (vec_all_eq (vec_and (VMask, VMask_ll), VMask_ll)) ll = 1; }
-			if (! lh) { if (vec_all_eq (vec_and (VMask, VMask_lh), VMask_lh)) lh = 1; }
-			if (! hl) { if (vec_all_eq (vec_and (VMask, VMask_hl), VMask_hl)) hl = 1; }
-			if (! hh) { if (vec_all_eq (vec_and (VMask, VMask_hh), VMask_hh)) hh = 1; }
-
-			VIResult = vec_sel (VIResult, VIIterations, VMask);
-        }  
-		
+		// Incremento di Z e decremento delle iterazioni
         VZr = vec_add (VZr, VCre);
         VZi = vec_add (VZi, VCim);
-    
+        
 		VIIterations = vec_sub (VIIterations, VIOne);
-		
-	} while (--Iterations);
+	// Cicla fino a quando ci sono iterazioni rimanenti    
+	} while (! vec_all_eq (VIIterations, VIZero)); 
+//	} while (--Iterations);
+	// Scrive il risultato per ogni pixel nell'array di destinazione 
+    vec_st (VIResult, 0, (unsigned int *) PixelVecBase); 
 
-	vec_st (VIResult, 0, (unsigned int *) PixelVecBase);
-
-    return Iterations;
+    return vec_extract (VIIterations, 0);
+//	return Iterations;
 }

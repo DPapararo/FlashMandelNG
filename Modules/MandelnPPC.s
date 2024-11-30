@@ -2,8 +2,10 @@
 #  V2.1 handmade asm main routine - Dino Papararo 20 Jan 2020
 #  V2.2 rescheduled some instruction - Dino Papararo 22 Jan 2020
 #  V2.3 added periodicity checking - Dino Papararo 13 Apr 2020
-#  Ver 2.4 small speedup changes - Dino Papararo 03 May 2020
-#  $Ver 2.5 modified Periodicity check, another speedup! - Dino Papararo 24 Dic 2020
+#  2.4 small speedup changes - Dino Papararo 03 May 2020
+#  2.5 modified Periodicity check, another speedup! - Dino Papararo 24 Dic 2020
+#  Ver 2.6 initialized Zr2 and Zi2 to zero - Dino Papararo 11 Feb 2024
+#  $Ver 2.7 speedup and fixes PeriodCheck - Dino Papararo 09 Nov 2024
 #
 #  FUNCTION
 #
@@ -16,8 +18,8 @@
 #  This function tests if a point belongs or not at Mandelbrot's set
 #  Handmade optimized for PowerPC processors.
 #
-#  r3:Iterations r4:Power r5:PLoop r6:MaxPeriod r7:LoadFloat
-#  f0:MaxDist f1:Cre f2:Cim f3:Zr f4:Zi f5:Zr2/Tmp1 f6:Zi2/Tmp2
+#  r3:Iterations r4:Power r5:PLoop r6:MaxPeriod r7:LoadRadius r8:LoadEpsilon
+#  f0:MaxDist f1:Cre f2:Cim f3:Zr f4:Zi f5:Zr2/Tmp1 f6:Zi2x2/Tmp2 f11:ZrZi
 #  f7:Dist f8:Pzr f9:Pzi f10:Epsilon
 ####################################################################################
 
@@ -29,68 +31,61 @@
     .type    MandelnPPC, @function
 
 MandelnPPC:
-    fmr     %f4,%f2                 #Zi = Cim
     lis     %r7,.Radius@ha          #set high 16bits r7 as Radius and clear lower 16bits
+	fmr     %f4,%f2                 #Zi = Cim
+    lis		%r8,.Epsilon@ha			#set high 16bits r7 as Epsilon and clear lower 16bits
     fmr     %f3,%f1                 #Zr = Cre
-    li      %r6,20                  #MaxPeriod = 20
-    lfs     %f0,.Radius@l(%r7)      #load Radius in f0
-    fmr     %f8,%f3                 #Pzr = zr
-#    lis     %r7,.Epsilon@ha        #set high 16bits r7 as Epsilon and clear lower 16bits
-    xor     %r5,%r5,%r5             #PLoop = 0
-    fmr     %f9,%f4                 #Pzi = zi
-#    lfd     %f10,.Epsilon@l(%r7)    #load Epsilon into f10
+	la		%r7,.Radius@l(%r7)		#Load low word Radius
+    fmr     %f8,%f1                 #Pzr = Cre
+    lfs		%f10,.Epsilon@l(%r8)	#Load Epsilon in f10
+	fmr		%f9,%f2					#Pzi = Cim
+    li      %r6,25          		#MaxPeriod = 25 - periodicity check interval
+	lfs		%f0,0(%r7)				#MaxDist = 4.0 - load Radius in MaxDist (f0)
+	mr      %r5,%r6          		#PLoop = MaxPeriod
  
 .MainLoop:
     mtctr   %r4                     #Load Power into counter
 .PowerLoop1:
-    fmul    %f6,%f4,%f4             #Zi2 = Zi * Zi
     fmul    %f5,%f3,%f3             #Zr2 = Zr * Zr
-    fmul    %f4,%f4,%f3             #Zi *= Zr
-    fsub    %f3,%f5,%f6             #Zr = Zr2 - Zi2
-    fadd    %f4,%f4,%f4             #Zi += Zi
-    bdnz    .PowerLoop1             #if --Power > 0 goto .PowerLoop1
-  
-    fadd    %f7,%f5,%f6             #Dist = Zr2 + Zi2
-    fcmpu   %cr5,%f7,%f0            #compare dist with Radius
-    fadd    %f3,%f3,%f1             #Zr += Cre
-    bgt-    %cr5,.Exit              #if dist > radius goto .Exit
-    cmpwi   %cr6,%r3,0              #compare Iterations with 0
-    fadd    %f4,%f4,%f2             #Zi += Cim
-    beq-    %cr6,.Exit              #if Iterations == 0 goto .Exit
+   	fmul    %f6,%f4,%f4             #Zi2x2 = Zi * Zi	
+    fmul    %f11,%f4,%f3            #ZrZi = Zr * Zi
+    fsub    %f3,%f5,%f6             #Zr = Zr2 - Zi2x2
+    fadd    %f4,%f11,%f11           #Zi = ZrZi + ZrZi
+    bdnz    .PowerLoop1             #if --Power > 0 goto .PowerLoop1  
+    
+	fadd    %f7,%f5,%f6             #Dist = Zr2 + Zi2x2    
+	fcmpu   %cr5,%f7,%f0            #compare Dist with MaxDist
+    bgt-    %cr5,.Exit              #if Dist > MaxDist goto .Exit
 
-#   check periodicity method (1) reusing Zr2 and Zi2 as Temp vars
-#   fsub   %f5,%f3,%f8              #Tmp1 = Zr - Pzr
-#   fabs   %f5,%f5                  #Tmp1 = abs |Tmp1|
-#   fcmpu  %cr7,%f5,%f10            #compare Tmp1 with Epsilon
-#   bge+   %cr7,.NoPeriodicity      #if Pzr >= Epsilon goto .NoPeriodicity
-#   fsub   %f6,%f4,%f9              #Tmp2 = Zi - Pzi
-#   fabs   %f6,%f6                  #Tmp2 = abs |Tmp2|
-#   fcmpu  %cr5,%f6,%f10            #compare Tmp2 with Epsilon
-#   blt-   %cr5,.PeriodicityExit    #if Tmp2 < Epsilon goto .PeriodicityExit
+    subic.  %r5,%r5,1				#PLoop--
+	bgt+	%cr0,.NoPeriodicity     #if PLoop > 0 goto .NoPeriodicity (cr0 set by subic.)
 
-#   check periodicity method (2)
-    fcmpu   %cr7,%f3,%f8            #compare Pzr with zr
-    bne+    %cr7,.NoPeriodicity     #if not equal goto .NoPeriodicity
-    fcmpu   %cr5,%f4,%f9            #compare Pzi with zi
-    beq-    %cr5,.PeriodicityExit   #if equal goto .PeriodicityExit
+#	check periodicity reusing Zr2 and Zi2x2 as Tmp1 and Tmp2 vars
+   	fsub   %f5,%f3,%f8              #Tmp1 = Zr - Pzr
+   	fabs   %f5,%f5                  #Tmp1 = abs |Tmp1|
+   	fcmpu  %cr1,%f5,%f10            #compare Tmp1 with Epsilon
+   	blt+   %cr1,.NoPeriodicity      #if Tmp1 >= Epsilon goto .NoPeriodicity
+   	fsub   %f6,%f4,%f9              #Tmp2 = Zi - Pzi
+   	fabs   %f6,%f6                  #Tmp2 = abs |Tmp2|
+   	fcmpu  %cr2,%f6,%f10            #compare Tmp2 with Epsilon
+   	blt-   %cr2,.PeriodicityExit    #if Tmp2 < Epsilon goto .PeriodicityExit
+
+    fmr     %f8,%f3                 #Pzr = Zr
+    mr     	%r5,%r6                	#PLoop = MaxPeriod
+    fmr     %f9,%f4                 #Pzi = Zi
 
 .NoPeriodicity:
-    cmpw    %cr6,%r5,%r6            #compare PLoop with MaxPeriod
+    fadd    %f3,%f3,%f1             #Zr += Cre
     subic.  %r3,%r3,1               #Iterations--
-    addi    %r5,%r5,1               #PLoop++
-    blt+    %cr6,.MainLoop          #if PLoop < MaxPeriod goto .MainLoop
-
-    fmr     %f8,%f3                 #Pzr = zr
-    xor     %r5,%r5,%r5             #PLoop = 0
-    fmr     %f9,%f4                 #Pzi = zi
+    fadd    %f4,%f4,%f2             #Zi += Cim
     bgt+    %cr0,.MainLoop          #if Iterations > 0 goto .MainLoop (cr0 set by subic.)
-
+	
 .Exit:
     blr                             #return
 
 .PeriodicityExit:
     xor    %r3,%r3,%r3              #Iterations = 0
-#    li     %r3,254                  #for debug
+#    li     %r3,254                  #for debug 254 in 8bit screens
     blr                             #return
 
     .size   MandelnPPC,.-MandelnPPC
@@ -98,17 +93,7 @@ MandelnPPC:
     .align  2
 .Radius:
     .long   1082130432              #radius = 4.0
-#    .long	1074790400
-#	.long	0     
-
-#	.section	.rodata.cst8,"aM",@progbits,8   
-#    .align  3
-#.Epsilon:
-#	.long	1020396463              #1e-15 high precision
-#	.long	-1629006314
-    
-#    .long   1013386997             #1e-17 very high precision
-#    .long   1020396463             #1e-15 high precision
-#    .long   1037794527             #1e-10 mid precision
-#    .long   1055193269             #1e-5 lower precision
-
+.Epsilon:
+	.long	646978941  	 			#1e-15 high precision tolerance
+	.ident	"Dino Papararo asm hand code"
+	.gnu_attribute 4, 1

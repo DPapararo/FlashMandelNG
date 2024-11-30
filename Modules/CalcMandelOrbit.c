@@ -1,14 +1,13 @@
 /*
  *  CalcMandelOrbit.c
-
- $Ver:2.6 Dino Papararo 27 Feb 2022
-    swapped PixelArray calc order first zr and later zi
  
  Ver 2.5 small changes - Dino Papararo 24 jan 2021
  Ver 2.4 rearranged datatypes - Dino Papararo 05 jan 2021
  Ver 2.3 modified do-while loop - Dino Papararo 01 may 2020
  Ver 2.2 modified some int32 types to int16 - Dino Papararo 25 mar 2020
  Ver 2.1 reworked code to reflect asm handmade code mandelppc.s - Dino Papararo 20 Jan 2020 
+ Ver 2.6 swapped PixelArray calc order first zr and later zi - Dino Papararo 27 Feb 2022
+ $Ver 2.7 Initialized to zero Zr2 and Zi2 - Dino Papararo 11 feb 2024
 */
 
 #include <exec/types.h>
@@ -19,10 +18,12 @@ uint32 CalcMandelnOrbit (int16 *PixelArray, uint32 MaxIterations, int16 Power,
   int16 Exp;
   uint32 Iterations = 0L;
   float64 zr, zi, zr2, zi2;
-  const float64 maxdist = 4.0;
+  const float64 maxdist = 4.0f, zero = 0.0f;
 
   	zr = Cre;
   	zi = Cim;
+	zr2 = zero;
+	zi2 = zero;
 
   	do 
 	{

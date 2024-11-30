@@ -174,19 +174,26 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
       	return FALSE;
     }
 
-  	ColorWin = OpenWindowTags (NULL, WA_Left, MARGIN,
-			     				WA_Top, MARGIN / 2,
-			     				WA_Width, MIN_WIDTH - (MARGIN * 2),
-			     				WA_Height, MIN (20 + BUTTON_GAD.ng_TopEdge + SLIDER_GAD.ng_TopEdge + SLIDER_GAD.ng_Height, MIN_HEIGHT - (MARGIN / 2)), 
-								WA_Title, CATSTR (TITLE_PaletteReq), 
-								WA_SizeGadget, TRUE,
-			     				WA_SizeBRight, TRUE, WA_MinWidth, 640,
-			     				WA_MinHeight, 480, WA_MaxWidth, 1024, WA_MaxHeight, 768, 
-								WA_ScreenTitle, "Modify palette...",
-			     				WA_CustomScreen, Win->WScreen, 
-								WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_REFRESHWINDOW | IDCMP_VANILLAKEY | IDCMP_GADGETDOWN | BUTTONIDCMP | SLIDERIDCMP | PALETTEIDCMP, 
-								WA_Flags, WFLG_ACTIVATE | WFLG_DRAGBAR | WFLG_SIMPLE_REFRESH | WFLG_RMBTRAP | WFLG_GIMMEZEROZERO, 
-								WA_Gadgets,	GadList, TAG_DONE);
+  	ColorWin = OpenWindowTags (NULL, 
+        			WA_Left, WINDOW_X_OFFSET,
+                   	WA_Top, WINDOW_Y_OFFSET,
+     				WA_Width, BUTTON_GAD.ng_LeftEdge + BUTTON_GAD.ng_Width + (MARGIN * 2),
+     				WA_Height, BUTTON_GAD.ng_TopEdge + BUTTON_GAD.ng_Height + (MARGIN * 2),
+					WA_Title, CATSTR (TITLE_PaletteReq), 
+					WA_SizeGadget, TRUE,
+     				WA_SizeBRight, TRUE, 
+					WA_MinWidth, MIN_GDW_WIDTH / 2,
+     				WA_MinHeight, MIN_GDW_HEIGHT / 2, 
+					WA_MaxWidth, MAX_GDW_WIDTH * 2, 
+					WA_MaxHeight, MAX_GDW_HEIGHT * 2, 
+					WA_ScreenTitle, "Modify palette...",
+     				WA_CustomScreen, Win->WScreen, 
+					WA_IDCMP, IDCMP_CLOSEWINDOW|IDCMP_REFRESHWINDOW|IDCMP_VANILLAKEY|IDCMP_GADGETDOWN|BUTTONIDCMP|SLIDERIDCMP|PALETTEIDCMP,
+					WA_Flags, WFLG_ACTIVATE|WFLG_DRAGBAR|WFLG_SIMPLE_REFRESH|WFLG_RMBTRAP|WFLG_GIMMEZEROZERO|WFLG_NW_EXTENDED, 
+					WA_Gadgets,	GadList, 
+					WA_StayTop, TRUE,
+                   	WA_DropShadows, TRUE,					
+					TAG_DONE);
 
   	if (!ColorWin)
     {
@@ -201,7 +208,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
     {
       	WaitPort (ColorWin->UserPort);
 
-      	while ((!Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (ColorWin->UserPort)))
+      	while (Message = (struct IntuiMessage *) GT_GetIMsg (ColorWin->UserPort))
 		{
 	  		MyGad = (struct Gadget *) Message->IAddress;
 	  		MyClass = Message->Class;
@@ -223,11 +230,14 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  					GetRGB32 (((struct ViewPort *) ViewPortAddress (ColorWin))->ColorMap, 0L, Colors, &Palette32[1L]);
 		  					Exit = TRUE;
 		  				break;
-						case 'c':	/* Cancel */
+						
+						case VAN_ESC: /* Cancel */
+						case 'c':	
 						case 'C':
 		  					LoadRGB32 (ViewPortAddress (ColorWin), Palette32);
 		  					Exit = TRUE;
 		  				break;
+						
 						case 'o':	/* Copy */
 						case 'O':
 		  					Copy (ColorWin, SelectedPen);
@@ -235,6 +245,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  					Swap_Msg = FALSE;
 		  					Spread_Msg = FALSE;
 		  				break;
+						
 						case 's':	/* Swap */
 						case 'S':
 		  					OldPen = SelectedPen;
@@ -242,6 +253,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  					Swap_Msg = TRUE;
 		  					Spread_Msg = FALSE;
 		  				break;
+						
 						case 'r':	/* Spread */
 						case 'R':
 					  		OldPen = SelectedPen;
@@ -249,14 +261,17 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  					Swap_Msg = FALSE;
 		  					Spread_Msg = TRUE;
 		  				break;
+						
 						case '<':
 		  					KeepPalette (ColorWin);
 		  					Shl (ColorWin, STARTPEN, ENDPEN);
 		  				break;
+						
 						case '>':
 		  					KeepPalette (ColorWin);
 		  					Shr (ColorWin, STARTPEN, ENDPEN);
 		  				break;
+						
 						case 'u':
 						case 'U':
 		  					LoadRGB32 (ViewPortAddress (ColorWin), UNDO_RGB);
@@ -268,6 +283,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  					GT_SetGadgetAttrs (GreenSliderGad, ColorWin, NULL, GTSL_Level, (int16) GreenLevel);
 		  					GT_SetGadgetAttrs (BlueSliderGad, ColorWin, NULL, GTSL_Level, (int16) BlueLevel);
 		  				break;
+						
 						case 'E':
 							RedLevel = COLOR_RGB[ColorBase] >> 24L;
 		  					if (RedLevel > MINVALUE)
@@ -279,6 +295,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'e':
 		  					RedLevel = COLOR_RGB[ColorBase] >> 24L;
 		  					if (RedLevel > MINVALUE)
@@ -290,6 +307,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'T':
 		  					RedLevel = COLOR_RGB[ColorBase] >> 24L;
 		  					if (RedLevel < MAXVALUE)
@@ -302,6 +320,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 't':
 		  					RedLevel = COLOR_RGB[ColorBase] >> 24L;
 		  					if (RedLevel < MAXVALUE)
@@ -313,6 +332,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'F':
 							GreenLevel = COLOR_RGB[ColorBase + 1L] >> 24L;
 		  					if (GreenLevel > MINVALUE)
@@ -336,6 +356,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'H':
 		  					GreenLevel = COLOR_RGB[ColorBase + 1L] >> 24L;
 		  					if (GreenLevel < MAXVALUE)
@@ -348,6 +369,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'h':
 		  					GreenLevel = COLOR_RGB[ColorBase + 1L] >> 24L;
 		  					if (GreenLevel < MAXVALUE)
@@ -359,6 +381,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'V':
 		  					BlueLevel = COLOR_RGB[ColorBase + 2L] >> 24L;
 		  					if (BlueLevel > MINVALUE)
@@ -370,6 +393,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'v':
 		  					BlueLevel = COLOR_RGB[ColorBase + 2L] >> 24L;
 		  					if (BlueLevel > MINVALUE)
@@ -381,6 +405,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'N':
 		  					BlueLevel = COLOR_RGB[ColorBase + 2L] >> 24L;
 		  					if (BlueLevel < MAXVALUE)
@@ -393,6 +418,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'n':
 		  					BlueLevel = COLOR_RGB[ColorBase + 2L] >> 24L;
 			  				if (BlueLevel < MAXVALUE)
@@ -404,6 +430,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		      					LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		    				}
 		  				break;
+						
 						case 'I':
 						case 'i':
 		  					KeepPalette (Win);
@@ -415,6 +442,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  					GT_SetGadgetAttrs (GreenSliderGad, ColorWin, NULL, GTSL_Level, (int16) GreenLevel);
 		  					GT_SetGadgetAttrs (BlueSliderGad, ColorWin, NULL, GTSL_Level, (int16) BlueLevel);
 		  					break;
+							
 						case '#':
 		  					for (i = 1; i <= 256 * 3; i += 3)
 		    				{
@@ -433,6 +461,7 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  						GetRGB32 (((struct ViewPort *) ViewPortAddress (ColorWin))->ColorMap, 0L, Colors, &Palette32[1L]);
 		  						Exit = TRUE;
 		  						break;
+								
 							case RESET2:
 		  						KeepPalette (Win);
 		  						LoadRGB32 (ViewPortAddress (ColorWin), Palette32);
@@ -444,28 +473,33 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  						GT_SetGadgetAttrs (GreenSliderGad, ColorWin, NULL, GTSL_Level, (int16) GreenLevel);
 		  						GT_SetGadgetAttrs (BlueSliderGad, ColorWin, NULL, GTSL_Level, (int16) BlueLevel);
 		  					break;
+							
 							case CANCEL2:
 		  						LoadRGB32 (ViewPortAddress (ColorWin), Palette32);
 		  						Exit = TRUE;
 		  					break;
+							
 							case COPY:
 		  						Copy (ColorWin, SelectedPen);
 		  						Copy_Msg = TRUE;
 		  						Swap_Msg = FALSE;
 		  						Spread_Msg = FALSE;
 		  					break;
+							
 							case SWAP:
 		  						OldPen = SelectedPen;
 		  						Copy_Msg = FALSE;
 		  						Swap_Msg = TRUE;
 		  						Spread_Msg = FALSE;
 		  					break;
+							
 								case SPREAD:
 		  						OldPen = SelectedPen;
 		  						Copy_Msg = FALSE;
 		  						Swap_Msg = FALSE;
 		  						Spread_Msg = TRUE;
 		  					break;
+							
 							case INVERT:
 		  						KeepPalette (Win);
 		  						InvertPalette (Win, STARTPEN, Colors - 1L);
@@ -476,14 +510,17 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  						GT_SetGadgetAttrs (GreenSliderGad, ColorWin, NULL, GTSL_Level, (int16) GreenLevel);
 		  						GT_SetGadgetAttrs (BlueSliderGad, ColorWin, NULL, GTSL_Level, (int16) BlueLevel);
 		  					break;
+							
 							case SHL:
 		  						KeepPalette (ColorWin);
 		  						Shl (ColorWin, STARTPEN, ENDPEN);
 		  					break;
+							
 							case SHR:
 		  						KeepPalette (ColorWin);
 		  						Shr (ColorWin, STARTPEN, ENDPEN);
 		  					break;
+							
 							case UNDO:
 		  						LoadRGB32 (ViewPortAddress (ColorWin), UNDO_RGB);
 		  						GetRGB32 (((struct ViewPort *) ViewPortAddress (ColorWin))->ColorMap, 0L, Colors, &COLOR_RGB[1L]);
@@ -494,24 +531,28 @@ int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 *
 		  						GT_SetGadgetAttrs (GreenSliderGad, ColorWin, NULL, GTSL_Level, (int16) GreenLevel);
 		  						GT_SetGadgetAttrs (BlueSliderGad, ColorWin, NULL, GTSL_Level, (int16) BlueLevel);
 		  					break;
+							
 							case RED:
 		  						KeepPalette (Win);
 		  						GT_GetGadgetAttrs (RedSliderGad, ColorWin, NULL, GTSL_Level, &RedLevel);
 		  						COLOR_RGB[ColorBase] = RedLevel << 24L;
 		  						LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		  					break;
+							
 							case GREEN:
 		  						KeepPalette (Win);
 		  						GT_GetGadgetAttrs (GreenSliderGad, ColorWin, NULL, GTSL_Level, &GreenLevel);
 		  						COLOR_RGB[ColorBase + 1L] = GreenLevel << 24L;
 		  						LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		  					break;
+							
 							case BLUE:
 		  						KeepPalette (Win);
 		  						GT_GetGadgetAttrs (BlueSliderGad, ColorWin, NULL, GTSL_Level, &BlueLevel);
 		  						COLOR_RGB[ColorBase + 2L] = BlueLevel << 24L;
 		  						LoadRGB32 (ViewPortAddress (ColorWin), COLOR_RGB);
 		  					break;
+							
 							case PALETTE:
 		  						GT_GetGadgetAttrs (MyPaletteGad, ColorWin, NULL, GTPA_Color, &SelectedPen);
 		  						if (Copy_Msg)
