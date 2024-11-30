@@ -1,16 +1,19 @@
 /*
    CalcMandelnOrbitGMP main loop, GMP function for OS4 version
 
-   $Ver:1.3 Dino Papararo 27 Feb 2022
+	$Ver:1.4 Dino Papararo 13 feb 2024
+    initialized gzr2 and gzi2
+
+   	Ver:1.3 Dino Papararo 27 Feb 2022
     swapped PixelArray calc order first gzr and later gzi
 
-   1.2 Dino Papararo 5 Jan 2021
+   	1.2 Dino Papararo 5 Jan 2021
     rearranged datatypes
 
-   1.1 Dino Papararo 1 May 2020
+   	1.1 Dino Papararo 1 May 2020
     modified do-while loop
 
-   1.0 Dino Papararo 20 Mar 2020
+   	1.0 Dino Papararo 20 Mar 2020
     first release
 */
 
@@ -29,6 +32,8 @@ uint32 CalcMandelnOrbit_GMP (int16 * PixelArray, uint32 MaxIterations, int16 Pow
 
   	mpf_set (gzr, GCre);
   	mpf_set (gzi, GCim);
+	mpf_set (gzr2, gzr);
+  	mpf_set (gzi2, gzi);	
 
   	do
     {

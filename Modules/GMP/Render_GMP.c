@@ -24,10 +24,13 @@
  *	  Revision 1.6 07/01/2023 dpapararo
  *	  Mem renderings can be stopped and you can draw boxes for any rectangle processeds
  *
+ *	  Revision 1.7 10/11/2024 dpapararo
+ *	  Added benchmark mode fail control
+ *
  */
 
 #include <exec/types.h>
-
+#include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/gadtools.h>
@@ -39,7 +42,7 @@
 #include "Headers/FlashMandel.h"
 
 extern void AddQueue (uint32, uint32);
-extern int16 AllocateBoundary (uint32, uint32);
+extern int32 AllocateBoundary (uint32, uint32);
 extern void DeallocateBoundary (void); 
 
 extern uint32 LinearRemap (const float64, const float64, const float64, const float64, const float64);
@@ -56,8 +59,6 @@ extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const 
 extern int16 CheckBox (struct RastPort *, const int16, const int16, const int16, const int16);
 extern int16 CheckBoxMem (struct MandelChunk *, uint32 *, const int16, const int16, const int16, const int16);
 extern void BlinkRect (struct Window *, const int16, const int16, const int16, const int16);
-
-extern uint32 MASK;
 
 static void MCPointMem_GMP (struct MandelChunk *, uint32 *, uint32 *, const int16, const int16);
 static void JCPointMem_GMP (struct MandelChunk *, uint32 *, uint32 *, const int16, const int16);
@@ -103,7 +104,8 @@ extern mpf_t gzr, gzi, gzr2, gzi2, gcre, gcim, gjkre, gjkim, grmin, gimin,
 
 extern uint8 *DONE;
 extern uint32 *DATA, *QUEUE;
-
+extern int16 BENCHMARK_FAIL;
+extern uint32 MASK;
 extern uint32 QueueHead;	
 extern enum { Loaded = 1, Queued = 2 };			
 
@@ -328,15 +330,12 @@ static int16 BruteDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Wi
 
 		    		case IDCMP_RAWKEY:
 		      		{
-						switch (MyCode)
-						{						
-		      				case RAW_ESC:
-							{
-			  					DisplayBeep (Win->WScreen);
-			  					return TRUE;
-							}
-							break;
-		      			}
+						if (MyCode == RAW_ESC)
+						{
+			  				DisplayBeep (Win->WScreen);
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																				
+			  				return TRUE;
+						}							      			
 					}
 					break;
 
@@ -431,7 +430,7 @@ int16 BoundaryDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Win, u
 	QueueSize = sizeof (int32) * ResX * ResY * 4L;
 	
 	/* allocation check */
-	if (! AllocateBoundary (ResX, ResY)) return FALSE;
+	if (AllocateBoundary (ResX, ResY) != RETURN_OK) return FALSE;	
     
 	/* (1) begin by adding the screen edges into the queue */
     for (Y = 0L; Y < ResY; ++Y) 
@@ -469,7 +468,7 @@ int16 BoundaryDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Win, u
 
         		switch (MyClass)
 				{
-        			case IDCMP_MENUPICK : 
+        			case IDCMP_MENUPICK:
 					{
 						if (MyCode != MENUNULL)
                     	{
@@ -485,15 +484,12 @@ int16 BoundaryDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window *Win, u
 
                     case IDCMP_RAWKEY:
                 	{
-						switch (MyCode)
-						{
-							case RAW_ESC:
-    	           			{
-    	               			DisplayBeep (Win->WScreen);
-								DeallocateBoundary();
-    	               			return TRUE;
-    	           			}
-							break;	
+						if (MyCode == RAW_ESC) 
+						{						
+    	               		DisplayBeep (Win->WScreen);
+							DeallocateBoundary();
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																				
+    	               		return TRUE;    	           		
 						}
 					}
 					break;
@@ -568,15 +564,12 @@ static int16 RectangleDrawMem_GMP (struct MandelChunk *MandelInfo, struct Window
 
 	    		case IDCMP_RAWKEY:
 	      		{
-					switch (MyCode)
-					{							
-	      				case RAW_ESC:
-						{
-		  					DisplayBeep (Win->WScreen);
-		  					return TRUE;
-						}
-						break;
-	      			}
+					if (MyCode == RAW_ESC) 
+					{								      				
+		  				DisplayBeep (Win->WScreen);
+						if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																			
+		  				return TRUE;
+					}					
 				}
 				break;
 
@@ -1235,15 +1228,12 @@ int16 BoundaryDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, uint
 
                     case IDCMP_RAWKEY:
                 	{						
-						switch (MyCode)
-						{														
-							case RAW_ESC:
-    	           			{
-    	               			DisplayBeep (Win->WScreen);
-								DeallocateBoundary();
-    	               			return TRUE;
-    	           			}
-							break;
+						if (MyCode == RAW_ESC)
+						{																				
+    	               		DisplayBeep (Win->WScreen);
+							DeallocateBoundary();
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																				
+    	               		return TRUE;    	           			
 						}																		
 					}
 					break;
@@ -1330,8 +1320,8 @@ static int16 RectangleDraw_GMP (struct MandelChunk *MandelInfo, struct Window *W
 						{
 							BlinkRect (Win, a1, b1, a2, b2);
 							BlinkRect (Win, a1, b1, a2, b2);
-							BlinkRect (Win, a1, b1, a2, b2);
-							
+							BlinkRect (Win, a1, b1, a2, b2);	
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																										
 		  					return FALSE;
 						}
 						break;
@@ -1339,6 +1329,7 @@ static int16 RectangleDraw_GMP (struct MandelChunk *MandelInfo, struct Window *W
 	      				case RAW_ESC:
 						{
 		  					DisplayBeep (Win->WScreen);
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																				
 		  					return TRUE;
 						}
 						break;
@@ -1432,13 +1423,15 @@ static int16 BruteDraw_GMP (struct MandelChunk *MandelInfo, struct Window *Win, 
                     			BlinkRect (Win, a1, helpy-1, a2, helpy);
 								helpy += 19;
 								if (helpy > b2) helpy = b2;
-                    			BlinkRect (Win, a1, helpy-1, a2, helpy);								
+                    			BlinkRect (Win, a1, helpy-1, a2, helpy);
+								if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																													
 							}
 							break;
 							
 		      				case RAW_ESC:
 							{
 			  					DisplayBeep (Win->WScreen);
+								if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																					
 			  					return TRUE;
 							}
 							break;
