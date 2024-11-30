@@ -1,9 +1,15 @@
-/* Gfx Render 
-** created by Dino Papararo v 1.1 03 Dic 2021
-** Now (*COLORREMAP) is extern to to avoid conflicts 09/10*2022 dpapararo
+/* Gfx Render - created by Dino Papararo
+**
+**	Revision 1.0 03/12/2021 dpapararo
+** 	Now (*COLORREMAP) is extern to to avoid conflicts 09/10*2022 dpapararo
+**	
+**	Revision 1.1 10/11/2024 dpapararo
+**	Added benchmark mode fail control
+**
 */
 
 #include <exec/types.h>
+#include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/gadtools.h>
 #include <proto/graphics.h>
@@ -23,7 +29,7 @@ void (*V_LINE) (struct MandelChunk *, struct RastPort *, uint8 *, uint32 *, cons
 
 extern void Scan (struct MandelChunk *, struct RastPort *, uint32 *, uint32, uint32 , int16);
 extern void AddQueue (uint32, uint32);
-extern int16 AllocateBoundary (uint32, uint32);
+extern int32 AllocateBoundary (uint32, uint32);
 extern void DeallocateBoundary (void); 
 
 uint32 LinearRemap (const float64, const float64, const float64, const float64, const float64);
@@ -59,6 +65,7 @@ static void JVLine16_32bit (struct MandelChunk *, struct RastPort *, uint8 *, ui
 
 extern uint8 *DONE;
 extern uint32 *DATA, *QUEUE;
+extern int16 BENCHMARK_FAIL;
 
 extern uint32 QueueHead;	
 extern enum { Loaded = 1, Queued = 2 };
@@ -135,22 +142,22 @@ static void MCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 #ifdef USE_ALTIVEC_MATH
   	float32 Cre = (float32) mpf_get_d (gcre);
   	float32 Cim = (float32) mpf_get_d (gcim);
-
 #ifdef USE_ALTIVEC_ASM
   	MandelnAltivecPPC (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
-#elif USE_ALTIVEC_MATH
+#else 
   	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
-#endif 
-		  
+#endif /* USE_ALTIVEC_ASM */	  
   	Color = *(PixelVecBase + 0);
-#elif USE_POWERPC_MATH
+#else 	
+#if USE_POWERPC_MATH
   	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
   	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
-#elif USE_SPE_MATH
+#else USE_SPE_MATH
 	Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
-#endif /* USE_ALTIVEC_MATH */
-  
+#endif /* USE_POWEPC_MATH */
+#endif /* USE_ALTIVEC_MATH */  
+
 	if (Color) Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 
 	SetAPen (Rp, Color);		 
@@ -172,23 +179,25 @@ static void MCPoint16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp
   	mpf_mul_ui (gtmp, gincremimag, y);
   	mpf_sub (gcim, gimax, gtmp);
 
+
 #ifdef USE_ALTIVEC_MATH
   	float32 Cre = (float32) mpf_get_d (gcre);
   	float32 Cim = (float32) mpf_get_d (gcim);
-
+	
 #ifdef USE_ALTIVEC_ASM
   	MandelnAltivecPPC (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
-#elif USE_ALTIVEC_MATH
+#else
   	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
-#endif
-
+#endif /* USE_ALTIVEC_ASM */
   	Color = *(PixelVecBase + 0);
-#elif USE_POWERPC_MATH
+#else 
+#if USE_POWERPC_MATH
   	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
   	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
-#elif USE_SPE_MATH
+#else USE_SPE_MATH
 	Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#endif /* USE_POWEPC_MATH */
 #endif /* USE_ALTIVEC_MATH */
 
 	Color_ARGB = 0xff000000;
@@ -219,7 +228,9 @@ static void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	mpf_add (gcre, grmin, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cre = (float32) mpf_get_d (gcre);
+  int16 i;
+  uint32 tmp1;
+  float32 Cre = (float32) mpf_get_d (gcre);
 
   	y = b2;
 
@@ -250,46 +261,20 @@ static void MVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
 			  			Cre,(float32) mpf_get_d (gcim), Cre,(float32) mpf_get_d (gcim1), 
 			  			Cre,(float32) mpf_get_d (gcim2), Cre,(float32) mpf_get_d (gcim3));
 #endif
-
-    	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 0))
+      	 		
+		for (i = 0; i < 4; i++)
 		{
-	  		*(PixelVecBase + 0) = COLORREMAP ((float64) *(PixelVecBase + 0), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
+			Color = *(PixelVecBase + i);
+			
+			if (Color)
+			{
+	  			Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+			}
       	
-		*TmpArray-- = (uint8) *(PixelVecBase + 0);
-      	y--;
-
-      	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 1))
-		{
-	  		*(PixelVecBase + 1) = COLORREMAP ((float64) *(PixelVecBase + 1), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+			*TmpArray-- = (uint8) Color;
+		
+			if ((y--) <= b1) break;
 		}
-      
-	  	*TmpArray-- = (uint8) *(PixelVecBase + 1);
-      	y--;
-
-      	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 2))
-		{
-	  		*(PixelVecBase + 2) = COLORREMAP ((float64) *(PixelVecBase + 2), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      	
-		*TmpArray-- = (uint8) *(PixelVecBase + 2);
-      	y--;
-
-      	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 3))
-		{
-	  		*(PixelVecBase + 3) = COLORREMAP ((float64) *(PixelVecBase + 3), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      	
-		*TmpArray-- = (uint8) *(PixelVecBase + 3);
-      	y--;
     }
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -334,7 +319,8 @@ static void MVLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	mpf_add (gcre, grmin, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cre = (float32) mpf_get_d (gcre);
+  	int16 i;
+	float32 Cre = (float32) mpf_get_d (gcre);
 
   	y = b2;
 
@@ -366,69 +352,26 @@ static void MVLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 	  					Cre,(float32) mpf_get_d (gcim2), Cre,(float32) mpf_get_d (gcim3));
 #endif
 
-		Color_ARGB = 0xff000000;
-	  
-		if (*(PixelVecBase + 0))
+		for (i = 0; i < 4; i++)
 		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
+			Color_ARGB = 0xff000000;
+	  		Color = *(PixelVecBase + i);
+			
+			if (Color)
+			{
+	        	r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
+				Color_ARGB |= (r << 16);
+				g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
+				Color_ARGB |= (g << 8);
+				b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
+				Color_ARGB |= b;
+			}
 	   
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-
-    	if (y < b1)	break;
-		Color_ARGB = 0xff000000;
-	
-		if (*(PixelVecBase + 1))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
+			WritePixelColor (Rp, x, y, Color_ARGB);
 		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-	
-    	if (y < b1)	break;
-		Color_ARGB = 0xff000000;
-	
-		if (*(PixelVecBase + 2))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
+			if (y-- <= b1)	break;
 		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-
-    	if (y < b1)	break;
-		Color_ARGB = 0xff000000;	
-	
-		if (*(PixelVecBase + 3))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-	    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-  	}
+	}
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
@@ -478,7 +421,8 @@ static void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	mpf_sub (gcim, gimax, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cim = (float32) mpf_get_d (gcim);
+  int16 i;
+  float32 Cim = (float32) mpf_get_d (gcim);
 
   	x = a1;
 
@@ -509,43 +453,21 @@ static void MHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
 						(float32) mpf_get_d (gcre), Cim, (float32) mpf_get_d (gcre1), Cim,
 		      			(float32) mpf_get_d (gcre2), Cim, (float32) mpf_get_d (gcre3), Cim);
 #endif
-
-      	if (*(PixelVecBase + 0))
+		for (i = 0; i < 4; i++)
 		{
-	  		*(PixelVecBase + 0) = COLORREMAP ((float64) *(PixelVecBase + 0), 1.0,	(float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
+			Color = *(PixelVecBase + i);
+      		
+			if (Color)
+			{
+	  			Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+			}
       
-	  	*TmpArray++ = (uint8) *(PixelVecBase + 0);
-      	x++;
-
-      	if (x > a2)	break;
-      	
-		if (*(PixelVecBase + 1))
-		{
-	  		*(PixelVecBase + 1) =  COLORREMAP ((float64) *(PixelVecBase + 1), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      
-	  	*TmpArray++ = (uint8) *(PixelVecBase + 1);
-      	x++;
-
-      	if (x > a2)	break;
-      	if (*(PixelVecBase + 2))
-		{
-	  		*(PixelVecBase + 2) = COLORREMAP ((float64) *(PixelVecBase + 2), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-		
-      	*TmpArray++ = (uint8) *(PixelVecBase + 2);
-      	x++;
-
-      	if (x > a2)	break;
-      	
-		if (*(PixelVecBase + 3))
-		{
-	  		*(PixelVecBase + 3) = COLORREMAP ((float64) *(PixelVecBase + 3), 1.0,	(float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      
-	  	*TmpArray++ = (uint8) *(PixelVecBase + 3);
-      	x++;
+	  		*TmpArray++ = (uint8) Color;
+      		
+			x++;
+			
+      		if (x > a2) break;      	
+		}					
 	}
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -590,7 +512,8 @@ static void MHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	mpf_sub (gcim, gimax, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cim = (float32) mpf_get_d (gcim);
+  int16 i;
+  float32 Cim = (float32) mpf_get_d (gcim);
 
   	x = a1;
 
@@ -621,68 +544,28 @@ static void MHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 						(float32) mpf_get_d (gcre), Cim, (float32) mpf_get_d (gcre1), Cim,
 		      			(float32) mpf_get_d (gcre2), Cim, (float32) mpf_get_d (gcre3), Cim);
 #endif
-	    Color_ARGB = 0xff000000;
-
-		if (*(PixelVecBase + 0))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
-
-        if (x > a2)	break;
-		Color_ARGB = 0xff000000;
-
-		if (*(PixelVecBase + 1))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
-	
-        if (x > a2)	break;
-		Color_ARGB = 0xff000000;	
-
-		if (*(PixelVecBase + 2))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
-
-        if (x > a2)	break;
-		Color_ARGB = 0xff000000;
 		
-		if (*(PixelVecBase + 3))
+		for (i = 0; i < 4; i++)
 		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
+			Color_ARGB = 0xff000000;
+			Color = *(PixelVecBase + i);
+			
+			if (Color)
+			{
+	        	r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
+				Color_ARGB |= (r << 16);
+				g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
+				Color_ARGB |= (g << 8);
+				b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
+				Color_ARGB |= b;
+			}
 		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
+			WritePixelColor (Rp, x, y, Color_ARGB);
+    		
+			x++;
+			
+        	if (x > a2) break;
+		}
   	}
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -699,7 +582,7 @@ static void MHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 #elif USE_SPE_MATH
 		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #endif
-  	Color_ARGB = 0xff000000;
+  		Color_ARGB = 0xff000000;
 
       	if (Color)
       	{
@@ -741,13 +624,15 @@ static void JCPoint (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32
 		 			(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
   	
 	Color = *(PixelVecBase + 0);
-#elif USE_POWERPC_MATH
+#else	
+#if USE_POWERPC_MATH
   	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
   	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#elif USE_SPE_MATH
+#else USE_SPE_MATH
 	Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#endif
+#endif /* USE_POWERPC_MATH */
+#endif /* USE_ALTIVEC_MATH */
   	if (Color) Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
 
 	SetAPen (Rp, Color);		 
@@ -777,13 +662,15 @@ static void JCPoint16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp
 		 			(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
 
  	Color = *(PixelVecBase + 0);
-#elif USE_POWERPC_MATH
+#else 	
+#if USE_POWERPC_MATH
   	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
   	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#elif USE_SPE_MATH
+#else USE_SPE_MATH
 	Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#endif
+#endif /* USE_POWERPC_MATH */
+#endif /* USE_ALTIVEC_MATH */
   
 	Color_ARGB = 0xff000000;
   
@@ -813,7 +700,8 @@ static void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	mpf_add (gcre, grmin, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cre = (float32) mpf_get_d (gcre);
+  int16 i;
+  float32 Cre = (float32) mpf_get_d (gcre);
 
   	y = b2;
 
@@ -839,40 +727,19 @@ static void JVLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
 		     			Cre, (float32) mpf_get_d (gcim1), Cre, (float32) mpf_get_d (gcim2), Cre, (float32) mpf_get_d (gcim3), 
 						(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
   
-      	if (*(PixelVecBase + 0))
-		{
-	  		*(PixelVecBase + 0) = COLORREMAP ((float64) *(PixelVecBase + 0), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
+  		for (i = 0; i < 4; i++)
+		{		
+      		Color = *(PixelVecBase + i);
+			
+			if (Color)
+			{
+	  			Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+			}
       	
-		*TmpArray-- = (uint8) *(PixelVecBase + 0);
-      	y--;
-      	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 1))
-		{
-	  		*(PixelVecBase + 1) = COLORREMAP ((float64) *(PixelVecBase + 1), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      
-	  	*TmpArray-- = (uint8) *(PixelVecBase + 1);
-      	y--;	
-      	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 2))
-		{
-	  		*(PixelVecBase + 2) =  COLORREMAP ((float64) *(PixelVecBase + 2), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
+			*TmpArray-- = (uint8) Color;
       	
-		*TmpArray-- = (uint8) *(PixelVecBase + 2);
-      	y--;
-      	if (y < b1)	break;
-	  
-      	if (*(PixelVecBase + 3))
-		{
-	  		*(PixelVecBase + 3) = COLORREMAP ((float64) *(PixelVecBase + 3), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      
-	  	*TmpArray-- = (uint8) *(PixelVecBase + 3);
-      	y--;
+      		if (y-- <= b1)	break;
+	  	}		
     }
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -917,7 +784,8 @@ static void JVLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	mpf_add (gcre, grmin, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cre = (float32) mpf_get_d (gcre);
+  int16 i;
+  float32 Cre = (float32) mpf_get_d (gcre);
 
   	y = b2;
 
@@ -944,68 +812,25 @@ static void JVLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 		     			(float32) mpf_get_d (gcim2), Cre, (float32) mpf_get_d (gcim3),
 		     			(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
  
-		Color_ARGB = 0xff000000;
-	  
-		if (*(PixelVecBase + 0))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
+ 		for (i = 0; i < 4; i++)
+		{		
+			Color_ARGB = 0xff000000;
+	  		Color = *(PixelVecBase + i);
+		
+			if (Color)
+			{
+	        	r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
+				Color_ARGB |= (r << 16);
+				g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
+				Color_ARGB |= (g << 8);
+				b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
+				Color_ARGB |= b;
+			}
 	   
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-	
-    	if (y < b1)	break;
-		Color_ARGB = 0xff000000;
-	
-		if (*(PixelVecBase + 1))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
+			WritePixelColor (Rp, x, y, Color_ARGB);
+		
+    		if (y-- <= b1) break;
 		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-	
-    	if (y < b1)	break;
-		Color_ARGB = 0xff000000;
-	
-		if (*(PixelVecBase + 2))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
-
-    	if (y < b1)	break;
-		Color_ARGB = 0xff000000;	
-	
-		if (*(PixelVecBase + 3))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-	    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-		y--;
   	}
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -1056,7 +881,8 @@ static void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
   	mpf_sub (gcim, gimax, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cim = (float32) mpf_get_d (gcim);
+  int16 i;
+  float32 Cim = (float32) mpf_get_d (gcim);
 
   	x = a1;
 
@@ -1082,40 +908,21 @@ static void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
 		     			(float32) mpf_get_d (gcre2), Cim, (float32) mpf_get_d (gcre3), Cim,
 		     			(float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
  
-       	if (*(PixelVecBase + 0))
+       	for (i = 0; i < 4; i++)
 		{
-	  		*(PixelVecBase + 0) = COLORREMAP ((float64) *(PixelVecBase + 0), 1.0,	(float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
+			Color = *(PixelVecBase + i);
+			
+			if (Color)
+			{
+	  			Color = COLORREMAP ((float64) Color, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+			}
       	
-		*TmpArray++ = (uint8) *(PixelVecBase + 0);
-      	x++;
-      	if (x > a2)	break;
-
-      	if (*(PixelVecBase + 1))
-		{
-	  		*(PixelVecBase + 1) = COLORREMAP ((float64) *(PixelVecBase + 1), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      	
-		*TmpArray++ = (uint8) *(PixelVecBase + 1);
-      	x++;
-      	if (x > a2)	break;
-
-      	if (*(PixelVecBase + 2))
-		{
-	  		*(PixelVecBase + 2) = COLORREMAP ((float64) *(PixelVecBase + 2), 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      	
-		*TmpArray++ = (uint8) *(PixelVecBase + 2);	
-      	x++;
-      	if (x > a2)	break;
-      	
-		if (*(PixelVecBase + 3))
-		{
-	  		*(PixelVecBase + 3) = COLORREMAP ((float64) *(PixelVecBase + 3), 1.0,	(float64) MandelInfo->Iterations, 4.0, 255.0);
-		}
-      	
-		*TmpArray++ = (uint8) *(PixelVecBase + 3);
-      	x++;
+			*TmpArray++ = (uint8) Color;
+      		
+			x++;
+			
+      		if (x > a2)	break;
+		}		
     }
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -1128,7 +935,7 @@ static void JHLine (struct MandelChunk *MandelInfo, struct RastPort *Rp,uint8 *P
 #ifdef USE_POWERPC_MATH
       	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre),	mpf_get_d (gjkim));
+      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_SPE_MATH
 		Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
@@ -1160,7 +967,8 @@ static void JHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
   	mpf_sub (gcim, gimax, gtmp);
 
 #ifdef USE_ALTIVEC_MATH		/* compute 4 pixels per time!! */
-  	float32 Cim = (float32) mpf_get_d (gcim);
+  int16 i;
+  float32 Cim = (float32) mpf_get_d (gcim);
 
   	x = a1;
 
@@ -1186,68 +994,27 @@ static void JHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 		     			(float32) mpf_get_d (gcre1), Cim, (float32) mpf_get_d (gcre2), Cim,
 		     			(float32) mpf_get_d (gcre3), Cim, (float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
  
-	    Color_ARGB = 0xff000000;
-
-		if (*(PixelVecBase + 0))
+	    for (i = 0; i < 4; i++)
 		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 0) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 0) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 0) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
-
-        if (x > a2)	break;
-		Color_ARGB = 0xff000000;
-
-		if (*(PixelVecBase + 1))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 1) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 1) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 1) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
-	
-        if (x > a2)	break;
-		Color_ARGB = 0xff000000;	
-
-		if (*(PixelVecBase + 2))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 2) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 2) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 2) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
-		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
-
-        if (x > a2)	break;
-		Color_ARGB = 0xff000000;
+			Color_ARGB = 0xff000000;
+			Color = *(PixelVecBase + i);
 		
-		if (*(PixelVecBase + 3))
-		{
-	        r = (uint8) lround ((sin(0.016f * (float64) *(PixelVecBase + 3) + 0.20f) * 127.5f + 127.5f));
-			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) *(PixelVecBase + 3) + 0.15f) * 127.5f + 127.5f));
-			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) *(PixelVecBase + 3) + 0.10f) * 127.5f + 127.5f));
-			Color_ARGB |= b;
-		}
+			if (Color)
+			{
+	        	r = (uint8) lround ((sin(0.016f * (float64) Color + 0.20f) * 127.5f + 127.5f));
+				Color_ARGB |= (r << 16);
+				g = (uint8) lround ((sin(0.013f * (float64) Color + 0.15f) * 127.5f + 127.5f));
+				Color_ARGB |= (g << 8);
+				b = (uint8) lround ((sin(0.010f * (float64) Color + 0.10f) * 127.5f + 127.5f));
+				Color_ARGB |= b;
+			}
 		    
-		WritePixelColor (Rp, x, y, Color_ARGB);
-    	x++;
+			WritePixelColor (Rp, x, y, Color_ARGB);
+    		
+			x++;
+			
+        	if (x > a2)	break;
+		}
   	}
 #elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
 
@@ -1260,7 +1027,7 @@ static void JHLine16_32bit (struct MandelChunk *MandelInfo, struct RastPort *Rp,
 #ifdef USE_POWERPC_MATH
       	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
-      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre),	mpf_get_d (gjkim));
+      	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_SPE_MATH
 		Color = JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #endif
@@ -1336,7 +1103,7 @@ static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, u
 	LoColor = (GetBitMapAttr (Win->RPort->BitMap, BMA_DEPTH) == MIN_DEPTH) ? 1 : 0;
 	
 	/* allocation check */
-	if (! AllocateBoundary (ResX, ResY)) return FALSE;
+	if (AllocateBoundary (ResX, ResY) != RETURN_OK) return FALSE;
     
 	/* (1) begin by adding the screen edges into the queue */
     for (Y = 0L; Y < ResY; ++Y)
@@ -1390,14 +1157,12 @@ static int16 BoundaryDraw (struct MandelChunk *MandelInfo, struct Window *Win, u
 
                     case IDCMP_RAWKEY:
                 	{
-						switch (MyCode)
-                    	{
-							case RAW_ESC:
-							{
-                    			DisplayBeep (Win->WScreen);					  
-								DeallocateBoundary();
-                        		return TRUE;
-							}
+						if (MyCode == RAW_ESC)
+                    	{							
+                   			DisplayBeep (Win->WScreen);					  
+							DeallocateBoundary();
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																				
+                       		return TRUE;							
                     	}
 					}
 					break;
@@ -1484,12 +1249,14 @@ static int16 BruteDraw (struct MandelChunk *MandelInfo, struct Window *Win, uint
 								helpy += 19;
 								if (helpy > b2) helpy = b2;
                     			BlinkRect (Win, a1, helpy-1, a2, helpy);
+								if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																					
 							}
    	            	    	break;
 	
     	            		case RAW_ESC:
     	            		{
     	                		DisplayBeep (Win->WScreen);
+								if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;																					
     	                		return TRUE;
     	            		}
 							break;
@@ -1584,8 +1351,8 @@ static int16 RectangleDraw (struct MandelChunk *MandelInfo, struct Window *Win, 
     	            	{
                     		BlinkRect (Win, a1, b1, a2, b2);
 	                   		BlinkRect (Win, a1, b1, a2, b2);
-	                   		BlinkRect (Win, a1, b1, a2, b2);													
-													
+	                   		BlinkRect (Win, a1, b1, a2, b2);
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;													
 							return FALSE;
 						}
    	            	   	break;
@@ -1593,6 +1360,7 @@ static int16 RectangleDraw (struct MandelChunk *MandelInfo, struct Window *Win, 
     	           		case RAW_ESC:
     	           		{
     	               		DisplayBeep (Win->WScreen);
+							if (BENCHMARK_FAIL == FALSE) BENCHMARK_FAIL = TRUE;							
     	               		return TRUE;
     	           		}
 						break;
