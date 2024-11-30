@@ -9,7 +9,7 @@ a  lot  of  interesting  features  like  reaction  GUI, arexx ports and scripts,
 localization, MAPM arbitray precision math, installer script,  a  dedicated  web
 page, and many various bug fixes.
 
-So my actual development system  is ->  Pegasos II G4@1GHz 2GB Ram - Radeon 9250
+So my actual development system  is ->  Pegasos II G4()1GHz 2GB Ram - Radeon 9250
 AmigaOS4.1fe update 2 with latest OS4 SDK and GCC 11.2.0
 
 FlashMandel uses handmade assembler routines for max speed!   ..and "SPEED" it's
@@ -49,9 +49,8 @@ time! ..but it's also less accurate due Float32  single  precision  calculations
 (limited  by  hardware)  vs  Float64  FPU doubles, so for deep zooms you need to
 switch sooner to higher precision GMP Library math calculations.
 In version 4.5 I have introduced A1222/Tabor compatiiblity with full SPE support
-this version should be faster than FPU one and slower than Altivec one.
-Anyway it's only supposed because I'm not an owner of A1222/Tabor machine and so
-it's all still untested and could not work as expected!
+sadly report from different testers is negative. I'll wait for a compiler fix to  
+correct procuce SPE binaries.
 
 About precision, one of main features of FlashMandel,  is  the  ability  to  use
 arbitrary precision math. To archieve this I used GMP library, Edgar did a great
@@ -61,14 +60,15 @@ FlashMandelNG_OS4 is Giftware, If you like it please sent me nice  goodies  ..An
 email or common postcard is ok too! :-) It's possible to include it in magazines
 and CDs, if so please let me to have a free copy of paper/media support ;-)
 
-Version 4.9 changes:
-Added 16 bit 'HiColor' screenmodes, mainly for QEMU and 'low end' systems users.
-
+Version 5.1 changes:
+Now commandline parameters follows amiga's way rules,  for now it's present only 
+'BENCHMARKMODE' option to start FlashMandelNG with an FPU or Altivec speed test.
+Fixed periodicity check and speededup up core Altivec routines to use 100% power 
 ***
 
 "Bottomless wonders spring from simple rules, which are repeated without end."
 cit. Benoit Mandelbrot
- Enjoy,
 
+ Enjoy,
 
 Amiga Rulez!
