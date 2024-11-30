@@ -28,20 +28,23 @@ COPT604e = -mcpu=604e -mtune=604e
 COPT7400 = -mcpu=7400 -mtune=7400 -maltivec -mabi=altivec 
 COPTP1022 = -mcpu=8540 -mtune=8540 -mspe -mabi=spe -mfloat-gprs=double
 COPTSIZE = $(COPT604e) -Os -mstrict-align -mregnames -fomit-frame-pointer
-COPTSPEED = $(COPT604e) -O3 -Wcast-align -mstrict-align -mregnames -fomit-frame-pointer -DUSE_POWERPC_MATH
-COPTSPEEDAV = $(COPT7400) -O3 -Wcast-align -mstrict-align -mno-vrsave -mregnames -fomit-frame-pointer -DUSE_ALTIVEC_MATH #-DUSE_ALTIVEC_ASM
-#COPTSPEEDSPE = $(COPT604e) -O3 -mstrict-align -mregnames -fomit-frame-pointer -DUSE_SPE_MATH
-#COPTSPEEDSPE = $(COPTP1022) -O3 -mstrict-align -mregnames -fomit-frame-pointer -fno-inline-functions -fno-partial-inlining -fno-align-functions -fno-align-jumps -fno-align-loops -fno-align-labels -fno-inline-small-functions -fno-indirect-inlining -DUSE_SPE_MATH
-COPTSPEEDSPE = $(COPTP1022) -O3 -flax-vector-conversions -mstrict-align -fomit-frame-pointer -mregnames -DUSE_SPE_MATH
+COPTSPEED = $(COPT604e) -O3 -Wcast-align -mstrict-align -mregnames -fomit-frame-pointer -DUSE_C_MATH
+COPTSPEED_ASM = $(COPT604e) -O3 -Wcast-align -mstrict-align -mregnames -fomit-frame-pointer -DUSE_POWERPC_MATH
+COPTSPEEDAV = $(COPT7400) -O3 -Wcast-align -mstrict-align -mno-vrsave -mregnames -fomit-frame-pointer -DUSE_ALTIVEC_MATH
+COPTSPEEDAV_ASM = $(COPT7400) -O3 -Wcast-align -mstrict-align -mno-vrsave -mregnames -fomit-frame-pointer -DUSE_ALTIVEC_ASM
+COPTSPEEDSPE = $(COPT604e) -O3 -mstrict-align -mregnames -fomit-frame-pointer -DUSE_SPE_MATH
+#COPTSPEEDSPE_ASM = $(COPTP1022) -O3 -mstrict-align -mregnames -fomit-frame-pointer -fno-inline-functions -fno-partial-inlining -fno-align-functions -fno-align-jumps -fno-align-loops -fno-align-labels -fno-inline-small-functions -fno-indirect-inlining -DUSE_SPE_ASM
+COPTSPEEDSPE_P1022 = $(COPTP1022) -O3 -flax-vector-conversions -mstrict-align -fomit-frame-pointer -mregnames -DUSE_SPE_MATH
 DEBUG_CFLAGS = -DNDEBUG -g -gstabs -DMYDEBUG=1 -DDEBUGLEVEL=1
 CFLAGS_IFF = -w -Wextra $(COPTSIZE) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp
 CFLAGS_IFFSPE = -w -Wextra $(COPTSPEEDSPE) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp
-CFLAGS = -w -Wextra $(COPTSPEED) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT -DFM_AREXX_SUPPORT
+CFLAGS = -w -Wextra $(COPTSPEED_ASM) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT -DFM_AREXX_SUPPORT
 CFLAGSAV = -w -Wextra $(COPTSPEEDAV) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT
 CFLAGSSPE = -w -Wextra $(COPTSPEEDSPE) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT -DFM_AREXX_SUPPORT
-CFLAGS_NOREACT_NOAREXX = -w -Wextra $(COPTSPEED) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY
+CFLAGSSPE_P1022 = -w -Wextra $(COPTSPEEDSPE_P1022) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT -DFM_AREXX_SUPPORT
+CFLAGS_NOREACT_NOAREXX = -w -Wextra $(COPTSPEED_ASM) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY
 CFLAGSSPE_NOREACT_NOAREXX = -w -Wextra $(COPTSPEEDSPE) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY
-CFLAGS_NOAREXX = -w -Wextra $(COPTSPEED) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT
+CFLAGS_NOAREXX = -w -Wextra $(COPTSPEED_ASM) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT
 CFLAGSSPE_NOREACT_NOAREXX = -w -Wextra $(COPTSPEEDSPE) -mcrt=newlib -I./. -IHeaders -IIHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY
 CFLAGSSPE_NOREACT = -w -Wextra $(COPTSPEEDSPE) -mcrt=newlib -I./. -IHeaders -IHeaders/iffp -D__USE_INLINE__ -D__USE_BASETYPE__ -DCATCOMP_ARRAY -DFM_REACT_SUPPORT
 ASFLAGS = -m7400 
@@ -65,10 +68,10 @@ REACTLOCMOD = $(MOD)/Locale
 AUTOINIT = $(MOD)/Autoinit
 
 # ect-Files
-MOD_O = $(O)/CalcJuliaOrbit.o $(O)/CalcMandelOrbit.o $(O)/ColorWindow.o $(O)/Effects.o $(O)/Julian.o $(O)/Mandeln.o $(O)/JulianPPC.o $(O)/MandelnPPC.o $(O)/TurboRender.o $(O)/GfxRender.o
-MOD_O_ALTIVEC = $(O)/CalcJuliaOrbit_av.o $(O)/CalcMandelOrbit_av.o $(O)/ColorWindow.o $(O)/Effects.o $(O)/Julian.o $(O)/Mandeln.o $(O)/JulianAltivec.o $(O)/MandelnAltivec.o $(O)/TurboRender_av.o $(O)/GfxRender_av.o #$(O)/MandelnAltivecPPC.o
-MOD_O_SPE = $(O)/CalcJuliaOrbit_spe.o $(O)/CalcMandelOrbit_spe.o $(O)/ColorWindow_spe.o $(O)/Effects_spe.o $(O)/Julian_spe.o $(O)/Mandeln_spe.o $(O)/TurboRender_spe.o $(O)/GfxRender_spe.o
-MOD_O_LITE = $(O)/CalcJuliaOrbit.o $(O)/CalcMandelOrbit.o $(O)/ColorWindow.o $(O)/Effects.o $(O)/Julian.o $(O)/Mandeln.o $(O)/JulianPPC.o $(O)/MandelnPPC.o $(O)/TurboRender.o $(O)/GfxRender.o
+MOD_O = $(O)/CalcJuliaOrbit.o $(O)/CalcMandelOrbit.o $(O)/ColorWindow.o $(O)/Effects.o $(O)/Julian.o $(O)/Mandeln.o $(O)/JulianPPC.o $(O)/MandelnPPC.o $(O)/TurboRender.o $(O)/GfxRender.o $(O)/Mandelnfix.o
+MOD_O_ALTIVEC = $(O)/CalcJuliaOrbit_av.o $(O)/CalcMandelOrbit_av.o $(O)/ColorWindow.o $(O)/Effects.o $(O)/Julian.o $(O)/Mandeln.o $(O)/JulianAltivec.o $(O)/MandelnAltivec.o $(O)/TurboRender_av.o $(O)/GfxRender_av.o $(O)/Mandelnfix_av.o #$(O)/MandelnAltivecPPC.o
+MOD_O_SPE = $(O)/CalcJuliaOrbit_spe.o $(O)/CalcMandelOrbit_spe.o $(O)/ColorWindow_spe.o $(O)/Effects_spe.o $(O)/Julian_spe.o $(O)/Mandeln_spe.o $(O)/Julian_spe_core.o $(O)/Mandeln_spe_core.o $(O)/TurboRender_spe.o $(O)/GfxRender_spe.o $(O)/Mandelnfix_spe.o
+MOD_O_LITE = $(O)/CalcJuliaOrbit.o $(O)/CalcMandelOrbit.o $(O)/ColorWindow.o $(O)/Effects.o $(O)/Julian.o $(O)/Mandeln.o $(O)/JulianPPC.o $(O)/MandelnPPC.o $(O)/TurboRender.o $(O)/GfxRender.o $(O)/Mandelnfix.o
 IFFMOD_O = $(O)/FMIlbm.o $(O)/iffpstrings.o
 IFFMOD_O_SPE = $(O)/FMIlbm_spe.o $(O)/iffpstrings_spe.o
 GMP_MOD_O = $(O)/Julian_GMP.o $(O)/Mandeln_GMP.o $(O)/CalcJulianOrbit_GMP.o $(O)/CalcMandelnOrbit_GMP.o $(O)/Render_GMP.o
@@ -108,10 +111,10 @@ lite: FlashMandelNG_OS4_lite #lite version
 altivec: FlashMandelNG_OS4_altivec #ALTIVEC version
 spe: FlashMandelNG_OS4_spe #GCC 6 SPE version
 
+.PHONY: clean
 clean:
 	$(RM) $(O)/#?.o
-	$(RM) FlashMandelNG
-
+	
 FlashMandelNG_OS4_lite: $(OBJ_NOREACT_NOAREXX)
 	$(CC) $(CFLAGS_NOREACT_NOAREXX) -o FlashMandelNG_OS4_lite $(OBJ_NOREACT_NOAREXX) -lgmp-604e -lm -lamiga -lauto
 #strip -s FlashMandelNG_OS4
@@ -125,7 +128,7 @@ FlashMandelNG_OS4_altivec: $(OBJ_ALTIVEC)
 #strip -s FlashMandelNG_OS4
 
 FlashMandelNG_OS4_spe: $(OBJ_SPE)
-	$(CC) $(CFLAGSSPE) -o FlashMandelNG_OS4_spe $(OBJ_SPE) -lgmp-p1010-spe -lm -lamiga -lauto
+	$(CC) $(CFLAGSSPE) -o FlashMandelNG_OS4_spe $(OBJ_SPE) -lgmp-604e -lm -lamiga -lauto
 #-lgmp-p1010-spe
 #strip -s FlashMandelNG_OS4
 
@@ -191,15 +194,30 @@ $(O)/JulianAltivec.o : $(MOD)/JulianAltivec.c $(H)/FlashMandel.h
   
 $(O)/Julian_spe.o : $(MOD)/JulianSPE.c $(H)/FlashMandel.h
 	$(CCSPE) $(CFLAGSSPE) -c $(MOD)/JulianSPE.c -o $(O)/Julian_spe.o
+
+$(O)/Julian_spe_core.o : $(MOD)/JulianSPE_Core.c $(H)/FlashMandel.h
+	$(CCSPE) $(CFLAGSSPE_P1022) -c $(MOD)/JulianSPE_Core.c -o $(O)/Julian_spe_core.o
  
 $(O)/Mandeln.o : $(MOD)/Mandeln.c $(H)/FlashMandel.h
 	$(CC) $(CFLAGS) -c $(MOD)/Mandeln.c -o $(O)/Mandeln.o
+	
+$(O)/Mandelnfix.o : $(MOD)/Mandelnfix.c $(H)/FlashMandel.h
+	$(CC) $(CFLAGS) -c $(MOD)/Mandelnfix.c -o $(O)/Mandelnfix.o	
+
+$(O)/Mandelnfix_av.o : $(MOD)/Mandelnfix.c $(H)/FlashMandel.h
+	$(CC) $(CFLAGSAV) -c $(MOD)/Mandelnfix.c -o $(O)/Mandelnfix_av.o
+	
+$(O)/Mandelnfix_spe.o : $(MOD)/Mandelnfix.c $(H)/FlashMandel.h
+	$(CC) $(CFLAGSSPE) -c $(MOD)/Mandelnfix.c -o $(O)/Mandelnfix_spe.o
 
 $(O)/MandelnAltivec.o : $(MOD)/MandelnAltivec.c $(H)/FlashMandel.h
 	$(CC) $(CFLAGSAV) -c $(MOD)/MandelnAltivec.c -o $(O)/MandelnAltivec.o
 
 $(O)/Mandeln_spe.o : $(MOD)/MandelnSPE.c $(H)/FlashMandel.h
 	$(CCSPE) $(CFLAGSSPE) -c $(MOD)/MandelnSPE.c -o $(O)/Mandeln_spe.o
+	
+$(O)/Mandeln_spe_core.o : $(MOD)/MandelnSPE_Core.c $(H)/FlashMandel.h
+	$(CCSPE) $(CFLAGSSPE_P1022) -c $(MOD)/MandelnSPE_Core.c -o $(O)/Mandeln_spe_core.o	
 
 $(O)/TurboRender.o : $(MOD)/Mem/TurboRender.c $(H)/FlashMandel.h
 	$(CC) $(CFLAGS) -c $(MOD)/Mem/TurboRender.c -o $(O)/TurboRender.o

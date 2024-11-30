@@ -55,7 +55,7 @@
 **		 Various bugs fixed, enanchements and code cleanups.
 **  V4.1 Fixed Modulo in WritePixelArray and other small cleanups.
 **	V4.2 Fixed Copy and Paste bitmap functions
-**  V4.3 Introduced new tooltypes, reworked recursivity until 3x3 pixel blocks.
+**  V4.3 Introduced new tooltypes, reworked recursivity until 3x3 pixel bl	\ocks.
 **		 Fixed Orbitwindow memalloc, small code cleanups.
 **  V4.4 Added scrolling and zoon in/out feature with keyboard
 **  V4.5 Fixed includes dirs
@@ -63,6 +63,9 @@
 **  V4.7 Fixed and speeded up altivec code - cleanup include files
 **  V4.8 Added Boundary Trace algorithm, fixed Julia pick, fixed ghosted menus 
 **  V4.9 Added 16 bit screenmodes (HiColor) 
+**  V5.0 Many bugfixes, added debug options and benchmark mode via Workbench and CLI
+**  V5.1 Speedeup periodicity check and altivec calcs, added Amiga way parsing arguments for cli startup 
+**		 added Bechmarkmod control to invalidate bad tests
 ******************************************************************************************************************/
 
 #include <stdio.h>
@@ -75,9 +78,6 @@
 #include <altivec.h>
 #endif
 
-//#include <exec/types.h>
-//#include <exec/exec.h>
-
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/utility.h>
@@ -86,9 +86,12 @@
 #include <proto/asl.h>
 #include <proto/diskfont.h>
 #include <proto/gadtools.h>
+#include <proto/iffparse.h> 
 #include <proto/locale.h>
-#include <proto/iffparse.h>
+
+#ifdef FM_AREXX_SUPPORT
 #include <proto/rexxsyslib.h>
+#endif /* FM_AREXX_SUPPORT */
 
 #include <intuition/gadgetclass.h>
 #include <devices/printer.h>
@@ -102,6 +105,7 @@
 // #include <GMP/mpf2mpfr.h>
 
 #include "Headers/FlashMandel.h"
+
 #include "Headers/FM_ReactionBasics.h"
 #define CatCompArray FM_CatCompArray
 #define CatCompArrayType FM_CatCompArrayType
@@ -109,9 +113,8 @@
 #undef CatCompArray
 #undef CatCompArrayType
 
-#include "Headers/FM_InfoReq_React.h"
-
 #ifdef FM_REACT_SUPPORT
+#include "Headers/FM_InfoReq_React.h"
 #include "Headers/FM_ConfirmReq_React.h"
 #include "Headers/FM_PalettePref_React.h"
 #include "Headers/FM_InfoReq_React.h"
@@ -125,7 +128,7 @@
 #include "Headers/FM_ARexx_Misc.h"
 #endif /* FM_AREXX_SUPPORT */
 
-#define VERSTAG "\0$VER: FlashMandelNG V4.9 (19.11.2023) Dino Papararo - Edgar Schwan"
+#define VERSTAG "\0$VER: FlashMandelNG V5.1 (03.11.2024) Dino Papararo - Edgar Schwan"
 #define GUIDE "SYS:Utilities/Multiview Docs/FlashMandelNG.guide"
 
 /* PALETTE PEN COLORS FOR GUI PENS */
@@ -133,6 +136,8 @@
 #define WHITE      (1)
 #define LIGHT_GREY (2)
 #define DARK_GREY  (3)
+
+#define MYDEBUG 0 /* set MYDEBUG to 1 to activate debug messages */
 
 // don't needed for auto mode -lmauto gcc switch
 /*
@@ -144,11 +149,10 @@ struct UtilityIFace *IUtility;
 
 struct Catalog *CatalogPtr = NULL;
 struct UndoBuffer *UNDOBuffer = NULL;
+
 #ifdef FM_AREXX_SUPPORT
 struct Library *RexxSysBase = NULL;
-#ifdef __amigaos4__
 struct RexxSysIFace *IRexxSys = NULL;
-#endif /* !__amigaos4__ */
 extern Object *AREXXOBJ;
 extern uint32 AREXXSIGNAL;
 extern struct List AREXXEVENTLIST;
@@ -169,12 +173,17 @@ char USERNAME_STRING[MAX_FILELEN], COPYRIGHT_STRING[BARLEN], MYFONT[MAX_FILELEN]
 uint16 oldstatus = 0;
 int32 res = NULL;
 uint32 receivedsig, wsignal, lastsignal;
+
+#ifdef FM_REACT_SUPPORT
 int8 allocsignal = 0;
+#endif /* FM_REACT_SUPPORT */
+
 int16 ForceAbort = FALSE;
 int16 MX1 = 0, MY1 = 0, MX2 = 0, MY2 = 0, W = 0, H = 0;    /* changed for ARexx-support */
-int16 ZOOMLINE[(5 * 2) + 2], RETURNVALUE = 0, UNDOCOUNTER = 0, LEVELUNDO;
-int32 PRIORITY = DEF_PRIORITY, __oslibversion = Lib_Version;
-uint32 MASK = TMASK, DELAY = DEF_DELAY, ELAPSEDTIME = NULL;
+int16 ZOOMLINE [(5 * 2)]; /* 5 pairs */
+int16 UNDOCOUNTER = 0, LEVELUNDO, WELCOMESOUND = FALSE, BENCHMARKMODE = FALSE, BENCHMARK_FAIL = FALSE;
+int32 PRIORITY = DEF_PRIORITY, __oslibversion = Lib_Version, ERRORCODE = RETURN_OK;
+uint32 MASK = TMASK, DELAY = DEF_DELAY, ELAPSEDTIME = 0L;
 float64 DEF_RMIN, DEF_RMAX, DEF_IMIN, DEF_IMAX, DEF_JKRE, DEF_JKIM;
 uint8 *PIXMEM = 0, *GFXMEM = 0, *ARGBMEM = 0, *RGBMEM = 0;
 uint8 BYTESPERPIXEL = 4; /* default to 24bit screens */
@@ -191,9 +200,9 @@ uint32 QueueHead = 0L;
 enum { Loaded = 1, Queued = 2 };
 
 // APTR LOCK = NULL;
-CONST_STRPTR CPUPPC_STR[50];
-CONST_STRPTR VERPPC_STR[50];
-CONST_STRPTR VECPPC_STR[50];
+CONST_STRPTR CPUPPC_STR [50];
+CONST_STRPTR VERPPC_STR [50];
+CONST_STRPTR VECPPC_STR [50];
 mpf_t gzr, gzi, gzr2, gzi2, gcre, gcim, gcre1, gcim1, gcre2, gcim2, gcre3,
       gcim3, gjkre, gjkim, grmin, gimin, grmax, gimax, gtmp, gdist, gmaxdist,
       gincremreal, gincremimag, gpzr, gpzi;
@@ -201,7 +210,7 @@ mpf_t gzr, gzi, gzr2, gzi2, gcre, gcim, gcre1, gcim1, gcre2, gcim2, gcre3,
 extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
 extern void (*C_POINT) (struct MandelChunk *, struct RastPort *, uint32 *, const int16, const int16);
 
-static const char __attribute__((used)) min_stack[] = "$STACK:102400"; // stack cookie - stack set to 102400
+static const char __attribute__((used)) min_stack [] = "$STACK:102400"; // stack cookie - stack set to 102400
 
 int16 __attribute__ ((saveds)) SMFilterFunc (REG (a0, struct Hook *), REG (a2, struct ScreenModeRequester *), REG (a1, uint32));
 
@@ -209,11 +218,11 @@ struct LoadSaveFMChunk *LSFMChunk = NULL;
 struct MandelChunk *MANDChunk = NULL;
 
 struct Hook SMFILTERHOOK = { NULL, NULL, (void *) SMFilterFunc, NULL };
-struct Border MYBORDER = { 0, 0, 0, 0, COMPLEMENT, 5, &ZOOMLINE, 0 };
+struct Border MYBORDER = { 0, 0, 0, 0, COMPLEMENT, 5, ZOOMLINE, NULL };
 struct TextAttr MYFONTSTRUCT = { DEF_FONTNAMESTR, DEF_FONTSIZE, FS_NORMAL, FPF_DISKFONT|FPF_DESIGNED };
-struct NewGadget TEXTGAD = { 0, 0, 0, 0, 0, &MYFONTSTRUCT, 0, 0, 0, 0 };
-struct NewGadget BUTTONGAD = { 0, 0, 0, 0, 0, &MYFONTSTRUCT, 0, 0, 0, 0 };
-struct NewGadget CHECKBOXGAD = { 0, 0, 0, 0, 0, &MYFONTSTRUCT, 0, 0, 0, 0 };
+struct NewGadget TEXTGAD = { 0, 0, 0, 0, 0, &MYFONTSTRUCT, 0, 0, NULL, NULL };
+struct NewGadget BUTTONGAD = { 0, 0, 0, 0, 0, &MYFONTSTRUCT, 0, 0, NULL, NULL };
+struct NewGadget CHECKBOXGAD = { 0, 0, 0, 0, 0, &MYFONTSTRUCT, 0, 0, NULL, NULL };
 struct BitScaleArgs BSA = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, 0, 0, NULL, NULL };
 struct Chunk FLASHMANDEL_CHUNK = { NULL, ID_ILBM, ID_FMNG, sizeof (struct LoadSaveFMChunk), &LSFMChunk };
 struct Chunk COPYRIGHT_CHUNK = { NULL, ID_ILBM, ID_Copyright, sizeof (COPYRIGHT_STRING), COPYRIGHT_STRING };
@@ -549,18 +558,16 @@ uint32 *PIXELVECTOR = NULL;
 /* DisplayError() */
 uint32 DisplayError (struct Window *Win, int32 id, uint32 ErrorLevel)
 {
+  uint32 idcmp = IDCMP_RAWKEY;
   struct EasyStruct es = { 	sizeof (struct EasyStruct), /* es_StructSize */
     						0, /* es_Flags */
     						CATSTR (TXT_FMErrorTitle),	/* es_Title */
     						"%s", /* es_TextFormat */
     						CATSTR (TXT_OK), /* es_GadgetFormat */ };
 						
-  uint32 idcmp = IDCMP_RAWKEY;
-
 	if (Win) EasyRequest (Win, &es, &idcmp, CATSTR (id));
-	else Printf ("FlashMandel error: %s\n", CATSTR (id));
+	else Printf ("FlashMandelNG error: %s\n", CATSTR (id));
 	
-  	RETURNVALUE = ErrorLevel;
   	return (ErrorLevel);
 }
 
@@ -640,18 +647,23 @@ void CloseDownDisplay (struct Screen *screen)
 
 #ifdef FM_REACT_SUPPORT
   	FreeReaction ();
-#endif
+#if MYDEBUG
+		PutStr ("Freeded Reaction\n");
+#endif /* MYDEBG */			
+	
+#endif /* FM_REACT_SUPPORT */
+
   	if ((status = PubScreenStatus (screen, PSNF_PRIVATE)) & 1) return;
   	
 	else
     {	/* Close as soon as possible */
-      	DisplayError (NULL, TXT_ERR_CantMakeScreenPrivate, 0);
+      	DisplayError (NULL, TXT_ERR_CantMakeScreenPrivate, RETURN_ERROR);
       	
 		while (1)
 		{
 	  		received = Wait (lastsignal);
 	  		if ((status = PubScreenStatus (screen, PSNF_PRIVATE)) & 1) return;
-	  		DisplayError (NULL, TXT_ERR_CantMakeScreenPrivate, 0);
+	  		DisplayError (NULL, TXT_ERR_CantMakeScreenPrivate, RETURN_ERROR);
 		}
     }
 }
@@ -694,12 +706,14 @@ CloseLibrary("locale.library") [8uS]
 */
 
 /*  startup */
-int main (int Argc, char **Argv)
+int16 main (int16 Argc, char *Argv[])
 {
-  int32 ReturnCode = 0;
-  STRPTR StopString;
+  int32 ReturnCode = RETURN_OK;
+  STRPTR StopString = NULL;
   STRPTR *IconToolTypes = NULL;
+  struct RDArgs *RD = NULL;
   struct ScreenModeRequester *SMReq = NULL;
+  int32 RDParams [ARG_MAX] = {0, 0, 0, 0};
 
 	/* if (UtilityBase = OpenLibrary("utility.library", 0))
     {
@@ -724,13 +738,11 @@ int main (int Argc, char **Argv)
 	if (CheckCPU () != VECTORTYPE_ALTIVEC)
    	{
 #ifdef __ALTIVEC__
-          DisplayError (NULL, TXT_ERR_NoChips, 20L);
-          ReturnCode = RETURN_FAIL;
+          ReturnCode = DisplayError (NULL, TXT_ERR_NoChips, RETURN_FAIL);
           goto cleanup;
 #endif
     }  	
 
-//#ifdef __ALTIVEC__
     if ((PIXELVECTOR = (uint32 *) AllocVecTags (sizeof (uint32) * 4,
 												AVT_Type, MEMF_PRIVATE,	
 												AVT_Contiguous, TRUE, 
@@ -738,36 +750,55 @@ int main (int Argc, char **Argv)
 												AVT_Alignment, 16,
                         						AVT_ClearWithValue, 0, TAG_DONE)) == NULL)
     {
-          ReturnCode = RETURN_FAIL;
-          goto cleanup;
+        ReturnCode = DisplayError (NULL, TXT_ERR_NoMem_STR, RETURN_ERROR);
+        goto cleanup;
     }
-//#endif	/* ALTIVEC */
-	
-	/* java/ieee mode on */
-	/*	const vector unsigned int VZero = vec_splat_u32 (0);
-    vec_mtvscr (VZero); */
 
+#if MYDEBUG
+	PutStr ("Allocated PixelVector memory\n");
+#endif /* MYDEBG */
+
+#ifdef __ALTIVEC__
+	/* java/ieee mode on */
+	/*	const vector unsigned int VZero = vec_splat_u32 (0); */
+    /* vec_mtvscr (VZero); */
+#endif	/* ALTIVEC */
+	
+#ifdef FM_REACT_SUPPORT
     if ((allocsignal = AllocSignal (-1)) == -1)
     {
-      ReturnCode = RETURN_FAIL;
-      goto cleanup;
+      	ReturnCode = DisplayError (NULL, TXT_ERR_NoSignal_STR, RETURN_ERROR);          	
+      	goto cleanup;
     }
 
-  	/* new for reaction-support */
+#if MYDEBUG
+	PutStr ("Allocated Signal\n");
+#endif /* MYDEBG */
+
+  	/* new for #ifdef FM_REACT_SUPPORT */
     lastsignal = 1 << allocsignal;
+#endif /* FM_REACT_SUPPORT */
 
 #ifdef FM_AREXX_SUPPORT
     if ((RexxSysBase = OpenLibrary ("rexxsyslib.library", 36L)) == NULL)
     {
-          ReturnCode = RETURN_FAIL;
-          goto cleanup;
+        ReturnCode = DisplayError (NULL, TXT_Unknown_STR, RETURN_FAIL);
+        goto cleanup;
     }
+
+#if MYDEBUG
+	PutStr ("Opened rexxsyslib library\n");
+#endif /* MYDEBG */
 
     if ((IRexxSys = (struct IRexxSys *) GetInterface (RexxSysBase, "main", 1, NULL)) == NULL)
     {
-          ReturnCode = RETURN_FAIL;
-          goto cleanup;
+		ReturnCode = DisplayError (NULL, TXT_Unknown_STR, RETURN_FAIL);
+        goto cleanup;
     }
+
+#if MYDEBUG
+	PutStr ("Get RexxSysBase interface\n");
+#endif /* MYDEBG */
 
     NewList (&AREXXEVENTLIST);
     AREXXEVENTLIST.lh_Type = NT_USER;
@@ -780,9 +811,13 @@ int main (int Argc, char **Argv)
 															/* AVT_Alignment, 16,*/
                         									AVT_ClearWithValue, 0, TAG_DONE)) == NULL)
     {
-          ReturnCode = RETURN_FAIL;
-          goto cleanup;
+        ReturnCode = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
+        goto cleanup;
     }
+
+#if MYDEBUG
+	PutStr ("Allocated MandChunk memory\n");
+#endif /* MYDEBG */	
 
     if ((LSFMChunk = (struct LoadSaveFMChunk *) AllocVecTags (sizeof (struct LoadSaveFMChunk), 
 																AVT_Type, MEMF_PRIVATE, 
@@ -791,11 +826,18 @@ int main (int Argc, char **Argv)
 																/* AVT_Alignment, 16, */
 																AVT_ClearWithValue, 0, TAG_DONE)) == NULL)
     {
-          ReturnCode = RETURN_FAIL;
-          goto cleanup;
+        ReturnCode = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
+        goto cleanup;
     }
 
+#if MYDEBUG
+	PutStr ("Allocated LSFMChunk memory\n");
+#endif /* MYDEBG */	
+
     CatalogPtr = OpenCatalog (NULL, FMCATALOGNAME, OC_PreferExternal, TRUE, TAG_DONE);
+#if MYDEBUG
+	PutStr ("Opened catalog\n");
+#endif /* MYDEBG */		
     LocalizeMenu ((struct NewMenu *) &FLASHMANDELMENU); /* open catalog file or use default language */
 
     FLASHMANDEL_CHUNK.ch_Data = LSFMChunk;
@@ -818,7 +860,7 @@ int main (int Argc, char **Argv)
     MANDChunk->JKre = INIT_DEF_JKRE;
     MANDChunk->JKim = INIT_DEF_JKIM;
 
-    MYILBM.camg = INVALID_ID;
+//    MYILBM.camg = INVALID_ID;
     MYILBM.Bmhd.w = DEF_WIDTH;
     MYILBM.Bmhd.h = DEF_HEIGHT;
     MYILBM.Bmhd.nPlanes = DEF_DEPTH;
@@ -834,6 +876,14 @@ int main (int Argc, char **Argv)
     MYILBM.EHB = FALSE;
     MYILBM.Autoscroll = FALSE;
     MYILBM.IFFPFlags = NULL;
+	
+	MYILBM.camg = BestModeID (BIDTAG_NominalWidth, MYILBM.Bmhd.w, 
+								BIDTAG_DesiredWidth, MYILBM.Bmhd.w, 
+								BIDTAG_NominalHeight, MYILBM.Bmhd.h, 
+								BIDTAG_DesiredHeight, MYILBM.Bmhd.h, 
+								BIDTAG_Depth, MYILBM.Bmhd.nPlanes, 
+								BIDTAG_DIPFMustNotHave, PROPERTYMASK,
+								TAG_DONE);
 
     Strlcpy (USERNAME_STRING, DEF_USERNAMESTR, sizeof (USERNAME_STRING));  
     Strlcpy (OLDFONTNAME_STR, DEF_FONTNAMESTR, sizeof (OLDFONTNAME_STR));
@@ -850,10 +900,54 @@ int main (int Argc, char **Argv)
     Strlcat (COPYRIGHT_STRING, " ", sizeof (COPYRIGHT_STRING));      
     Strlcat (COPYRIGHT_STRING, COPYRIGHT_DATE, sizeof (COPYRIGHT_STRING));
 
-    if (Argc) goto clistart; /* CLI launch */
-    if (! (IconToolTypes = ArgArrayInit (Argc, Argv))) goto clistart; /* IconToolTypes not allocated */
+	if (Argc > 0) /* CLI start */
+	{   			    			
+#if MYDEBUG
+		PutStr ("Program started via console\n");
+		
+		for (int16 argNo = 0; argNo < Argc; ++argNo)
+		{
+			printf ("Argc = %d - Argv = %s\n", argNo, Argv [argNo]);	
+		}
+#endif /* MYDEBG */		
+	
+		if (RD = ReadArgs (ARG_TEMPLATE, RDParams, NULL))
+		{
+			if ((RDParams [OPT_BENCHMARK] != NULL)) BENCHMARKMODE = TRUE;    			
+			FreeArgs (RD);
+			
+			if (BENCHMARKMODE == TRUE) goto clistart; /* CLI launch */
+			else goto cleanup;
+   		}
+   		
+		else
+    	{			
+			PutStr ("Error parsing command line\nPlease use following format: ");
+			PutStr (ARG_TEMPLATE);
+			PutStr ("\n");
+			goto cleanup;
+		}		
+	}		
+	
+#if MYDEBUG
+	PutStr ("Program started via Workbench\n");
+#endif /* MYDEBG */		
+	
+    if (! (IconToolTypes = ArgArrayInit (Argc, Argv))) 
+	{
+		ReturnCode = DisplayError (NULL, TXT_ERR_NoMem, RETURN_WARN);		
+		goto clistart; /* IconToolTypes not allocated */
+	}    
+#if MYDEBUG
+	PutStr ("Allocated IconToolTypes memory\n");
+#endif /* MYDEBG */	
 
-    MYILBM.Bmhd.w = ArgInt (IconToolTypes, "SCREENWIDTH", DEF_WIDTH);
+	if (BENCHMARKMODE = ArgInt (IconToolTypes, "BENCHMARKMODE", FALSE))
+	{
+		goto clistart;	
+	}
+	
+	MYILBM.Bmhd.w = ArgInt (IconToolTypes, "SCREENWIDTH", DEF_WIDTH);
     MYILBM.Bmhd.w = MIN (MAX_WIDTH, MAX (MYILBM.Bmhd.w, MIN_WIDTH));
 	
     MYILBM.Bmhd.h = ArgInt (IconToolTypes, "SCREENHEIGHT", DEF_HEIGHT);
@@ -865,17 +959,7 @@ int main (int Argc, char **Argv)
 		MYILBM.Bmhd.nPlanes = DEF_DEPTH;
 	}
 	
-#ifndef NDEBUG
-	//  printf("SCREENWIDTH: %ld\n", MYILBM.Bmhd.w); //DEBUG
-	//  printf("SCREENHEIGHT: %ld\n", MYILBM.Bmhd.h); //DEBUG
-	//  printf("SCREENDEPTH: %ld\n", MYILBM.Bmhd.nPlanes); //DEBUG
-#endif /* !NDEBUG */
-
     sscanf (ArgString (IconToolTypes, "SCREENMODE", DEF_MONITORSTR), "%lx", &MYILBM.camg);
-
-#ifndef NDEBUG
-	//  printf("SCREENMODE: 0x%08X\n", (unsigned int) MYILBM.camg); //DEBUG
-#endif /* !NDEBUG */
 
     MANDChunk->RMin = strtod (ArgString (IconToolTypes, "REALMIN", INIT_DEF_RMINSTR), &StopString);
     if ((MANDChunk->RMin == 0.0) && (errno == ERANGE)) MANDChunk->RMin = INIT_DEF_RMIN;
@@ -1038,11 +1122,18 @@ int main (int Argc, char **Argv)
 			MANDChunk->Flags &= ~TILING_BIT;
 			MANDChunk->Flags |= BOUNDARY_BIT;
 		}	
+		
+		else if (MANDChunk->Flags & JULIA_BIT)
+		{
+			MANDChunk->Flags |= TILING_BIT; 
+			/* boundary trace not possible on julia fractal, in thid case default to tiling trace */
+			PutStr ("Boundary trace algorithm is not possible for Julia set\n");
+		}	
 	}
 
     else if (Stricmp (ArgString (IconToolTypes, "RENDERINGALGORITHM", "TILINGTRACE"), "BRUTETRACE") == 0L)
 	{
-		if (MANDChunk->Flags & MANDEL_BIT)
+		if ((MANDChunk->Flags & MANDEL_BIT) || (MANDChunk->Flags & JULIA_BIT))
 		{
 			MANDChunk->Flags &= ~BOUNDARY_BIT;		
 			MANDChunk->Flags &= ~TILING_BIT;
@@ -1052,50 +1143,27 @@ int main (int Argc, char **Argv)
 
     else if (Stricmp (ArgString (IconToolTypes, "RENDERINGALGORITHM", "TILINGTRACE"), "TILINGTRACE") == 0L)
 	{
-		if (MANDChunk->Flags & MANDEL_BIT)
+		if ((MANDChunk->Flags & MANDEL_BIT) || (MANDChunk->Flags & JULIA_BIT))
 		{
 			MANDChunk->Flags &= ~BRUTE_BIT;		
 			MANDChunk->Flags &= ~BOUNDARY_BIT;
 			MANDChunk->Flags |= TILING_BIT;
 		}	
-	}	
-
-clistart:
-    if (!(UNDOBuffer = (struct UndoBuffer *) AllocVecTags ((sizeof (struct UndoBuffer) * LEVELUNDO), 
-															AVT_Type, MEMF_PRIVATE, 
-															AVT_Contiguous, TRUE, 
-															AVT_Lock, TRUE, 
-															/* AVT_Alignment, 16, */ 
-															AVT_ClearWithValue, 0, TAG_DONE)))
-  	{
-    	ReturnCode = RETURN_FAIL;
-        goto cleanup;
-  	}
-
-    DEF_RMIN = MANDChunk->RMin;
-    DEF_RMAX = MANDChunk->RMax;
-    DEF_IMIN = MANDChunk->IMin;
-    DEF_IMAX = MANDChunk->IMax;
-    DEF_JKRE = MANDChunk->JKre;
-    DEF_JKIM = MANDChunk->JKim;
-
-    PALETTE = &PALETTE256;
-
-    MYILBM.camg = BestModeID (BIDTAG_NominalWidth, MYILBM.Bmhd.w, 
-								BIDTAG_DesiredWidth, MYILBM.Bmhd.w, 
-								BIDTAG_NominalHeight, MYILBM.Bmhd.h, 
-								BIDTAG_DesiredHeight, MYILBM.Bmhd.h, 
-								BIDTAG_Depth, MYILBM.Bmhd.nPlanes, 
-								BIDTAG_DIPFMustNotHave, PROPERTYMASK,
-								TAG_DONE);
-
-    
-	if ((MYILBM.camg != INVALID_ID) && ArgInt (IconToolTypes, "SMREQUESTER", TRUE))
+	}
+	
+	if (ArgInt (IconToolTypes, "PLAYSOUND", TRUE)) WELCOMESOUND = TRUE;
+	
+	if (ArgInt (IconToolTypes, "SMREQUESTER", TRUE))
 	{
 		if (SMReq = (struct ScreenModeRequester *) AllocAslRequest (ASL_ScreenModeRequest, NULL))
   		{
+		
+#if MYDEBUG
+			PutStr ("Allocated ScreenMode requester\n");
+#endif /* MYDEBG */	
+		
         	if (AslRequestTags (SMReq,
-								ASLSM_TitleText, "FlashMandel ScreenMode Requester",
+								ASLSM_TitleText, "FlashMandelNG ScreenMode Requester",
 								ASLSM_InitialDisplayID, MYILBM.camg,
 								ASLSM_InitialDisplayWidth, MYILBM.Bmhd.w,
 				            	ASLSM_InitialDisplayHeight, MYILBM.Bmhd.h,
@@ -1117,33 +1185,65 @@ clistart:
             	MYILBM.camg = SMReq->sm_DisplayID;
             	MYILBM.Bmhd.w = SMReq->sm_DisplayWidth;
             	MYILBM.Bmhd.h = SMReq->sm_DisplayHeight;
-            	MYILBM.Bmhd.nPlanes = SMReq->sm_DisplayDepth;
+            	MYILBM.Bmhd.nPlanes = SMReq->sm_DisplayDepth;				
+        		FreeAslRequest (SMReq);	
+#if MYDEBUG
+				PutStr ("Freeded ScreenMode requester\n");
+#endif /* MYDEBG */						
       		}
 
        		else
       		{
             	FreeAslRequest (SMReq);
-            	ReturnCode = RETURN_FAIL;
+#if MYDEBUG
+				PutStr ("Freeded ScreenMode requester\n");
+#endif /* MYDEBG */					
             	goto cleanup;
       		}
-
-        	FreeAslRequest (SMReq);
   		}
-	}	
+		
+		else
+		{
+     			ReturnCode = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
+            	goto cleanup;		
+		}
+	}		
+
+clistart:
+    if ((UNDOBuffer = (struct UndoBuffer *) AllocVecTags ((sizeof (struct UndoBuffer) * LEVELUNDO), 
+															AVT_Type, MEMF_PRIVATE, 
+															AVT_Contiguous, TRUE, 
+															AVT_Lock, TRUE, 
+															AVT_ClearWithValue, 0, TAG_DONE)) == NULL)
+  	{
+        ReturnCode = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
+        goto cleanup;
+  	}	
+
+#if MYDEBUG
+	PutStr ("Allocated UNDO memory\n");
+#endif /* MYDEBG */	
+
+    DEF_RMIN = MANDChunk->RMin;
+    DEF_RMAX = MANDChunk->RMax;
+    DEF_IMIN = MANDChunk->IMin;
+    DEF_IMAX = MANDChunk->IMax;
+    DEF_JKRE = MANDChunk->JKre;
+    DEF_JKIM = MANDChunk->JKim;
+
+    PALETTE = &PALETTE256[0];
 
 	// if (MYILBM.Bmhd.nPlanes == MAX_DEPTH) MANDChunk->Flags |= TURBO_BIT;    /* force use of turbo render for 24bit screens */
     if (MYILBM.camg == INVALID_ID)
   	{
-        DisplayError (NULL, TXT_ERR_ModeNotAvailable, 20L);
-        ReturnCode = RETURN_FAIL;
+        ReturnCode = DisplayError (NULL, TXT_ERR_ModeNotAvailable, RETURN_ERROR);
         goto cleanup;
   	}
 
     if (! MakeDisplay (&MYILBM))
   	{
-        DisplayError (NULL, TXT_ERR_MakeDisplay, 20L);
-        CloseDisplay (&MYILBM);
-        ReturnCode = RETURN_FAIL;		
+        ReturnCode = DisplayError (NULL, TXT_ERR_MakeDisplay, RETURN_ERROR);
+		CloseDisplay (&MYILBM);
         goto cleanup;
   	}
 
@@ -1162,9 +1262,10 @@ clistart:
     MANDChunk->PrecisionDigits = (int16) ceil (log10 (pow (2, MANDChunk->PrecisionBits)));
 
 	/* last check about Histogram rendering algotithm */
-	if ((MANDChunk->Flags & HISTOGRAM_BIT) && (MANDChunk->Depth == MAX_DEPTH))
+	if ((MANDChunk->Flags & HISTOGRAM_BIT) && (MANDChunk->Depth > MIN_DEPTH))
 	{
 		MANDChunk->Flags &= ~HISTOGRAM_BIT;
+		PutStr ("Histogram coloring mode is possible only for 8bit (256 colors) screens\n");
 	}
 
 	/* initialize MandChunk and global GMP vars */
@@ -1179,17 +1280,99 @@ clistart:
     mpf_set_d (MANDChunk->GJKre, MANDChunk->JKre);
     mpf_set_d (MANDChunk->GJKim, MANDChunk->JKim);
 
-    PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
-    ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
-    ClearPointer (MYILBM.win);
+	if (BENCHMARKMODE == TRUE)
+	{	
+		MANDChunk->LeftEdge = 0;
+    	MANDChunk->TopEdge = 0;
+    	MANDChunk->Width = DEF_WIDTH;
+    	MANDChunk->Height = DEF_HEIGHT;
+    	MANDChunk->Depth = DEF_DEPTH;
+    	MANDChunk->Iterations = DEF_ITERATIONS;
+    	MANDChunk->PixelFormat = PIXF_CLUT; // default to 8bit pixelformat (PIXF_CLUT 8bit - PIXF_A8R8G8B8 24bit) 
+    	MANDChunk->Modulo = DEF_WIDTH;
+        MANDChunk->Flags = (PPC_BIT | LINEAR_BIT | MANDEL_BIT | REAL_BIT | BRUTE_BIT | TURBO_BIT);
+    	MANDChunk->Power = 1; /* classic mandelbrot formula Z=Z^2+C */
+    	MANDChunk->PrecisionBits = DEF_PRECISION_BITS;
+    	MANDChunk->RMin = INIT_DEF_RMIN;
+    	MANDChunk->RMax = INIT_DEF_RMAX;
+    	MANDChunk->IMin = INIT_DEF_IMIN;
+    	MANDChunk->IMax = INIT_DEF_IMAX;
+    	MANDChunk->JKre = INIT_DEF_JKRE;
+    	MANDChunk->JKim = INIT_DEF_JKIM;	
 
+		ELAPSEDTIME	= 0L;
+		PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);		
+		
+		for (int16 i = 0; i < BENCHREPEATTIMES; i++)
+		{
+    		ELAPSEDTIME += DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+		} /* repeat BENCHREPEATTIMES times */
+				
+        DisplayBeep (MYILBM.win->WScreen);	
+		ClearPointer (MYILBM.win);
+		
+		if (BENCHMARK_FAIL == FALSE)
+		{
+			printf ("Benchmark mode 'brute force algorithm' results\nScreen resolution %dx%d Screen depth %dbit Iterations %d Rendering repeated times %d\nFormula Z=Z²+C (Mandelbrot set)\nSet coordinates:\nReal min %.3f max %.3f\nImag min %.3f max %.3f\n", DEF_WIDTH, DEF_HEIGHT, DEF_DEPTH, DEF_ITERATIONS, BENCHREPEATTIMES, INIT_DEF_RMIN, INIT_DEF_RMAX, INIT_DEF_IMIN, INIT_DEF_IMAX);
+			ShowTime (MYILBM.win, CATSTR (TXT_RenderTime), ELAPSEDTIME, TRUE);
+		}	
+		
+		else
+		{
+			PutStr ("Benchmark lead to wrong results due TAB or ESC key pressed\nplease repeat test and don't press any key\n");
+		}
+
+		PutStr ("\nAttempting to test fixed point math (integers)\n");
+		ELAPSEDTIME	= 0L;
+		PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);		
+
+        MANDChunk->Flags = (PPC_BIT | LINEAR_BIT | MANDEL_BIT | FIXED_BIT | BRUTE_BIT | TURBO_BIT);
+				
+		for (int16 i = 0; i < BENCHREPEATTIMES; i++)
+		{
+    		ELAPSEDTIME += DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+		} /* repeat BENCHREPEATTIMES times */
+		
+        DisplayBeep (MYILBM.win->WScreen);				
+		ClearPointer (MYILBM.win);
+		
+		if (BENCHMARK_FAIL == FALSE)
+		{
+			printf ("Benchmark mode 'brute force algorithm' results\nScreen resolution %dx%d Screen depth %dbit Iterations %d Rendering repeated times %d\nFormula Z=Z²+C (Mandelbrot set)\nSet coordinates:\nReal min %.3f max %.3f\nImag min %.3f max %.3f\n", DEF_WIDTH, DEF_HEIGHT, DEF_DEPTH, DEF_ITERATIONS, BENCHREPEATTIMES, INIT_DEF_RMIN, INIT_DEF_RMAX, INIT_DEF_IMIN, INIT_DEF_IMAX);
+			ShowTime (MYILBM.win, CATSTR (TXT_RenderTime), ELAPSEDTIME, TRUE);
+		}	
+		
+		else
+		{
+			PutStr ("Benchmark lead to wrong results due TAB or ESC key pressed\nplease repeat test and don't press any key\n");
+		}		
+
+		goto end;
+	}
+	
+	else
+	{
+    	PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
+    	ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+    	ClearPointer (MYILBM.win);
+	}
+	
     SetMenuStart (&MYILBM, UNDOCOUNTER);
-    ShowTime (MYILBM.win, CATSTR (TXT_RenderTime), ELAPSEDTIME);
+    ShowTime (MYILBM.win, CATSTR (TXT_RenderTime), ELAPSEDTIME, FALSE);
 
 #ifdef FM_AREXX_SUPPORT
-    CreateARexxMenu (NULL);
-    SetARexxMenu (&MYILBM);
-	if (ArgInt (IconToolTypes, "PLAYSOUND", TRUE)) LaunchIt (&MYILBM, "startup.rexx", "arexx");
+    if (CreateARexxMenu (NULL))
+	{
+#if MYDEBUG
+		PutStr ("Allocated Arexx menus\n");
+#endif /* MYDEBG */			
+    	SetARexxMenu (&MYILBM);
+#if MYDEBUG
+		PutStr ("Setup Arexx menus\n");
+#endif /* MYDEBG */		
+	}
+	
+	if (WELCOMESOUND) LaunchIt (&MYILBM, "startup.rexx", "arexx");
 #endif /* FM_AREXX_SUPPORT */
 
     ShowTitle (MYILBM.win->WScreen, FALSE);
@@ -1207,12 +1390,22 @@ clistart:
     if (TMASK & MASK) ShowTitle (MYILBM.win->WScreen, TRUE);
 
     ReturnCode = MainProg (&MYILBM, MANDChunk);
+	if (ReturnCode) DisplayError (NULL, TXT_ERR_MakeDisplay, RETURN_ERROR);
 
 #ifdef FM_AREXX_SUPPORT
     RemoveARexxMenu (&MYILBM);
-    FreeARexxMenu ();
+#if MYDEBUG
+	PutStr ("Removed Arexx menus\n");
+#endif /* MYDEBG */			
+    if (FreeARexxMenu ())
+	{
+#if MYDEBUG
+		PutStr ("Freeded Arexx menus\n");
+#endif /* MYDEBG */		
+	}	
 #endif /* FM_AREXX_SUPPORT */
 
+end:
 	/* Free global GMP vars */
     Clear_MANDChunk_GMP ();
     Clear_UNDOBuffer_GMP (UNDOCOUNTER); /* if there's something inside Undo buffer free it */
@@ -1222,18 +1415,86 @@ clistart:
     CloseDisplay (&MYILBM);
 	/* free all memory allocated */
 cleanup:
-    if (NEWFONT) CloseFont (NEWFONT);
-    if (IconToolTypes) ArgArrayDone ();
-    if (CatalogPtr) CloseCatalog (CatalogPtr); /* new for reaction-support */
-    if (UNDOBuffer) FreeVec (UNDOBuffer);
-    if (RNDMEM) FreeVec (RNDMEM);
-    if (MANDChunk) FreeVec (MANDChunk);
-    if (LSFMChunk) FreeVec (LSFMChunk);
+    if (IconToolTypes) 
+	{
+		ArgArrayDone ();
+#if MYDEBUG
+		PutStr ("Freeded IconToolTypes\n");
+#endif /* MYDEBG */	
+	}
+	
+    if (CatalogPtr) 
+	{
+		CloseCatalog (CatalogPtr); /* new for reaction-support */
+#if MYDEBUG
+		PutStr ("Closed Catalog\n");
+#endif /* MYDEBUG */		
+	}
+	
+    if (UNDOBuffer) 
+	{	
+		FreeVec (UNDOBuffer);	
+#if MYDEBUG
+		PutStr ("DeAllocated UNDO memory\n");
+#endif /* MYDEBUG */	
+	}
+		
+    if (MANDChunk) 
+	{
+		FreeVec (MANDChunk);
+#if MYDEBUG
+		PutStr ("DeAllocated MANDChunk memory\n");
+#endif /* MYDEBUG */	
+	}
+			
+    if (LSFMChunk) 
+	{
+		FreeVec (LSFMChunk);
+#if MYDEBUG
+		PutStr ("DeAllocated LSFMChunk memory\n");
+#endif /* MYDEBUG */		
+	}
+//#ifdef __ALTIVEC__
+    if (PIXELVECTOR) 
+	{
+		FreeVec (PIXELVECTOR);
+#if MYDEBUG
+		PutStr ("DeAllocated PixelVector memory\n");
+#endif /* MYDEBUG */
+	}
+	
+	/*java/ieee mode off*/
+	/* const vector unsigned int VOne = vec_splat_u32 (1);
+	vec_mtvscr (VOne); */ 
+//#endif /* __ALTIVEC__ */	
+
+#ifdef FM_REACT_SUPPORT
+    if (allocsignal) 
+	{	
+		FreeSignal (allocsignal);
+#if MYDEBUG
+		PutStr ("Freeded Signal\n");
+#endif /* MYDEBUG */
+	}
+#endif /* FM_REACT_SUPPORT */
+	
 #ifdef FM_AREXX_SUPPORT
-    if (IRexxSys) DropInterface ((struct Interface *) IRexxSys);
-    if (RexxSysBase) CloseLibrary (RexxSysBase);
+    if (IRexxSys) 
+	{
+		DropInterface ((struct Interface *) IRexxSys);
+#if MYDEBUG
+		PutStr ("Dropped IRexxSys interface\n");
+#endif /* MYDEBUG */
+	}
+			
+    if (RexxSysBase) 
+	{
+		CloseLibrary (RexxSysBase);
+#if MYDEBUG
+		PutStr ("Closed RexxSysBase library\n");
+#endif /* MYDEBUG */
+	}		
 #endif /* FM_AREXX_SUPPORT */
-    if (allocsignal) FreeSignal (allocsignal);
 	
   	//if (IGadTools) DropInterface((struct Interface *) IGadTools);
   	//if (GadToolsBase) CloseLibrary(GadToolsBase);
@@ -1241,21 +1502,22 @@ cleanup:
   	//if (UtilityBase) CloseLibrary(UtilityBase);
   	//IExec->DropInterface((struct Interface*) IAsl);
     //IExec->CloseLibrary(AslBase);
-	//use auto close libraries 
-  	
-//#ifdef __ALTIVEC__
-    if (PIXELVECTOR) FreeVec (PIXELVECTOR);
-	/*java/ieee mode off*/
-	/* const vector unsigned int VOne = vec_splat_u32 (1);
-	vec_mtvscr (VOne); */ 
-//#endif /* __ALTIVEC__ */
+	//use auto close libraries  	
+
+#if MYDEBUG /* #define MYDEBUG to 1 for debug purposes */
+	Printf ("\nError Code: %ld - ReturnCode: %ld\n", ERRORCODE, ReturnCode);
+	if (ERRORCODE == RETURN_OK && ReturnCode == RETURN_OK) PutStr ("It's all ok!\n");
+	else PutStr ("There were some errors or warnings!\n");
+#endif
 	    
-	exit (ReturnCode);
+	return ReturnCode;
 }
 
 /* mainprog() */
 int32 MainProg (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 {
+  int32 ReturnValue = RETURN_OK;
+  
     while (! res)
     {
         while (HandleEvents (Ilbm, MandelInfo) & NEWDISPLAY_MSG)
@@ -1284,15 +1546,17 @@ int32 MainProg (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                     {
                         if (MYBITMAP)
                         {
-                            FreeBitMapSafety (MYBITMAP);
+                            FreeBitMapSafety (MYBITMAP);							
                             MYBITMAP = NULL;
                             MASK &= ~BMASK;
+#if MYDEBUG
+							PutStr ("Freeded MYBITMAP requester\n");
+#endif /* MYDEBG */									
                         }
                     }
 
-                    DisplayError (NULL, TXT_ERR_MakeDisplay, 20L);
+                    ReturnValue = DisplayError (NULL, TXT_ERR_MakeDisplay, RETURN_ERROR);					
                     CloseDisplay (Ilbm);
-                    RETURNVALUE = 20;
                     goto ExitMainProg;
                 }
 
@@ -1326,7 +1590,7 @@ int32 MainProg (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                     PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
                     ELAPSEDTIME =  DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
                     SetMenuStart (Ilbm, UNDOCOUNTER);
-                    ShowTime (Ilbm->win, CATSTR (TXT_RenderTime), ELAPSEDTIME);
+                    ShowTime (Ilbm->win, CATSTR (TXT_RenderTime), ELAPSEDTIME, FALSE);
                 }
 
                 else SetMenuStart (Ilbm, UNDOCOUNTER);
@@ -1348,7 +1612,7 @@ int32 MainProg (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
  	ClearZoomFrame (Ilbm->wrp);
 
 ExitMainProg:
-	return (RETURNVALUE);
+	return (ReturnValue);
 }
 
 /***********************************************************************************************************/
@@ -1546,17 +1810,25 @@ int16 ClearZoomFrame (struct RastPort *RPort)
 /* OpenDisplay() */
 struct Window *OpenDisplay (struct ILBMInfo *Ilbm, int16 Width, int16 Height, int16 Depth, uint32 ModeID)
 {
+  int32 ReturnValue = RETURN_OK;
+  
   struct Screen *Scr = NULL;
   struct Window *Win = NULL;
 
     if (Scr = OpenIdScreen (Ilbm, Width, Height, Depth, ModeID))
     {
-    	if (Win = OpenWindowTags (NULL, WA_Left, Scr->LeftEdge, WA_Top, Scr->TopEdge, 
-									WA_Width, Scr->Width, WA_Height, Scr->Height, 
-									WA_ScreenTitle, COPYRIGHT_STRING, WA_CustomScreen, Scr,
-              						WA_IDCMP, IDCMP_STANDARD, WA_Flags,	WFLG_STANDARD, 
-									WA_MouseQueue, 1L, WA_BusyPointer, TRUE, 
-									WA_NewLookMenus, TRUE, WA_DropShadows, TRUE, TAG_DONE))
+    	if (Win = OpenWindowTags (NULL, WA_Left, Scr->LeftEdge, 
+									WA_Top, Scr->TopEdge, 
+									WA_Width, Scr->Width, 
+									WA_Height, Scr->Height, 
+									WA_ScreenTitle, COPYRIGHT_STRING, 
+									WA_CustomScreen, Scr,
+              						WA_IDCMP, IDCMP_STANDARD, 
+									WA_Flags, WFLG_STANDARD, 
+									WA_MouseQueue, 1L, 
+									WA_BusyPointer, TRUE, 
+									WA_NewLookMenus, TRUE, 
+									WA_DropShadows, TRUE, TAG_DONE))
     	{
       		Ilbm->scr = Scr;
       		Ilbm->win = Win;
@@ -1566,13 +1838,16 @@ struct Window *OpenDisplay (struct ILBMInfo *Ilbm, int16 Width, int16 Height, in
       		Ilbm->wrp = Win->RPort;
       		Ilbm->UserFlags = 0; // Ilbm compression -> TRUE == cmpByteRun1 - FALSE == cmpNone
       		Ilbm->UserData = NULL;
-
-      		goto ExitOpenDisplay;
+#if MYDEBUG
+			PutStr ("Opened Window\n");
+#endif /* MYDEBG */				
     	}
     }
 
   	else
     {
+		ReturnValue = DisplayError (NULL, TXT_ERR_Window, RETURN_ERROR);
+		
       	if (CMASK & MASK)
     	{
       		if (Ilbm->brbitmap)
@@ -1580,14 +1855,23 @@ struct Window *OpenDisplay (struct ILBMInfo *Ilbm, int16 Width, int16 Height, in
           		FreeBitMapSafety (Ilbm->brbitmap);
           		Ilbm->brbitmap = NULL;
           		MASK &= ~CMASK;
+#if MYDEBUG
+				PutStr ("Freeded BRBitmap memory\n");
+#endif /* MYDEBG */					
         	}
     	}
 
-      	if (Win) CloseWindow (Win);
-      	if (Scr) CloseScreen (Scr);
+      	if (Scr) 
+		{
+			CloseScreen (Scr);
+#if MYDEBUG
+			PutStr ("Closed Screen\n");
+#endif /* MYDEBG */	
+		}			
     }
 
-ExitOpenDisplay:	
+ExitOpenDisplay:
+	ERRORCODE = ReturnValue;
 	return (Win);
 }
 
@@ -1595,12 +1879,19 @@ ExitOpenDisplay:
 struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, int16 Depth, uint32 ModeID)
 {
   struct Screen *Scr = NULL;
-  struct Task *task = NULL; /* new for reaction-support */
-  int32 ErrorCode = NULL;
+  int32 ErrorCode = 0L, ReturnValue = RETURN_OK;
   uint32 BitMapTag, PassedTags, PixelFormat = PIXF_CLUT;
 
-  	if (!Ilbm) goto ExitOpenIdScreen;
+#ifdef FM_REACT_SUPPORT
+  struct Task *task = NULL; /* new for reaction-support */
+#endif /* FM_REACT_SUPPORT */
 
+  	if (!Ilbm)
+	{
+		ReturnValue = RETURN_ERROR;
+	 	goto ExitOpenIdScreen;
+	}
+	
   	ModeID = BestModeID (BIDTAG_NominalWidth, Width, 
 							BIDTAG_NominalHeight, Height,
         					BIDTAG_DesiredWidth, Width, 
@@ -1611,7 +1902,7 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
 
   	if (ModeID == INVALID_ID)
     {
-      	DisplayError (Ilbm->win, TXT_ERR_ModeNotAvailable, 20L);
+      	ReturnValue = DisplayError (Ilbm->win, TXT_ERR_ModeNotAvailable, RETURN_ERROR);
       	goto ExitOpenIdScreen;
     }
 
@@ -1640,23 +1931,42 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
                         						BMATags_ModeWidth, Width,
                         						BMATags_ModeHeight, Height,
                         						BMATags_DisplayID, ModeID, TAG_DONE))
-    	MASK |= CMASK;
+    	{
+			MASK |= CMASK;
+#if MYDEBUG
+			PutStr ("Allocated BRBitmap memory\n");
+#endif /* MYDEBG */
+		}
     }
 
   	BitMapTag = (Ilbm->brbitmap ? SA_BitMap : TAG_IGNORE);
   	PassedTags = (Ilbm->stags ? TAG_MORE : TAG_IGNORE);
 
+#ifdef FM_REACT_SUPPORT
   	Forbid ();
   	task = (struct Task *) &((struct Process *) FindTask (NULL))->pr_Task; /* new for reaction-support */
   	Permit ();
+#endif /* FM_REACT_SUPPORT */
 
   	SetPubScreenName (FMSCREENNAME);
 
-  	Scr = OpenScreenTags (NULL, SA_DisplayID, ModeID, SA_Type, Ilbm->stype, SA_Width, Width, SA_Height, Height, SA_Depth, Depth, 
-							SA_Colors32, PALETTE, SA_Pens, PENS, SA_DetailPen, WHITE, SA_BlockPen, BLACK, 
-							SA_Interleaved, TRUE, SA_Font, &MYFONTSTRUCT, SA_Title, COPYRIGHT_STRING, SA_PubName, FMSCREENNAME,    /* new for reaction-support */
+  	Scr = OpenScreenTags (NULL, SA_DisplayID, ModeID, 
+							SA_Type, Ilbm->stype, 
+							SA_Width, Width, 
+							SA_Height, Height, 
+							SA_Depth, Depth, 
+							SA_Colors32, PALETTE, 
+							SA_Pens, PENS, 
+							SA_DetailPen, WHITE, 
+							SA_BlockPen, BLACK, 
+							SA_Interleaved, TRUE, 
+							SA_Font, &MYFONTSTRUCT, 
+							SA_Title, COPYRIGHT_STRING, 
+#ifdef FM_REACT_SUPPORT						
+							SA_PubName, FMSCREENNAME,    /* new for reaction-support */
             				SA_PubSig, allocsignal, /* new for reaction-support */
             				SA_PubTask, task, /* new for reaction-support */
+#endif /* FM_REACT_SUPPORT */							
             				SA_SharePens, FALSE,
             				SA_OffScreenDragging, TRUE,
             				SA_Compositing, TRUE,
@@ -1672,53 +1982,64 @@ struct Screen *OpenIdScreen (struct ILBMInfo *Ilbm, int16 Width, int16 Height, i
       	switch (ErrorCode)
     	{
     		case OSERR_NOMONITOR:
-      			DisplayError (NULL, TXT_ERR_NoMonitor, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_NoMonitor, RETURN_ERROR);
       		break;
 			
     		case OSERR_NOCHIPS:
-		      	DisplayError (NULL, TXT_ERR_NoChips, 20L);
+		      	ReturnValue = DisplayError (NULL, TXT_ERR_NoChips, RETURN_ERROR);
       		break;
 			
     		case OSERR_NOMEM:
-      			DisplayError (NULL, TXT_ERR_NoMem, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
       		break;
 			
     		case OSERR_NOCHIPMEM:
-      			DisplayError (NULL, TXT_ERR_NoChipMem, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_NoChipMem, RETURN_ERROR);
       		break;
 			
     		case OSERR_PUBNOTUNIQUE:
-      			DisplayError (NULL, TXT_ERR_PubNotUnique, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_PubNotUnique, RETURN_ERROR);
       		break;
 			
     		case OSERR_UNKNOWNMODE:
-      			DisplayError (NULL, TXT_ERR_UnknownMode, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_UnknownMode, RETURN_ERROR);
       		break;
 			
     		case OSERR_TOODEEP:
-    			DisplayError (NULL, TXT_ERR_ScreenToDeep, 20L);
+    			ReturnValue = DisplayError (NULL, TXT_ERR_ScreenToDeep, RETURN_ERROR);
       		break;
 			
     		case OSERR_ATTACHFAIL:
-      			DisplayError (NULL, TXT_ERR_AttachScreen, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_AttachScreen, RETURN_ERROR);
       		break;
 			
     		case OSERR_NOTAVAILABLE:
-      			DisplayError (NULL, TXT_ERR_ModeNotAvailable, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_ModeNotAvailable, RETURN_ERROR);
       		break;
 			
     		default:
-      			DisplayError (NULL, TXT_ERR_UnknownErr, 20L);
+      			ReturnValue = DisplayError (NULL, TXT_ERR_UnknownErr, RETURN_ERROR);
       		break;
     	}
-
-      	goto ExitOpenIdScreen;
     }
+	
+	else
+	{
+#if MYDEBUG
+		PutStr ("Opened Screen\n");
+#endif /* MYDEBG */	
+	
 #ifdef FM_REACT_SUPPORT
-  	oldstatus = PubScreenStatus (Scr, 0); /* new for reaction-support */
-  	InitReaction (FMSCREENNAME);
-#endif
+  		oldstatus = PubScreenStatus (Scr, 0); /* new for reaction-support */
+  		InitReaction (FMSCREENNAME);
+#if MYDEBUG
+		PutStr ("Initialized reaction\n");
+#endif /* MYDEBG */			
+#endif /*FM_REACT_SUPPORT */
+	}
+	
 ExitOpenIdScreen:
+	ERRORCODE = ReturnValue;
   	return (Scr);
 }
 
@@ -1726,7 +2047,7 @@ ExitOpenIdScreen:
 int32 MakeDisplay (struct ILBMInfo * Ilbm)
 {
   static uint32 SAVED_COMPONENT = NULL, SAVED_POSITION = NULL;
-  int32 NColors = 0L;
+  int32 NColors = 0L, ReturnValue = RETURN_OK;
 
   	Ilbm->Bmhd.w = MIN (MAX_WIDTH, MAX (MIN_WIDTH, Ilbm->Bmhd.w));
   	Ilbm->Bmhd.h = MIN (MAX_HEIGHT, MAX (MIN_HEIGHT, Ilbm->Bmhd.h));
@@ -1742,10 +2063,12 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
            									/*AVT_Alignment, 16, */ 
 											AVT_ClearWithValue, 0, TAG_DONE)))
    	{
-       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+       	ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
 		goto ExitMakeDisplay;
 	}  	
-
+#if MYDEBUG
+	PutStr ("Allocated ARGB memory\n");
+#endif /* MYDEBG */
   	MASK |= AMASK;
 	
 	if (!(RGBMEM = (uint8 *) AllocVecTags (sizeof (uint8) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h) * 2,
@@ -1755,10 +2078,12 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
            									/*AVT_Alignment, 16, */ 
 											AVT_ClearWithValue, 0, TAG_DONE)))
    	{
-       	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+       	ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
 		goto ExitMakeDisplay;
 	}  	
-
+#if MYDEBUG
+	PutStr ("Allocated RGB memory\n");
+#endif /* MYDEBG */
   	MASK |= DMASK;	
 
   	if (!(RNDMEM = (uint32 *) AllocVecTags (sizeof (uint32) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h),	
@@ -1768,10 +2093,12 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 											/*AVT_Alignment, 16, */ 
 											AVT_ClearWithValue, 0, TAG_DONE)))
     {
-      	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
 		goto ExitMakeDisplay;
     }
-
+#if MYDEBUG
+	PutStr ("Allocated RND memory\n");
+#endif /* MYDEBG */
   	MASK |= RMASK;
 
   	if (!(GFXMEM = (uint8 *) AllocVecTags (sizeof (uint8) * (Ilbm->Bmhd.w) * (Ilbm->Bmhd.h), 
@@ -1781,10 +2108,12 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 											/* AVT_Alignment, 16, */ 
 											AVT_ClearWithValue, 0, TAG_DONE)))
     {
-      	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
 		goto ExitMakeDisplay;     	
     }
-
+#if MYDEBUG
+	PutStr ("Allocated GFX memory\n");
+#endif /* MYDEBG */
   	MASK |= PMASK;
 
   	if (!(PIXMEM = (uint8 *) AllocVecTags (sizeof (uint8) * MAX (Ilbm->Bmhd.w, Ilbm->Bmhd.h),	
@@ -1794,15 +2123,17 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 											/*AVT_Alignment, 16, */ 
 											AVT_ClearWithValue, 0, TAG_DONE)))
     {
-      	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
 		goto ExitMakeDisplay;
     }
-
+#if MYDEBUG
+	PutStr ("Allocated PIX memory\n");
+#endif /* MYDEBG */
   	MASK |= LMASK;
 
-  	if ((NEWFONT = OpenDiskFont (&MYFONTSTRUCT)) == NULL)
+  	if (!(NEWFONT = OpenDiskFont (&MYFONTSTRUCT)))
     {
-      	DisplayError (NULL, TXT_ERR_Font, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_Font, RETURN_ERROR);
 
       	// default to Topaz font  
       	Strlcpy (MYFONT, "topaz.font", sizeof (MYFONT));
@@ -1811,16 +2142,21 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
       	MYFONTSTRUCT.ta_Style = FS_NORMAL;
       	MYFONTSTRUCT.ta_Flags = FPF_ROMFONT | FPF_DESIGNED;
 
-      	if ((NEWFONT = OpenFont (&MYFONTSTRUCT)) == NULL)
-      	{
-          	DisplayError (NULL, TXT_ERR_Font, 20L);
+      	if (!(NEWFONT = OpenFont (&MYFONTSTRUCT)))
+      	{	
+          	DisplayError (NULL, TXT_ERR_Font, RETURN_ERROR);
 			goto ExitMakeDisplay;
-      	}
+      	}	
+#if MYDEBUG
+		PutStr ("ROM font opened\n");
+#endif /* MYDEBG */			
     }
-
+#if MYDEBUG
+    PutStr ("Disk font opened\n");
+#endif /* MYDEBG */	
   	if (!(OpenDisplay (Ilbm, Ilbm->Bmhd.w, Ilbm->Bmhd.h, Ilbm->Bmhd.nPlanes, Ilbm->camg)))
     {
-      	DisplayError (NULL, TXT_ERR_NoMem, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_ERROR);
 		goto ExitMakeDisplay;
     }
 
@@ -1828,46 +2164,58 @@ int32 MakeDisplay (struct ILBMInfo * Ilbm)
 
   	if (!(VINFO = GetVisualInfo (Ilbm->scr, TAG_DONE)))
     {
-      	DisplayError (NULL, TXT_ERR_VisualInfo, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_VisualInfo, RETURN_ERROR);
 		goto ExitMakeDisplay;
     }
-
+#if MYDEBUG
+		PutStr ("Get VINFO\n");
+#endif /* MYDEBG */	
   	MASK |= VMASK;
 
   	if (!(MAINMENU = CreateMenus (&FLASHMANDELMENU, GTMN_FullMenu, TRUE, TAG_DONE)))
     {
-      	DisplayError (NULL, TXT_ERR_Menu, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_Menu, RETURN_ERROR);
 		goto ExitMakeDisplay;
     }
-
+#if MYDEBUG
+		PutStr ("Created menus\n");
+#endif /* MYDEBG */	
   	MASK |= MMASK;
 
   	if (!(LayoutMenus (MAINMENU, VINFO, /*GTMN_TextAttr, &MYFONTSTRUCT, GTMN_CharSet, 3,*/ GTMN_NewLookMenus, TRUE, TAG_DONE)))
     {
-      	DisplayError (NULL, TXT_ERR_Menu, 20L);
+      	ReturnValue = DisplayError (NULL, TXT_ERR_Menu, RETURN_ERROR);
 		goto ExitMakeDisplay;
     }
-
+#if MYDEBUG
+		PutStr ("Layout menus ok\n");
+#endif /* MYDEBG */
   	CheckMenu (Ilbm->win);
   	UpdatePrecMenuItem (MANDChunk->PrecisionBits, MAINMENU, Ilbm);
 
 #ifdef FM_AREXX_SUPPORT
-  	SetARexxMenu (Ilbm);
+//  	if (SetARexxMenu (Ilbm))
+//	{
+#if MYDEBUG
+//		PutStr ("Set Arexx menus\n");
+#endif /* MYDEBG */	
+//	}
 #endif /* FM_AREXX_SUPPORT */
 
 	// if (Ilbm->IFFPFlags & IFFPF_USERMODE) Ilbm->camg = Ilbm->usermodeid;
-  	PALETTE[0L] = ((uint32) (1L << 8) << 16); // Palette will be always 256 colors (8 bit)
+  	PALETTE [0L] = ((uint32) (1L << 8) << 16); // Palette will be always 256 colors (8 bit)
 	
-  	if (SAVED_POSITION) PALETTE[SAVED_POSITION] = SAVED_COMPONENT;
+  	if (SAVED_POSITION) PALETTE [SAVED_POSITION] = SAVED_COMPONENT;
 
   	SAVED_POSITION = (3L * (1L << 8)) + 1; // Palette will be always 256 colors (8 bit)
 
-  	SAVED_COMPONENT = PALETTE[SAVED_POSITION];
-  	PALETTE[SAVED_POSITION] = NULL;
+  	SAVED_COMPONENT = PALETTE [SAVED_POSITION];
+  	PALETTE [SAVED_POSITION] = NULL;
 
 	NColors = (1L << Ilbm->Bmhd.nPlanes);
 	
 ExitMakeDisplay:
+	ERRORCODE = ReturnValue;
   	return (NColors); // return colors number
 }
 
@@ -1877,8 +2225,12 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
   	ClearMenuStrip (Ilbm->win);
 
 #ifdef FM_AREXX_SUPPORT
-  	RemoveARexxMenu (Ilbm);
-	// FreeARexxMenu ();
+//  	if (RemoveARexxMenu (Ilbm))
+//	{
+#if MYDEBUG
+//		PutStr ("Removed Arexx menus\n");
+#endif /* MYDEBG */	
+//	}
 #endif /* FM_AREXX_SUPPORT */
 
   	if (MMASK & MASK)
@@ -1888,6 +2240,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeMenus (MAINMENU);
       		MAINMENU = NULL;
       		MASK &= ~MMASK;
+#if MYDEBUG
+			PutStr ("Freeded menus\n");
+#endif /* MYDEBG */			
     	}
     }
 
@@ -1898,6 +2253,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeVisualInfo (VINFO);
       		VINFO = NULL;
       		MASK &= ~VMASK;
+#if MYDEBUG
+			PutStr ("Freeded VINFO\n");
+#endif /* MYDEBG */			
     	}
     }
 
@@ -1908,6 +2266,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		CloseWindow (Ilbm->win);
       		Ilbm->win = NULL;
       		MASK &= ~WMASK;
+#if MYDEBUG
+			PutStr ("Closed Window\n");
+#endif /* MYDEBG */			
     	}
     }
 
@@ -1918,6 +2279,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeVec (ARGBMEM);
       		ARGBMEM = NULL;
       		MASK &= ~AMASK;
+#if MYDEBUG
+			PutStr ("Freeded ARGB memory\n");
+#endif /* MYDEBG */			
     	}
     }
 	
@@ -1928,6 +2292,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeVec (RGBMEM);
       		ARGBMEM = NULL;
       		MASK &= ~DMASK;
+#if MYDEBUG
+			PutStr ("Freeded RGB memory\n");
+#endif /* MYDEBG */				
     	}
     }	
 
@@ -1938,6 +2305,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeVec (RNDMEM);
       		RNDMEM = NULL;
       		MASK &= ~RMASK;
+#if MYDEBUG
+			PutStr ("Freeded RND memory\n");
+#endif /* MYDEBG */				
     	}
     }
 
@@ -1948,6 +2318,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeVec (GFXMEM);
       		GFXMEM = NULL;
       		MASK &= ~PMASK;
+#if MYDEBUG
+			PutStr ("Freeded GFX memory\n");
+#endif /* MYDEBG */				
     	}
     }
 
@@ -1958,18 +2331,26 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeVec (PIXMEM);
       		PIXMEM = NULL;
       		MASK &= ~LMASK;
+#if MYDEBUG
+			PutStr ("Freeded PIX memory\n");
+#endif /* MYDEBG */				
     	}
     }
 
   	if (SMASK & MASK)
     {
+#ifdef FM_REACT_SUPPORT	
       	CloseDownDisplay (Ilbm->scr);
+#endif /* FM_REACT_SUPPORT */
 
     	if (Ilbm->scr)
     	{
       		CloseScreen (Ilbm->scr);
       		Ilbm->scr = NULL;
       		MASK &= ~SMASK;
+#if MYDEBUG
+			PutStr ("Closed Screen\n");
+#endif /* MYDEBG */				
     	}
     }
 
@@ -1980,6 +2361,9 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
       		FreeBitMapSafety (Ilbm->brbitmap);
       		Ilbm->brbitmap = NULL;
       		MASK &= ~CMASK;
+#if MYDEBUG
+			PutStr ("Freeded BRBitmap memory\n");
+#endif /* MYDEBG */				
     	}
     }
 
@@ -1987,20 +2371,62 @@ void CloseDisplay (struct ILBMInfo *Ilbm)
     {
       	CloseFont (NEWFONT);
       	NEWFONT = NULL;
+#if MYDEBUG
+		PutStr ("Closed Font\n");
+#endif /* MYDEBG */			
     }
 }
 
 /* ShowTime() */
-void ShowTime (struct Window *Win, STRPTR String, int32 Secs)
+int16 ShowTime (struct Window *Win, STRPTR String, int32 InputSecs, int16 Console)
 {
-	/*convert seconds to h,m,s -> seconds/3600,(seconds%3600)/60,(seconds%3600)%60*/
-  	if (Secs) snprintf (BAR_STRING, sizeof (BAR_STRING), CATSTR (TXT_AverageSpeed), String, Secs / 3600L,
-          				(Secs % 3600L) / 60L, (Secs % 3600L) % 60L, (float64) (Win->GZZWidth * Win->GZZHeight) /
-          				(float64) ((Secs % 3600L) % 60L)); // there is %.1f value can't use SNPrintf OS4 API Call
-  	else
-    	SNPrintf (BAR_STRING, sizeof (BAR_STRING), CATSTR (TXT_LessThanOne), String);
+	int16 ReturnValue = RETURN_WARN;
+	int32 Days, Hours, Minutes, Seconds;
+	
+	Days = InputSecs / (24 * 3600);
+	Hours = (InputSecs % (24 * 3600)) / 3600;
+	Minutes = (((InputSecs % (24 * 3600)) % 3600) / 60);
+	Seconds = (((InputSecs % (24 * 3600)) % 3600) % 60);
+	
+	if (Win && Console)
+	{
+		if (InputSecs)
+		{
+			/*convert seconds to h,m,s -> seconds/3600,(seconds%3600)/60,(seconds%3600)%60*/
+			snprintf (BAR_STRING, sizeof (BAR_STRING), CATSTR (TXT_AverageSpeed), String, Hours, Minutes, Seconds, 
+			(float64) (Win->GZZWidth * Win->GZZHeight * BENCHREPEATTIMES) / (float64) (Seconds)); // there is %.1f value can't use SNPrintf OS4 API Call
+		}
+		
+		else 
+		{
+			SNPrintf (BAR_STRING, sizeof (BAR_STRING), CATSTR (TXT_LessThanOne), String);
+		}
+	
+		Printf ("%s\n", BAR_STRING);
+		
+		ReturnValue = RETURN_OK;
+	}
+	
+	else if (Win)
+	{
+		if (InputSecs)
+		{		
+			/*convert seconds to h,m,s -> seconds/3600,(seconds%3600)/60,(seconds%3600)%60*/
+			snprintf (BAR_STRING, sizeof (BAR_STRING), CATSTR (TXT_AverageSpeed), String, Hours, Minutes, Seconds, 
+			(float64) (Win->GZZWidth * Win->GZZHeight * BENCHREPEATTIMES) / (float64) (Seconds)); // there is %.1f value can't use SNPrintf OS4 API Call	
+  		}				
+	
+		else
+		{
+   			SNPrintf (BAR_STRING, sizeof (BAR_STRING), CATSTR (TXT_LessThanOne), String);
+		}
 
-  	SetWindowTitles (Win, (STRPTR) ~0, BAR_STRING);
+		SetWindowTitles (Win, (STRPTR) ~0, BAR_STRING);
+	
+		ReturnValue = RETURN_OK;
+	}
+	
+	return ReturnValue;	
 }
 
 /* SaveCoords() */
@@ -2221,16 +2647,6 @@ int32 About (struct Window *Win)
 	return (More);
 }
 
-/* Fail() 
-uint32 Fail (STRPTR ErrorString, uint32 ErrorLevel)
-{
-  	DisplayBeep (NULL);
-  	Printf ("%s\n", ErrorString);
-  	RETURNVALUE = ErrorLevel;
-
-  	return (ErrorLevel);
-}*/
-
 /* Choice() */
 int32 Choice (struct Window * Win, STRPTR Title, STRPTR String)
 {
@@ -2243,17 +2659,19 @@ int32 Choice (struct Window * Win, STRPTR Title, STRPTR String)
 }
 
 /* ShowCoords() */
-int16 ShowCoords (struct Window * Win)
+int32 ShowCoords (struct Window *Win)
 {
   struct Gadget *GadList = NULL, *StringGad_1 = NULL, *StringGad_2 = NULL, 
   		*StringGad_3 = NULL, *StringGad_4 = NULL, *StringGad_5 = NULL, *StringGad_6 = NULL;
   struct Gadget *MyButtonGad = NULL, *MyCheckBoxGad = NULL, *MyGad = NULL;
   struct Window *GadWin = NULL;
   struct IntuiMessage *Message = NULL;
-  int32 Exit = FALSE, Accept = FALSE, Reset = FALSE, Ratio = FALSE, KeepReal = TRUE;
-  uint8 String[MAX_MATH_DIGITS + 2];
+  uint8 String [MAX_MATH_DIGITS + 2];
   uint16 MyCode;
+  int32 ReturnValue = RETURN_OK;
+  uint32 Exit = FALSE, Accept = FALSE, Reset = FALSE, Ratio = FALSE, KeepReal = TRUE;
   uint32 MyClass;
+  
   mpf_t Tmp_RMIN, Tmp_IMAX, Tmp_RMAX, Tmp_IMIN, Tmp_JKRE, Tmp_JKIM;
   mpf_inits (Tmp_RMIN, Tmp_IMAX, Tmp_RMAX, Tmp_IMIN, Tmp_JKRE, Tmp_JKIM, 0);
 
@@ -2266,9 +2684,9 @@ int16 ShowCoords (struct Window * Win)
 
   	TEXTGAD.ng_VisualInfo = BUTTONGAD.ng_VisualInfo = CHECKBOXGAD.ng_VisualInfo = VINFO;
   	StringGad_1 = CreateContext (&GadList);
-  	TEXTGAD.ng_Width = (MIN_WIDTH - (MARGIN * 2)) / 3;
+  	TEXTGAD.ng_Width = (MIN_GDW_WIDTH - (MARGIN * 2)) / 3;
   	TEXTGAD.ng_TopEdge = MARGIN;
-  	TEXTGAD.ng_LeftEdge = MARGIN + (((MIN_WIDTH - (MARGIN * 2)) - TEXTGAD.ng_Width) / 2);
+  	TEXTGAD.ng_LeftEdge = MARGIN + (MIN_GDW_WIDTH - (MARGIN * 2) - TEXTGAD.ng_Width) / 2;
   	TEXTGAD.ng_Height = MYFONTSTRUCT.ta_YSize * 3 / 2;
   	TEXTGAD.ng_GadgetText = CATSTR (Coord_TXT_Top);
   	TEXTGAD.ng_Flags = PLACETEXT_LEFT;
@@ -2277,12 +2695,14 @@ int16 ShowCoords (struct Window * Win)
           						String, STRINGA_ReplaceMode, TRUE, GTST_MaxChars,
           						MANDChunk->PrecisionDigits, GT_Underscore, '_', TAG_DONE);
   	TEXTGAD.ng_TopEdge += (20 + TEXTGAD.ng_Height);
+//	TEXTGAD.ng_LeftEdge	-= 100;
   	TEXTGAD.ng_GadgetText = CATSTR (Coord_TXT_Left);
   	gmp_snprintf (String, sizeof (String), "%+2.1235Ff", Tmp_RMIN);
   	StringGad_2 =  CreateGadget (STRING_KIND, StringGad_1, &TEXTGAD, GTST_String,
           						String, STRINGA_ReplaceMode, TRUE, GTST_MaxChars,
           						MANDChunk->PrecisionDigits, GT_Underscore, '_', TAG_DONE);
   	TEXTGAD.ng_TopEdge += (20 + TEXTGAD.ng_Height);
+//	TEXTGAD.ng_LeftEdge	+= 200;	
   	TEXTGAD.ng_GadgetText = CATSTR (Coord_TXT_Right);
   	TEXTGAD.ng_Flags = PLACETEXT_RIGHT;
   	gmp_snprintf (String, sizeof (String), "%+2.1235Ff", Tmp_RMAX);
@@ -2290,6 +2710,7 @@ int16 ShowCoords (struct Window * Win)
           						String, STRINGA_ReplaceMode, TRUE, GTST_MaxChars,
           						MANDChunk->PrecisionDigits, GT_Underscore, '_', TAG_DONE);
   	TEXTGAD.ng_TopEdge += (20 + TEXTGAD.ng_Height);
+//	TEXTGAD.ng_LeftEdge	-= 100;		
   	TEXTGAD.ng_GadgetText = CATSTR (Coord_TXT_Bottom);
   	gmp_snprintf (String, sizeof (String), "%+2.1235Ff", Tmp_IMIN);
   	StringGad_4 = CreateGadget (STRING_KIND, StringGad_3, &TEXTGAD, GTST_String,
@@ -2319,7 +2740,7 @@ int16 ShowCoords (struct Window * Win)
           							TRUE, GTCB_Scaled, TRUE, GT_Underscore, '_', TAG_DONE);
   	BUTTONGAD.ng_LeftEdge = MARGIN;
   	BUTTONGAD.ng_TopEdge = CHECKBOXGAD.ng_TopEdge + CHECKBOXGAD.ng_Height + 30;
-  	BUTTONGAD.ng_Width = (MIN_WIDTH - (MARGIN * 7)) / 4;
+  	BUTTONGAD.ng_Width = (MIN_GDW_WIDTH - (MARGIN * 7)) / 4;
   	BUTTONGAD.ng_Height = MYFONTSTRUCT.ta_YSize * 3 / 2;
   	BUTTONGAD.ng_GadgetText = CATSTR (Coord_TXT_Accept);
   	BUTTONGAD.ng_GadgetID = ACCEPT;
@@ -2340,14 +2761,20 @@ int16 ShowCoords (struct Window * Win)
   	if (MyButtonGad)
     {
       	GadWin = OpenWindowTags (NULL,
-        			WA_Left, MARGIN,
-                   	WA_Top, MARGIN,
-                   	WA_Width, MIN_WIDTH - (MARGIN * 2),
-                   	WA_Height, MIN_HEIGHT - (MARGIN * 2),
+        			WA_Left, WINDOW_X_OFFSET,
+                   	WA_Top, WINDOW_Y_OFFSET,
+                   	WA_Width, BUTTONGAD.ng_LeftEdge + BUTTONGAD.ng_Width + (MARGIN * 2),
+                   	WA_Height, BUTTONGAD.ng_TopEdge + BUTTONGAD.ng_Height + (MARGIN * 2),				
                    	WA_Title, CATSTR (TITLE_CoordReq),
+					WA_SizeGadget, TRUE,
+     				WA_SizeBRight, TRUE, 				
+					WA_MinWidth, MIN_GDW_WIDTH / 2,
+     				WA_MinHeight, MIN_GDW_HEIGHT / 2, 
+					WA_MaxWidth, MAX_GDW_WIDTH * 2, 
+					WA_MaxHeight, MAX_GDW_HEIGHT * 2, 					
                    	WA_ScreenTitle,	CATSTR (TXT_ScrTitle_Coord),
                    	WA_CustomScreen, Win->WScreen, 
-					WA_IDCMP, IDCMP_CLOSEWINDOW|IDCMP_REFRESHWINDOW|IDCMP_VANILLAKEY|STRINGIDCMP|BUTTONIDCMP, 
+					WA_IDCMP, IDCMP_CLOSEWINDOW|IDCMP_REFRESHWINDOW|IDCMP_VANILLAKEY|STRINGIDCMP|BUTTONIDCMP|SLIDERIDCMP, 
 					WA_Flags, WFLG_ACTIVATE|WFLG_DRAGBAR|WFLG_SIMPLE_REFRESH|WFLG_GIMMEZEROZERO|WFLG_RMBTRAP|WFLG_NW_EXTENDED,
                    	WA_Gadgets, GadList, 
 					WA_StayTop, TRUE,
@@ -2362,7 +2789,7 @@ int16 ShowCoords (struct Window * Win)
         	{
           		WaitPort (GadWin->UserPort);
 
-          		while ((!Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (GadWin->UserPort)))
+          		while (Message = (struct IntuiMessage *) GT_GetIMsg (GadWin->UserPort))
         		{
           			MyGad = (struct Gadget *) Message->IAddress;
           			MyClass = Message->Class;
@@ -2547,15 +2974,15 @@ int16 ShowCoords (struct Window * Win)
               			Reset = FALSE;
             		}
         		}
-       		} while (! Exit);
+       		} while (Exit == FALSE);
 
    			CloseWindow (GadWin);
    		}
 
-   		else DisplayError (NULL, TXT_ERR_WindowGadget, 15L);
+   		else ReturnValue = DisplayError (NULL, TXT_ERR_WindowGadget, RETURN_WARN);
    	}
   		
-	else DisplayError (NULL, TXT_ERR_Gadget, 15L);
+	else ReturnValue = DisplayError (NULL, TXT_ERR_Gadget, RETURN_WARN);
 
   	FreeGadgets (GadList);
   	mpf_clears (Tmp_RMIN, Tmp_IMAX, Tmp_RMAX, Tmp_IMIN, Tmp_JKRE, Tmp_JKIM, 0);
@@ -2564,35 +2991,35 @@ int16 ShowCoords (struct Window * Win)
 }
 
 /* IntegerGad() */
-uint32 IntegerGad (struct Window * Win, STRPTR TitleWin, STRPTR TitleScr, STRPTR TxtString, uint32 Var)
+int32 IntegerGad (struct Window * Win, STRPTR TitleWin, STRPTR TitleScr, STRPTR TxtString, uint32 Var)
 {
   struct IntuiMessage *Message = NULL;
   struct Gadget *GadList = NULL, *MyIntGad = NULL, *MyButtonGad = NULL, *MyGad = NULL;
   struct Window *GadWin = NULL;
   int16 Exit = FALSE;
   uint16 MyCode;
-  uint32 ReturnValue = Var;
+  int32 ReturnValue = Var;
   uint32 MyClass;
 
   	TEXTGAD.ng_VisualInfo = BUTTONGAD.ng_VisualInfo = VINFO;
   	MyIntGad = CreateContext (&GadList);
-  	TEXTGAD.ng_LeftEdge = 245;
-  	TEXTGAD.ng_TopEdge = 20;
-  	TEXTGAD.ng_Width = 130;
-  	TEXTGAD.ng_Height = (MYFONTSTRUCT.ta_YSize * 3L) / 2;
+  	TEXTGAD.ng_Width = (MIN_GDW_WIDTH - (MARGIN * 2)) / 3;
+  	TEXTGAD.ng_TopEdge = MARGIN;
+  	TEXTGAD.ng_LeftEdge = MARGIN + (MIN_GDW_WIDTH - (MARGIN * 2) - TEXTGAD.ng_Width) / 4;
+  	TEXTGAD.ng_Height = MYFONTSTRUCT.ta_YSize * 3 / 2;		
   	TEXTGAD.ng_GadgetText = TxtString;
   	TEXTGAD.ng_Flags = PLACETEXT_LEFT;
   	MyIntGad = CreateGadget (INTEGER_KIND, MyIntGad, &TEXTGAD, GTIN_Number, Var,
           						GTIN_MaxChars, 12, STRINGA_ReplaceMode, TRUE,
           						GT_Underscore, '_', TAG_DONE);
-  	BUTTONGAD.ng_LeftEdge = 55;
-  	BUTTONGAD.ng_TopEdge = TEXTGAD.ng_TopEdge + TEXTGAD.ng_Height + 30;
-  	BUTTONGAD.ng_Width = 130;
-  	BUTTONGAD.ng_Height = (MYFONTSTRUCT.ta_YSize * 3L) / 2;
+  	BUTTONGAD.ng_LeftEdge = MARGIN;
+  	BUTTONGAD.ng_TopEdge = TEXTGAD.ng_TopEdge + TEXTGAD.ng_Height + MARGIN;
+  	BUTTONGAD.ng_Width = (MIN_GDW_WIDTH - (MARGIN * 7)) / 4;
+  	BUTTONGAD.ng_Height = (MYFONTSTRUCT.ta_YSize * 3) / 2; 
   	BUTTONGAD.ng_GadgetText = CATSTR (Cyc_TXT_Accept);
   	BUTTONGAD.ng_GadgetID = ACCEPT;
   	MyButtonGad = CreateGadget (BUTTON_KIND, MyIntGad, &BUTTONGAD, GT_Underscore, '_', TAG_DONE);
-  	BUTTONGAD.ng_LeftEdge += (60 + BUTTONGAD.ng_Width);
+  	BUTTONGAD.ng_LeftEdge += ((MARGIN * 3) + BUTTONGAD.ng_Width);
   	BUTTONGAD.ng_GadgetText = CATSTR (Cyc_TXT_Cancel);
   	BUTTONGAD.ng_GadgetID = CANCEL;
   	MyButtonGad = CreateGadget (BUTTON_KIND, MyButtonGad, &BUTTONGAD, GT_Underscore, '_', TAG_DONE);
@@ -2602,12 +3029,18 @@ uint32 IntegerGad (struct Window * Win, STRPTR TitleWin, STRPTR TitleScr, STRPTR
       	GadWin = OpenWindowTags (NULL,
         			WA_Left, WINDOW_X_OFFSET,
                    	WA_Top, WINDOW_Y_OFFSET,
-                   	WA_Width, BUTTONGAD.ng_LeftEdge + BUTTONGAD.ng_Width + 90, 
-					WA_Height, BUTTONGAD.ng_TopEdge + BUTTONGAD.ng_Height + 55, 
+                   	WA_Width, BUTTONGAD.ng_LeftEdge + BUTTONGAD.ng_Width + (MARGIN * 2), 
+                   	WA_Height, BUTTONGAD.ng_TopEdge + BUTTONGAD.ng_Height + (MARGIN * 2),									
+					WA_SizeGadget, TRUE,
+     				WA_SizeBRight, TRUE,
+					WA_MinWidth, MIN_GDW_WIDTH / 2,
+     				WA_MinHeight, MIN_GDW_HEIGHT / 2, 
+					WA_MaxWidth, MAX_GDW_WIDTH * 2, 
+					WA_MaxHeight, MAX_GDW_HEIGHT * 2, 									
 					WA_Title, TitleWin, 
 					WA_ScreenTitle, TitleScr,
                    	WA_CustomScreen, Win->WScreen, 
-					WA_IDCMP, IDCMP_CLOSEWINDOW|IDCMP_REFRESHWINDOW|IDCMP_VANILLAKEY|INTEGERIDCMP|BUTTONIDCMP, 
+					WA_IDCMP, IDCMP_CLOSEWINDOW|IDCMP_REFRESHWINDOW|IDCMP_VANILLAKEY|INTEGERIDCMP|BUTTONIDCMP|SLIDERIDCMP, 
 					WA_Flags, WFLG_ACTIVATE|WFLG_DRAGBAR|WFLG_SIMPLE_REFRESH|WFLG_GIMMEZEROZERO|WFLG_RMBTRAP|WFLG_NW_EXTENDED,
                    	WA_Gadgets, GadList, 
 					WA_StayTop, TRUE,
@@ -2622,7 +3055,7 @@ uint32 IntegerGad (struct Window * Win, STRPTR TitleWin, STRPTR TitleScr, STRPTR
         	{
           		WaitPort (GadWin->UserPort);
 
-          		while ((!Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (GadWin->UserPort)))
+          		while (Message = (struct IntuiMessage *) GT_GetIMsg (GadWin->UserPort))
         		{
           			MyGad = (struct Gadget *) Message->IAddress;
           			MyClass = Message->Class;
@@ -2693,15 +3126,15 @@ uint32 IntegerGad (struct Window * Win, STRPTR TitleWin, STRPTR TitleScr, STRPTR
             		}
         		}
 
-        	} while (!Exit);
+        	} while (Exit == FALSE);
 
       		CloseWindow (GadWin);
     	}
 
-      	else DisplayError (NULL, TXT_ERR_Window, 15L);
+      	else DisplayError (NULL, TXT_ERR_Window, RETURN_ERROR);
     }
 
-  	else DisplayError (NULL, TXT_ERR_Gadget, 15L);
+  	else DisplayError (NULL, TXT_ERR_Gadget, RETURN_ERROR);
 
   	FreeGadgets (GadList);
   	
@@ -2709,40 +3142,85 @@ uint32 IntegerGad (struct Window * Win, STRPTR TitleWin, STRPTR TitleScr, STRPTR
 }
 
 /* Boundary memory allocation */
-int16 AllocateBoundary (uint32 Width, uint32 Height) 
+int32 AllocateBoundary (uint32 Width, uint32 Height) 
 {
+  int32 ReturnValue = RETURN_OK;
+
 	DONE = (uint8 *) AllocVecTags (sizeof (uint8) * Width * Height, 
 									AVT_Type, MEMF_PRIVATE,	
 									AVT_Contiguous, TRUE, 
 									AVT_Lock, TRUE, 
                         			AVT_ClearWithValue, 0, TAG_DONE);
 
+	if (DONE)
+	{
+#if MYDEBUG
+			PutStr ("Allocated DONE memory\n");
+#endif /* MYDEBG */	
+	}
+	
 	DATA = (uint32 *) AllocVecTags (sizeof (uint32) * Width * Height, 
 									AVT_Type, MEMF_PRIVATE,	
 									AVT_Contiguous, TRUE, 
 									AVT_Lock, TRUE, 
                         			AVT_ClearWithValue, 0, TAG_DONE);
-							
+	if (DATA)
+	{
+#if MYDEBUG
+			PutStr ("Allocated DATA memory\n");
+#endif /* MYDEBG */	
+	}		
+						
 	QUEUE = (uint32 *) AllocVecTags (sizeof (uint32) * Width * Height * 4,
 										AVT_Type, MEMF_PRIVATE,	
 										AVT_Contiguous, TRUE, 
 										AVT_Lock, TRUE, 
                         				AVT_ClearWithValue, 0, TAG_DONE);
-							
+	if (QUEUE)
+	{
+#if MYDEBUG
+			PutStr ("Allocated QUEUE memory\n");
+#endif /* MYDEBG */	
+	}			
+					
 	if ((DATA == NULL) || (DONE == NULL) || (QUEUE == NULL)) 
 	{
+		ReturnValue = DisplayError (NULL, TXT_ERR_NoMem, RETURN_WARN);
 		DeallocateBoundary ();
-		return 0;
     }
 	
-	return 1;
+	ERRORCODE = ReturnValue;
+	return ReturnValue;
 }
 
 void DeallocateBoundary (void) 
 {
-    if (QUEUE) { FreeVec (QUEUE); QUEUE = NULL; }
-    if (DONE) { FreeVec (DONE); DONE = NULL; }
-    if (DATA) { FreeVec (DATA); DATA = NULL; }
+    if (QUEUE) 
+	{ 
+		FreeVec (QUEUE); 
+		QUEUE = NULL; 
+#if MYDEBUG
+		PutStr ("Freeded QUEUE memory\n");
+#endif /* MYDEBG */	
+	}
+	
+    if (DONE) 
+	{ 
+		FreeVec (DONE); 
+		DONE = NULL; 
+#if MYDEBUG
+		PutStr ("Freeded DONE memory\n");
+#endif /* MYDEBG */		
+	}
+	
+    if (DATA) 
+	{ 
+		FreeVec (DATA); 
+		DATA = NULL; 
+#if MYDEBUG
+		PutStr ("Freeded DATA memory\n");
+#endif /* MYDEBG */		
+	}
 }
 
 /* Memory allocation for boundary trace */
@@ -2816,6 +3294,7 @@ void Scan (struct MandelChunk *MandelInfo, struct RastPort *Rp, uint32 *PixelVec
 uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint8 *GfxMem,
          uint32 *PixelVector, uint32 *RndMem, int16 BeepWhenReady)
 {
+  int32 ReturnValue = RETURN_OK;
   uint32 StartSecs = NULL, EndSecs = NULL, DummyMicros = NULL;
   uint32 *HistMem = NULL;
 	
@@ -2828,9 +3307,12 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
 												/*AVT_Alignment, 16, */ 
 												AVT_ClearWithValue, 0, TAG_DONE)))
     {
-      	DisplayError (Win, TXT_ERR_NoMem, 20L);
+      	ReturnValue = DisplayError (Win, TXT_ERR_NoMem, RETURN_ERROR);
       	goto ExitDrawFractal; // return 0
     }
+#if MYDEBUG
+		PutStr ("Allocated HIST  memory\n");
+#endif /* MYDEBG */	
 
 	/* define new drawing limits */
   	MandelInfo->Width = Win->GZZWidth;
@@ -2863,7 +3345,7 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
   	if (MandelInfo->Flags & TURBO_BIT)
     {
       	// fill memory with zero value -> belong mandelbrot set case
-      	// if ((MandelInfo->Depth == MAX_DEPTH) && (AMASK & MASK)) 
+      	// if ((MandelInfo->Depth == MAX_DEPTH) && (AMASK & MASK))
 		// memset (ARGBMem, 0, (MandelInfo->Width * MandelInfo->Height) * 4);
       	// memset (GfxMem, 0, (MandelInfo->Width * MandelInfo->Height));
       	// memset (RndMem, 0L, sizeof (uint32) * (MandelInfo->Width * MandelInfo->Height));
@@ -2876,10 +3358,10 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
       	if (MandelInfo->Flags & HIGHPREC_BIT) CalcFractalMem_GMP (MandelInfo, Win, RndMem, HistMem);
       	else CalcFractalMem (MandelInfo, Win, PixelVector, RndMem, HistMem);
 
-      	if ((MandelInfo->Flags & HISTOGRAM_BIT) && (MandelInfo->Depth == MIN_DEPTH)) 
+      	if ((MandelInfo->Flags & HISTOGRAM_BIT) && (MandelInfo->Depth == MIN_DEPTH))
 		{
 		  	SNPrintf (BAR_STRING, sizeof (BAR_STRING), "Appling histogram coloring algorithm, it may take very long time on slow systems and for high iterations. Please wait...");
-  			SetWindowTitles (Win, (STRPTR) ~0, BAR_STRING);	
+  			SetWindowTitles (Win, (STRPTR) ~0, BAR_STRING);
 			ShowTitle (Win->WScreen, TRUE);
 	
 			Histogram (MandelInfo, Win, GfxMem, RndMem, HistMem);
@@ -2897,15 +3379,21 @@ uint32 DrawFractal (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
     }
 
   	CurrentTime (&EndSecs, &DummyMicros); // stop timer
-  	if (HistMem) { FreeVec (HistMem); HistMem = NULL; }
+  	if (HistMem)
+	{ 
+		FreeVec (HistMem); 
+		HistMem = NULL; 
+#if MYDEBUG
+		PutStr ("Freeded HIST memory\n");
+#endif /* MYDEBG */			
+	}
   	if (TMASK & MASK) ShowTitle (Win->WScreen, TRUE);
   	if (BeepWhenReady == TRUE) DisplayBeep (Win->WScreen);
 
 ExitDrawFractal:
+	ERRORCODE = ReturnValue;
   	return (EndSecs - StartSecs); /* return only seconds, really no need to be more accurate! */
-}
-
-		  	
+}	  	
 
 /* LandscapeRender */
 /*
@@ -3047,14 +3535,15 @@ void DrawAxis (struct Window *Win, int16 StepX, int16 StepY)
     }
 }
 
-int16 Orbit (struct Window *Win, int16 Width, int16 Height)
+int32 Orbit (struct Window *Win, int16 Width, int16 Height)
 {
   struct Window *OrbitWin = NULL;
-  int16 Error = FALSE;
   int16 OrbitWinDim = MAX (Width, Height) / 4;
-
+  int32 ReturnValue = RETURN_OK;
+  
 	OrbitWin = OpenWindowTags (NULL,
-								WA_Left, WINDOW_X_OFFSET, WA_Top, WINDOW_Y_OFFSET,
+								WA_Left, WINDOW_X_OFFSET, 
+								WA_Top, WINDOW_Y_OFFSET,
 							   	//  WA_Width,400,
 								//  WA_Height,400,
                                 WA_Width, OrbitWinDim,
@@ -3063,12 +3552,12 @@ int16 Orbit (struct Window *Win, int16 Width, int16 Height)
                                 WA_ScreenTitle, "Window orbit...",
                                 WA_CustomScreen, Win->WScreen,
 								//  WA_IDCMP,IDCMP_RAWKEY|IDCMP_CLOSEWINDOW,
-                                WA_Flags,
-                                WFLG_DRAGBAR | WFLG_NOCAREREFRESH |
-                                WFLG_SMART_REFRESH | WFLG_RMBTRAP |
-                                WFLG_GIMMEZEROZERO | WFLG_NW_EXTENDED
-                                /*WFLG_CLOSEGADGET| */ ,
-                                WA_BusyPointer, TRUE, WA_StayTop, TRUE,
+                                WA_Flags, WFLG_DRAGBAR | WFLG_NOCAREREFRESH |
+                                			WFLG_SMART_REFRESH | WFLG_RMBTRAP |
+                                			WFLG_GIMMEZEROZERO | WFLG_NW_EXTENDED
+                                			/*WFLG_CLOSEGADGET| */,
+                                WA_BusyPointer, TRUE, 
+								WA_StayTop, TRUE,
                                 WA_DropShadows, TRUE, TAG_DONE);
 
     if (OrbitWin)
@@ -3078,32 +3567,36 @@ int16 Orbit (struct Window *Win, int16 Width, int16 Height)
         SetDrMd (OrbitWin->RPort, JAM1);
         DrawAxis (OrbitWin, OrbitWin->GZZWidth / 5, OrbitWin->GZZHeight / 5);
         SetDrMd (OrbitWin->RPort, COMPLEMENT);
-        if (Error = ShowOrbit (MANDChunk, Win, OrbitWin)) DisplayError (Win, TXT_ERR_OrbitWindow, 15L);
+        
+		if (ShowOrbit (MANDChunk, Win, OrbitWin) != RETURN_OK)
+		{ 
+			ReturnValue = DisplayError (Win, TXT_ERR_OrbitWindow, RETURN_WARN);
+		}
+		
         ModifyIDCMP (Win, IDCMP_STANDARD);
         CloseWindow (OrbitWin);
     }
 
     else
     {
-        DisplayError (Win, TXT_ERR_OrbitWindow, 15L);
-        Error = TRUE;
+    	ReturnValue = DisplayError (Win, TXT_ERR_OrbitWindow, RETURN_WARN);
     }
 
-    return (Error);
+	ERRORCODE = ReturnValue;
+    return (ReturnValue);
 }
 
 /* ShowOrbit() */
-int16 ShowOrbit (struct MandelChunk * MandelInfo, struct Window * Win, struct Window * OrbitWin)
+int32 ShowOrbit (struct MandelChunk * MandelInfo, struct Window * Win, struct Window * OrbitWin)
 {
   struct IntuiMessage *Message = NULL;
   int16 *PArray = NULL;
-  int16 Error = FALSE, Exit = FALSE;
+  int16 Exit = FALSE;
   int16 MouseX, MouseY;
   uint16 MyCode;
+  int32 ReturnValue = RETURN_OK;
   uint32 MyClass, Index, OrbitIterations = 0L;
   mpf_t RealCoord, ImagCoord;
-
-	mpf_inits (RealCoord, ImagCoord, 0);
 
 	if (PArray = (int16 *) AllocVecTags (((sizeof (int16) * ((2 * MandelInfo->Iterations)) + 2)),
                                 			AVT_Type, MEMF_PRIVATE, 
@@ -3112,11 +3605,17 @@ int16 ShowOrbit (struct MandelChunk * MandelInfo, struct Window * Win, struct Wi
                                 			/*AVT_Alignment, 16, */
 											AVT_ClearWithValue, 0, TAG_DONE))
 	{    
-    	do
+#if MYDEBUG
+		PutStr ("Allocated PARRAY memory\n");
+#endif /* MYDEBG */	
+
+		mpf_inits (RealCoord, ImagCoord, 0);
+    	
+		do
         {
 			WaitPort (Win->UserPort);
 
-            while ((! Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort)))
+            while (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort))
             {
 				MyClass = Message->Class;
                 MyCode = Message->Code;
@@ -3196,26 +3695,27 @@ int16 ShowOrbit (struct MandelChunk * MandelInfo, struct Window * Win, struct Wi
 					break;
                 } // switch (MyClass)            
             } // while                         
-        } while (!Exit); // do while
-
-        if (PArray)
-        {
-              FreeVec (PArray);
-              PArray = NULL;
-        }
-    } // if
+        } while (Exit == FALSE); // do while
+      
+        FreeVec (PArray);
+        PArray = NULL;
+#if MYDEBUG
+		PutStr ("Freeded PARRAY memory\n");
+#endif /* MYDEBG */				
+    	mpf_clears (RealCoord, ImagCoord, 0);   	
+	} // if PArray
     
-	else Error = TRUE;
-
-    mpf_clears (RealCoord, ImagCoord, 0);
-    return (Error);
+	else ReturnValue = RETURN_WARN;
+    
+	ERRORCODE = ReturnValue;
+	return (ReturnValue);
 }
 
 /* BlinkRect() */
 void BlinkRect (struct Window *Win, const int16 LeftEdge, const int16 TopEdge,
        				const int16 RightEdge, const int16 BottomEdge)
 {
-  uint8 Blink = 2;
+  uint8 Blink;
 
   	DisplayBeep (Win->WScreen);
   	ZOOMLINE[6] = ZOOMLINE[8] = LeftEdge;
@@ -3224,7 +3724,7 @@ void BlinkRect (struct Window *Win, const int16 LeftEdge, const int16 TopEdge,
   	ZOOMLINE[5] = ZOOMLINE[7] = BottomEdge;
   	ZOOMLINE[0] = LeftEdge + 1;
 
-  	while (Blink--)
+  	for (Blink = 0; Blink < 2; Blink++)
     {   /* give a visual alert of rectangle being skipped */
       	DrawBorder (Win->RPort, &MYBORDER, 0, 0);
       	Delay (3);
@@ -3234,12 +3734,13 @@ void BlinkRect (struct Window *Win, const int16 LeftEdge, const int16 TopEdge,
 }
 
 /* Preview() */
-int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem, uint8 *RGBMem, 
+int32 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem, uint8 *RGBMem, 
      			uint32 *RndMem, uint8 *PixMem, uint8 *GfxMem, int16 Width, int16 Height)
 {
   struct Window *PreviewWin = NULL;
   struct IntuiMessage *Message = NULL;
-  int16 Error = FALSE, Exit = FALSE;
+  int16 Exit = FALSE;
+  int32 ReturnValue = RETURN_OK;
   uint16 MyCode;
   uint32 MyClass;
 
@@ -3267,22 +3768,31 @@ int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem, uint8 *RG
 		PutPointer (PreviewWin, 0, 0, 0, 0, 0, BUSY_POINTER);
       	ELAPSEDTIME = DrawFractal (MANDChunk, PreviewWin, ARGBMem, RGBMem, PixMem, GfxMem, PixelVector, RndMem, FALSE);
       	ClearPointer (PreviewWin);
-      	ShowTime (PreviewWin, CATSTR (TXT_PreviewTime), ELAPSEDTIME);
+      	ShowTime (PreviewWin, CATSTR (TXT_PreviewTime), ELAPSEDTIME, FALSE);
 
     	do
     	{
       		WaitPort (PreviewWin->UserPort);
 
-      		while ((!Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (PreviewWin->UserPort)))
+      		while (Message = (struct IntuiMessage *) GT_GetIMsg (PreviewWin->UserPort))
         	{
           		MyClass = Message->Class;
           		MyCode = Message->Code;
           		GT_ReplyIMsg ((struct IntuiMessage *) Message);
-          		if (MyClass == IDCMP_CLOSEWINDOW) Exit = TRUE;    
-          		else if ((MyClass == IDCMP_RAWKEY) && (MyCode == RAW_ESC)) Exit = TRUE;
+          		
+				switch (MyClass)
+				{
+					case IDCMP_CLOSEWINDOW:
+						Exit = TRUE;
+					break;
+					
+					case IDCMP_RAWKEY:
+						if (MyCode == RAW_ESC) Exit = TRUE;												
+					break;
+				}
             }
 			
-    	} while (!Exit);
+    	} while (Exit == FALSE);
 
       	CloseWindow (PreviewWin);
     }
@@ -3296,14 +3806,17 @@ int16 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem, uint8 *RG
               	FreeBitMapSafety (MYBITMAP);
               	MYBITMAP = NULL;
               	MASK &= ~BMASK;
+#if MYDEBUG
+				PutStr ("Freeded MYBITMAP memory\n");
+#endif /* MYDEBG */								
             }
       	}
 
-      	DisplayError (Win, TXT_ERR_PreviewWindow, 15L);
-      	Error = TRUE;
+      	ReturnValue = DisplayError (Win, TXT_ERR_PreviewWindow, RETURN_WARN);
     }
 
-  	return (Error);
+  	ERRORCODE = ReturnValue;
+	return (ReturnValue);
 }
 
 /* DrawFrame() */
@@ -3346,7 +3859,10 @@ int16 FileRequest (struct Window *Win, STRPTR String, STRPTR DrawerTxt, int16 Dr
 
   	if (MyFileReq = (struct FileRequester *) AllocAslRequest (ASL_FileRequest, 0))
     {
-				
+#if MYDEBUG
+		PutStr ("Allocated File requester\n");
+#endif /* MYDEBG */					
+
    		MyDir = ((DrawerType == PALETTES_DRAWER) ? PALETTESDIR : PICTURESDIR);	
 		if (! Strlen (MyDir)) Strlcpy (MyDir, DrawerTxt, sizeof (PALETTESDIR));
 									
@@ -3371,6 +3887,9 @@ int16 FileRequest (struct Window *Win, STRPTR String, STRPTR DrawerTxt, int16 Dr
 		}
 
       	FreeAslRequest (MyFileReq);
+#if MYDEBUG
+				PutStr ("Freeded File requester\n");
+#endif /* MYDEBG */				
 
       	if (Save && Success)
     	{
@@ -3397,6 +3916,9 @@ int16 FontRequest (struct Window * Win)
 
   	if (MyFontReq = (struct FontRequester *) AllocAslRequest (ASL_FontRequest, 0))
     {
+#if MYDEBUG
+		PutStr ("Allocated Font requester\n");
+#endif /* MYDEBG */		
       	if (AslRequestTags (MyFontReq, ASLFO_Window, Win,
 			ASLFO_InitialLeftEdge, WINDOW_X_OFFSET,
             ASLFO_InitialTopEdge, WINDOW_Y_OFFSET,
@@ -3426,6 +3948,9 @@ int16 FontRequest (struct Window * Win)
     	}
 
       	FreeAslRequest (MyFontReq);
+#if MYDEBUG
+		PutStr ("Freeded Font requester\n");
+#endif /* MYDEBG */				
     }
 
   	return (Success);
@@ -3440,6 +3965,9 @@ int16 SMRequest (struct ILBMInfo * Ilbm)
 
     if (SMReq = (struct ScreenModeRequester *) AllocAslRequest (ASL_ScreenModeRequest, NULL))
     {
+#if MYDEBUG
+		PutStr ("Allocated ScreenMode requester\n");
+#endif /* MYDEBG */		
 		if (AslRequestTags (SMReq, ASLSM_Window, Win,
             ASLSM_SleepWindow, TRUE,
             ASLSM_TitleText, "ScreenMode requester",
@@ -3472,6 +4000,9 @@ int16 SMRequest (struct ILBMInfo * Ilbm)
         }
 
         FreeAslRequest (SMReq);
+#if MYDEBUG
+		PutStr ("Freeded ScreenMode requester\n");
+#endif /* MYDEBG */				
     }
 
     return (NewScreen);
@@ -3922,7 +4453,7 @@ uint32 ProcessMenu (struct MandelChunk *MandelInfo, struct Window *Win, uint8 *A
                                     MandelInfo->Flags &= ~(MANDEL_BIT); // not remove for PickJuliaK!!
                                     MandelInfo->Flags |= JULIA_BIT;
 
-									if (MandelInfo->Flags & BOUNDARY_BIT) // backup in tiling mode for julia rendering										
+									if (MandelInfo->Flags & BOUNDARY_BIT) // defaults for tiling mode for julia rendering
 									{
 										MandelInfo->Flags &= ~(BOUNDARY_BIT);
 										MandelInfo->Flags |= TILING_BIT;
@@ -4460,7 +4991,7 @@ void ProcessMouse (struct Window *Win, int16 CurMouseX, int16 CurMouseY, int32 M
   	{
       	WaitPort (Win->UserPort);
 
-      	while ((! Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort)))
+      	while (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort))
       	{
           	MyClass = Message->Class;
           	MyCode = Message->Code;
@@ -4486,33 +5017,29 @@ void ProcessMouse (struct Window *Win, int16 CurMouseX, int16 CurMouseY, int32 M
             
             	case IDCMP_EXTENDEDMOUSE:
             	{
-                	switch (MyCode)					
+                	if (MyCode == IMSGCODE_INTUIWHEELDATA)					
                 	{
-						case IMSGCODE_INTUIWHEELDATA:
-						{
-                    		if (MData->Version == INTUIWHEELDATA_VERSION)
-                    		{                      
-                        		DrawFrame (Win, MWX0, MWY0, MWX1, MWY1);
-                        
-                        		MWX1 += MData->WheelY;                  
-                        	
-								if (MWX1 < INITIALZOOM) 
-                        		{
-                            		MWX1 = INITIALZOOM;                                                
-                            		DisplayBeep (Win->WScreen);
-                        		}
-                             
-                        		MWY1 = ScalerDiv ((uint16) MWX1, (uint16) Win->GZZHeight, (uint16) Win->GZZWidth);
-                        		DrawFrame (Win, MWX0, MWY0, MWX1, MWY1);
-                                            
-                        		MX1 = MWX0;
-                        		MY1 = MWY0;
-                        		W = MWX1;
-                        		H = MWY1;
-							}
-                    	}
-						break;
-                	}            
+                   		if (MData->Version == INTUIWHEELDATA_VERSION)
+                   		{                      
+                       		DrawFrame (Win, MWX0, MWY0, MWX1, MWY1);
+                      
+                       		MWX1 += MData->WheelY;                  
+                       	
+							if (MWX1 < INITIALZOOM) 
+                       		{
+                           		MWX1 = INITIALZOOM;                                                
+                           		DisplayBeep (Win->WScreen);
+                       		}
+                            
+                       		MWY1 = ScalerDiv ((uint16) MWX1, (uint16) Win->GZZHeight, (uint16) Win->GZZWidth);
+                       		DrawFrame (Win, MWX0, MWY0, MWX1, MWY1);
+                                           
+                       		MX1 = MWX0;
+                       		MY1 = MWY0;
+                       		W = MWX1;
+                       		H = MWY1;
+						}
+                 	}            
             	}
             	break;
             
@@ -4525,19 +5052,15 @@ void ProcessMouse (struct Window *Win, int16 CurMouseX, int16 CurMouseY, int32 M
                  
             	case IDCMP_RAWKEY:
             	{
-			       	switch (MyCode)					
+			       	if (MyCode == RAW_ESC)
 					{
-						case RAW_ESC:
-						{
-							Exit = TRUE;
-						}
-						break;
+						Exit = TRUE;
 					}
             	}
             	break;
           	}
       	}
-    } while (! Exit);
+    } while (Exit == FALSE);
 
   	SetMouseQueue (Win, (uint32) DefaultQueue);
   	ModifyIDCMP (Win, IDCMP_STANDARD);
@@ -4556,13 +5079,14 @@ void ProcessMouse (struct Window *Win, int16 CurMouseX, int16 CurMouseY, int32 M
 }
 
 /* Pick() */
-int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
+int32 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
         			uint8 *ARGBMem, uint8 *RGBMem, uint8 *PixMem, uint32 *PixelVector, uint32 *RndMem, uint8 *GfxMem)
 {
   struct Window *JuliaPreviewWin = NULL;
   struct IntuiMessage *Message = NULL;
   int16 Selected = FALSE, Exit = FALSE;
   int16 MouseX = 0, MouseY = 0;
+  int32 ReturnValue = RETURN_OK;
   uint16 MyCode = 0;
   uint32 MyClass = NULL;
   mpf_t RCoord, ICoord, TmpJKRE, TmpJKIM;
@@ -4575,8 +5099,12 @@ int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
                                       WA_BusyPointer, TRUE, WA_PointerDelay, TRUE, 
                                       WA_StayTop, TRUE, WA_DropShadows, TRUE, TAG_DONE);
 
-    if (JuliaPreviewWin == NULL) goto ExitPickJuliaK;
-
+    if (! JuliaPreviewWin) 
+	{
+		ReturnValue = RETURN_WARN;
+		goto ExitPickJuliaK;
+	}
+	
     ClearMenuStrip (Win);
     SetWindowTitles (Win, (STRPTR) ~0, CATSTR (TXT_LeftButtonForJulia));
     PutPointer (Win, 0, 0, 0, 0, 0, ZOOM_POINTER);
@@ -4586,7 +5114,7 @@ int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
     {
         WaitPort (Win->UserPort);
 
-        while ((! Exit) && (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort)))
+        while (Message = (struct IntuiMessage *) GT_GetIMsg (Win->UserPort))
         {
 			MyClass = Message->Class;
             MyCode = Message->Code;
@@ -4696,6 +5224,7 @@ int16 PickJuliaK (struct MandelChunk *MandelInfo, struct Window *Win,
     mpf_clears (RCoord, ICoord, TmpJKRE, TmpJKIM, 0);
 
 ExitPickJuliaK:    
+	ERRORCODE = ReturnValue;
 	return (Selected);
 }
 
@@ -4706,7 +5235,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
   BPTR MyFile;
   int16 MouseX = 0, MouseY = 0, New_Granularity = 0;
   uint16 MyCode = 0;
-  int32 Result = 0;
+  int32 Result = 0, ReturnValue = RETURN_OK;
   uint32 MyClass = NULL, MyMenu = NULL, Scrl_Zoom_Step = 10;
   mpf_t RealCoord, ImagCoord, ScrRatio, FracRatio;
 //  mp_exp_t exp = 0;
@@ -4730,13 +5259,15 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 #endif /* FM_AREXX_SUPPORT */
      	if (receivedsig & wsignal)  	
 		{
-           	while ((!((MyMenu == EXIT_MSG) || (MyMenu & NEWDISPLAY_MSG))) && (Message = (struct IntuiMessage *) GT_GetIMsg (Ilbm->win->UserPort)))
+           	while (Message = (struct IntuiMessage *) GT_GetIMsg (Ilbm->win->UserPort))
          	{
              	MyClass = Message->Class;
               	MyCode = Message->Code;
               	MouseX = Message->MouseX;
               	MouseY = Message->MouseY;
               	GT_ReplyIMsg ((struct IntuiMessage *) Message);
+
+				if ((MyMenu == EXIT_MSG) || (MyMenu & NEWDISPLAY_MSG)) break;
 
 				if (New_Granularity)
 				{	
@@ -5073,7 +5604,8 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                         if (MyMenu & TIME_MSG)
                        	{
                             ShowTitle (Ilbm->win->WScreen, TRUE);
-                            ShowTime (Ilbm->win, CATSTR (TXT_LastCalcTime), ELAPSEDTIME), Delay (TWOSECS);
+                            ShowTime (Ilbm->win, CATSTR (TXT_LastCalcTime), ELAPSEDTIME, FALSE);
+							Delay (TWOSECS);
                             if (!(TMASK & MASK)) ShowTitle (Ilbm->win->WScreen, FALSE);
                             break;
                        	}
@@ -5140,7 +5672,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 #else /* FM_REACT_SUPPORT */
                             res = ModifyPalette (Ilbm->win, WINDOW_X_OFFSET, WINDOW_Y_OFFSET, PALETTE);
 #endif /* FM_REACT_SUPPORT */
-                            if (!res) DisplayError (Ilbm->win, TXT_ERR_PaletteRequester, 15L);
+                            if (!res) ReturnValue = DisplayError (Ilbm->win, TXT_ERR_PaletteRequester, RETURN_ERROR);
                             ResetMenuStrip (Ilbm->win, MAINMENU);
                             ModifyIDCMP (Ilbm->win, IDCMP_STANDARD);
                             break;
@@ -5218,6 +5750,21 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                     MandelInfo->PixelFormat = LSFMChunk->PixelFormat;
                                     MandelInfo->Modulo = LSFMChunk->Modulo;
                                     MandelInfo->Flags = LSFMChunk->Flags;
+									
+									if (MandelInfo->Flags & JULIA_BIT)
+									{
+										if (MandelInfo->Flags & BOUNDARY_BIT)
+										{
+											MandelInfo->Flags &= ~BOUNDARY_BIT;
+											MandelInfo->Flags |= TILING_BIT;
+										}
+									}	
+										
+									if (!((MandelInfo->Flags & BRUTE_BIT) || (MandelInfo->Flags & TILING_BIT) || (MandelInfo->Flags & BOUNDARY_BIT)))
+									{
+										MandelInfo->Flags |= TILING_BIT;
+									}
+									
                                     MandelInfo->Power = LSFMChunk->Power;
                                     MandelInfo->PrecisionDigits = LSFMChunk->PrecisionDigits;
                                     MandelInfo->Depth = LSFMChunk->Depth;
@@ -5255,7 +5802,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 
                                     if (Ilbm->camg == INVALID_ID)
                                    	{
-                                        DisplayError (Ilbm->win, TXT_ERR_ModeNotAvailable, 20L);
+                                        ReturnValue = DisplayError (Ilbm->win, TXT_ERR_ModeNotAvailable, RETURN_WARN);
                                         break;
                                    	}
 
@@ -5269,7 +5816,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 
                                     if (!MakeDisplay (Ilbm))
                                    	{
-                                        DisplayError (Ilbm->win, TXT_ERR_MakeDisplay, 20L);
+                                        ReturnValue = DisplayError (Ilbm->win, TXT_ERR_MakeDisplay, RETURN_ERROR);
                                    	    CloseDisplay (Ilbm);
                                         MyMenu = EXIT_MSG;
                                         break;
@@ -5277,7 +5824,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 
                                     MASK &= ~ZMASK;
                                     ShowTitle (Ilbm->win->WScreen, FALSE);
-                                    if (LoadMandPic (Ilbm, MYPATH)) DisplayError (Ilbm->win, TXT_ERR_LoadMandPic, 5L);
+                                    if (LoadMandPic (Ilbm, MYPATH)) ReturnValue = DisplayError (Ilbm->win, TXT_ERR_LoadMandPic, RETURN_WARN);
                                    	if (TMASK & MASK) ShowTitle (Ilbm->win->WScreen, TRUE);
                                     GetRGB32 (Ilbm->vp->ColorMap, 0, Ilbm->vp->ColorMap->Count, (PALETTE + 1L));
                                     SetMenuStart (Ilbm, UNDOCOUNTER);
@@ -5286,7 +5833,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                 else
                                 {
                            			ClearZoomFrame (Ilbm->wrp);                                   
-                                   	DisplayError (Ilbm->win, TXT_ERR_QueryMandPic, 0);
+                                   	ReturnValue = DisplayError (Ilbm->win, TXT_ERR_QueryMandPic, RETURN_WARN);
                                 }    
                            	}                            
 							break;
@@ -5339,7 +5886,7 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                 
                                 ShowTitle (Ilbm->win->WScreen, FALSE);
                                 GetRGB32 (Ilbm->vp->ColorMap, 0, Ilbm->vp->ColorMap->Count, (PALETTE + 1L));
-                                if (SaveMandPic  (Ilbm, LSFMChunk, USERNAME_STRING, COPYRIGHT_STRING, MYPATH)) DisplayError (Ilbm->win, TXT_ERR_SaveMandPic, 5L);
+                                if (SaveMandPic  (Ilbm, LSFMChunk, USERNAME_STRING, COPYRIGHT_STRING, MYPATH)) ReturnValue = DisplayError (Ilbm->win, TXT_ERR_SaveMandPic, RETURN_WARN);
                                 if (TMASK & MASK) ShowTitle (Ilbm->win->WScreen, TRUE);                                  
                           	}
                           	break;
@@ -5354,12 +5901,12 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                 if (Ilbm->ParseInfo.iff = AllocIFF ())
                               	{
                                     Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);								
-                                    if (LoadPalette (Ilbm, MYPATH)) DisplayError (Ilbm->win, TXT_ERR_LoadMandPal, 5L);
+                                    if (LoadPalette (Ilbm, MYPATH)) ReturnValue = DisplayError (Ilbm->win, TXT_ERR_LoadMandPal, RETURN_WARN);
                                   	GetRGB32 (Ilbm->vp->ColorMap, 0, Ilbm->vp->ColorMap->Count, (PALETTE + 1L));
                                     FreeIFF (Ilbm->ParseInfo.iff);
                               	}
 
-                                else DisplayError (Ilbm->win, TXT_ERR_NoMem, 5L);
+                                else ReturnValue = DisplayError (Ilbm->win, TXT_ERR_NoMem, RETURN_WARN);
                           	}
                           	break;
                       	}
@@ -5372,11 +5919,11 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
 
                                 if (Ilbm->ParseInfo.iff = AllocIFF ())
                               	{
-                                  	if (SavePalette (Ilbm, &USERNAME_CHUNK, &COPYRIGHT_CHUNK, MYPATH)) DisplayError (Ilbm->win, TXT_ERR_SaveMandPal, 5L);
+                                  	if (SavePalette (Ilbm, &USERNAME_CHUNK, &COPYRIGHT_CHUNK, MYPATH)) ReturnValue = DisplayError (Ilbm->win, TXT_ERR_SaveMandPal, RETURN_WARN);
                                     FreeIFF (Ilbm->ParseInfo.iff);
                               	}
 
-                                else DisplayError (Ilbm->win, TXT_ERR_NoMem, 5L);
+                                else ReturnValue = DisplayError (Ilbm->win, TXT_ERR_NoMem, RETURN_WARN);
                           	}
                             break;
                       	}
@@ -5402,10 +5949,13 @@ uint32 HandleEvents (struct ILBMInfo *Ilbm, struct MandelChunk *MandelInfo)
                                             FreeBitMapSafety (MYBITMAP);
                                             MYBITMAP = NULL;
                                             MASK &= ~BMASK;
+#if MYDEBUG
+											PutStr ("Freeded MYBITMAP memory\n");
+#endif /* MYDEBG */													
                                       	}
                                   	}
 
-                                    DisplayError (Ilbm->win, TXT_ERR_MakeDisplay, 20L);
+                                    ReturnValue = DisplayError (Ilbm->win, TXT_ERR_MakeDisplay, RETURN_ERROR);
                                     CloseDisplay (Ilbm);
                                     MyMenu = EXIT_MSG;
                                     break;
@@ -5506,7 +6056,7 @@ REDRAW:
                            PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
                            ELAPSEDTIME = DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
                            SetMenuStart (Ilbm, UNDOCOUNTER);
-                           ShowTime (Ilbm->win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME);
+                           ShowTime (Ilbm->win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME, FALSE);
                            break;
                        }
 DRAW:
@@ -5522,7 +6072,7 @@ DRAW:
                                PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
                                ELAPSEDTIME = DrawFractal (MandelInfo, Ilbm->win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
                                SetMenuStart (Ilbm, UNDOCOUNTER);
-                               ShowTime (Ilbm->win, CATSTR (TXT_ZoomTime), ELAPSEDTIME);
+                               ShowTime (Ilbm->win, CATSTR (TXT_ZoomTime), ELAPSEDTIME, FALSE);
                            }
                            break;
                        }
@@ -5570,6 +6120,7 @@ DRAW:
 
   	mpf_clears (RealCoord, ImagCoord, ScrRatio, FracRatio, 0);
   	
+	if (ReturnValue != RETURN_OK) ERRORCODE = ReturnValue;
 	return (MyMenu);
 }
 
@@ -5584,7 +6135,7 @@ void FreeBitMapSafety (struct BitMap *Bitmap)
 struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 Width, uint16 Height)
 {
   struct BitMap *NewBM = NULL;
-  int32 SrcType, DstType;
+  int32 SrcType, DstType, ReturnValue = RETURN_OK;
   uint32 SrcDepth, SrcPixelFormat;
   
   	SrcType = BLITT_BITMAP;
@@ -5606,6 +6157,9 @@ struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 W
 
     if (NewBM)
     {
+#if MYDEBUG
+		PutStr ("Allocated NEWBM memory\n");
+#endif /* MYDEBG */		
         if (ZMASK & MASK) DrawBorder (Win->RPort, &MYBORDER, 0, 0);
         ShowTitle (Win->WScreen, FALSE);
 
@@ -5620,15 +6174,19 @@ struct BitMap *CopyBitMap (struct Window *Win, uint16 Left, uint16 Top, uint16 W
         if (ZMASK & MASK) DrawBorder (Win->RPort, &MYBORDER, 0, 0);
         MASK |= BMASK;
     }
+	
+	else ReturnValue = RETURN_WARN;
 
+	ERRORCODE = ReturnValue;
     return (NewBM);
 }
 
 /* PasteBitMap() */
-int16 PasteBitMap (struct BitMap *SrcBM, struct Window *DstWin, uint16 SrcLeft, uint16 SrcTop, uint16 SrcWidth, uint16 SrcHeight)
+int32 PasteBitMap (struct BitMap *SrcBM, struct Window *DstWin, uint16 SrcLeft, uint16 SrcTop, uint16 SrcWidth, uint16 SrcHeight)
 {
   int16 Success = FALSE;
   uint16 DstWinWidth, DstWinHeight;
+  int32 ReturnValue = RETURN_OK; 
   uint32 DstDepth, DstPixelFormat;
   
   struct BitMap *TmpBM = NULL;
@@ -5650,6 +6208,9 @@ int16 PasteBitMap (struct BitMap *SrcBM, struct Window *DstWin, uint16 SrcLeft, 
 
         if (TmpBM)
         {
+#if MYDEBUG
+			PutStr ("Allocated TMPBM memory\n");
+#endif /* MYDEBG */				
 			BSA.bsa_SrcX = 0;
             BSA.bsa_SrcY = 0;
 			BSA.bsa_SrcWidth = SrcWidth;
@@ -5668,14 +6229,23 @@ int16 PasteBitMap (struct BitMap *SrcBM, struct Window *DstWin, uint16 SrcLeft, 
             BitMapScale (&BSA);
             BltBitMapRastPort (TmpBM, 0, 0, DstWin->RPort, 0, 0, DstWinWidth, DstWinHeight, 0xC0);
             FreeBitMapSafety (TmpBM);
+#if MYDEBUG
+			PutStr ("Freeded TMPBM memory\n");
+#endif /* MYDEBG */					
             Success = TRUE;
         }
+		
+		else ReturnValue = RETURN_WARN;
 
         FreeBitMapSafety (SrcBM);
         SrcBM = NULL;
         MASK &= ~BMASK;
+#if MYDEBUG
+		PutStr ("Freeded SrcBM memory\n");
+#endif /* MYDEBG */				
     }
 
+	ERRORCODE = ReturnValue;
     return (Success);
 }
 
