@@ -326,7 +326,7 @@ ExitCreateArexxMenu:
         RETURNS:        result:
                             Is TRUE if successfull.
 */
-int16 SetARexxMenu (struct ILBMInfo * Ilbm)
+int16 SetARexxMenu (struct ILBMInfo *Ilbm)
 {
   int16 success = FALSE;
   struct Menu *win_menu = Ilbm->win->MenuStrip, *last_menu = NULL;
@@ -369,7 +369,7 @@ int16 SetARexxMenu (struct ILBMInfo * Ilbm)
 
 /* RemoveARexxMenu(): Remove and free menu-items for ARexx-menu.
 
-        SYNOPSIS: void  = RemoveARexxMenu
+        SYNOPSIS: int16  = RemoveARexxMenu
                         (
                         struct ILBMInfo  *Ilbm;
                         );
@@ -377,13 +377,15 @@ int16 SetARexxMenu (struct ILBMInfo * Ilbm)
         INPUTS:     Ilbm:
                             Pointer to the ILBMInfo-structure.
 
-        RETURNS:        result: -
+        RETURNS:    result: 
+                            Is TRUE if successfull.		
 */
-void RemoveARexxMenu (struct ILBMInfo *Ilbm)
+int16 RemoveARexxMenu (struct ILBMInfo *Ilbm)
 {
   struct Menu *win_menu = Ilbm->win->MenuStrip, *act_menu = NULL, *prev_menu = NULL;
   APTR vi = NULL;
-
+  int16 success = FALSE;
+  
   	if (ARexxMenu)
     {
       	if (vi = GetVisualInfoA (Ilbm->scr, NULL))
@@ -411,27 +413,37 @@ void RemoveARexxMenu (struct ILBMInfo *Ilbm)
 	  
 	  		FreeVisualInfo (vi);
 		}
-    }
+    
+		success = TRUE;
+	}
+	
+	return success;
 }
 
 /* FreeARexxMenu(): Free menu-items of arexx-menu.
 
-        SYNOPSIS: void  = FreeARexxMenu
+        SYNOPSIS: int16  = FreeARexxMenu
                         (
                         void
                         );
 
         INPUTS:     -
 
-        RETURNS:        result: -
+        RETURNS:  result: 
+                            Is TRUE if successfull.		
 */
-void FreeARexxMenu (void)
+int16 FreeARexxMenu (void)
 {
+  int16 success = FALSE;
+  
   	if (ARexxNewMenu)
     {
       	FreeVec ((APTR) ARexxNewMenu);
       	ARexxNewMenu = NULL;
+		success = TRUE;
     }
+	
+	return success;
 }
 
 /* HandleARexxMenu(): Handle all events on the arexx-menu.

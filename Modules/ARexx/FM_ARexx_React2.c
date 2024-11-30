@@ -110,7 +110,7 @@
 
 #ifdef FM_AREXX_SUPPORT
 
-extern uint8 *PIXMEM, *GFXMEM, *ARGBMEM;
+extern uint8 *PIXMEM, *GFXMEM, *ARGBMEM, *RGBMEM;
 extern uint32 *RNDMEM, PIXELVECTOR[4];
 extern int16 UNDOCOUNTER;
 extern struct Catalog *CatalogPtr;
@@ -309,10 +309,10 @@ void ARexxFunc_SetCoordinates (REG (a0, struct ARexxCmd *cmd), REG (a1, struct R
 			
 	  		SetMenuStop (&MYILBM);
 	  		PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
-	  		ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
+	  		ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
 	  		PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
 	  		SetMenuStart (&MYILBM, UNDOCOUNTER);
-	  		ShowTime (MYILBM.win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME);
+	  		ShowTime (MYILBM.win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME, FALSE);
 		}
 		
       	else cmd->ac_RC = RC_WARN;
@@ -752,7 +752,7 @@ void ARexxFunc_SetPalette (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxM
 	      				if (success == TRUE)
 						{
 		  					if (fast) LoadRGB32 (ViewPortAddress (MYILBM.win), (APTR) TempPal);
-		  					else Fade (MYILBM.win, ARGBMEM, (uint32 *) TempPal, 25L, 1L, FROMBLACK);
+		  					else Fade (MYILBM.win, ARGBMEM, RGBMEM, (uint32 *) TempPal, 25L, 1L, FROMBLACK);
 		  					GetRGB32 (((struct ViewPort *) ViewPortAddress (MYILBM.win))->ColorMap, 0L, num_colors, (uint32 *) PaletteColors);
 		  					cmd->ac_RC = RC_OK;
 		  					cmd->ac_RC2 = 0;

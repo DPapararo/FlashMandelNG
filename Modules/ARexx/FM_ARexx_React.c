@@ -170,7 +170,7 @@ extern struct LoadSaveFMChunk *LSFMChunk;
 extern char USERNAME_STRING[MAX_FILELEN], COPYRIGHT_STRING[BARLEN];
 extern char FMSCREENNAME[MAXPUBSCREENNAME + 1], MYPATH[MAX_PATHLEN];
 extern char MYFONT[MAX_FILELEN];
-extern uint8 *PIXMEM, *GFXMEM, *ARGBMEM;
+extern uint8 *PIXMEM, *GFXMEM, *ARGBMEM, *RGBMEM;
 extern uint32 *RNDMEM, PIXELVECTOR[4];
 extern int16 UNDOCOUNTER;
 extern int16 ZOOMLINE[5 * 2];
@@ -484,7 +484,7 @@ void ARexxFunc_LoadPicture (REG (a0, struct ARexxCmd *cmd), REG (a1, struct Rexx
 		
 	    if (!(Error = QueryMandFile (&MYILBM, LSFMChunk, path)))
 	    {
-			if (!(fast)) Fade (MYILBM.win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+			if (!(fast)) Fade (MYILBM.win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
 			
 			CloseDisplay (&MYILBM);
 					
@@ -819,7 +819,7 @@ void ARexxFunc_ShowTitle (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMs
 void ARexxFunc_ShowElapsed (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *rm))
 {
   	if (!(TMASK & MASK))  ShowTitle (MYILBM.scr, TRUE);
-  	ShowTime (MYILBM.win, CATSTR (TXT_LastCalcTime), ELAPSEDTIME);
+  	ShowTime (MYILBM.win, CATSTR (TXT_LastCalcTime), ELAPSEDTIME, FALSE);
   	Delay (TWOSECS);
   	
 	if (!(TMASK & MASK))
@@ -1042,7 +1042,7 @@ void ARexxFunc_ShowPreview (REG (a0, struct ARexxCmd *cmd), REG (a1, struct Rexx
     {
       	ModifyIDCMP (MYILBM.win, NULL);
       	ClearMenuStrip (MYILBM.win);
-      	Preview (MYILBM.win, PIXELVECTOR, ARGBMEM, RNDMEM, PIXMEM, GFXMEM, MYILBM.win->GZZWidth, MYILBM.win->GZZHeight);
+      	Preview (MYILBM.win, PIXELVECTOR, ARGBMEM, RGBMEM, RNDMEM, PIXMEM, GFXMEM, MYILBM.win->GZZWidth, MYILBM.win->GZZHeight);
       	ResetMenuStrip (MYILBM.win, MAINMENU);
       	ModifyIDCMP (MYILBM.win, IDCMP_STANDARD);
       	RestoreCoords (MYILBM.win);
@@ -1101,10 +1101,10 @@ struct FM_RxCmd_RENDER *args = NULL;
 	*/  
   	SetMenuStop (&MYILBM);
   	PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
-  	ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+  	ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
   	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
   	SetMenuStart (&MYILBM, UNDOCOUNTER);
-  	ShowTime (MYILBM.win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME);
+  	ShowTime (MYILBM.win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME, FALSE);
 
   	if (rm->rm_Action & RXFF_RESULT)
     {
@@ -1213,7 +1213,7 @@ void ARexxFunc_Zoom (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *rm
 					PasteBitMap (MYBITMAP, MYILBM.win, (uint16) MYILBM.win->LeftEdge, (uint16) MYILBM.win->TopEdge, (uint16) (ZOOMLINE[4] - ZOOMLINE[6] + 1), (uint16) (ZOOMLINE[5] - ZOOMLINE[3] + 1));
 					SetMenuStop (&MYILBM);
 					PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
-					elapsed += ELAPSEDTIME =  DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+					elapsed += ELAPSEDTIME =  DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
 					PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
 					SetMenuStart (&MYILBM, UNDOCOUNTER);
       			}
@@ -1230,7 +1230,7 @@ void ARexxFunc_Zoom (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *rm
 	    		ZOOMLINE[5] = bottom;
 	    		if (NewCoords (MYILBM.win, ZOOMLINE[6], ZOOMLINE[3], ZOOMLINE[4], ZOOMLINE[5]))
 	      		{
-					elapsed += DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+					elapsed += DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
 	      		}
 	  		}
 			
@@ -1238,7 +1238,7 @@ void ARexxFunc_Zoom (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *rm
       	}
 
     	ELAPSEDTIME = elapsed;
-    	ShowTime (MYILBM.win, CATSTR (TXT_ZoomTime), ELAPSEDTIME);
+    	ShowTime (MYILBM.win, CATSTR (TXT_ZoomTime), ELAPSEDTIME, FALSE);
     	cmd->ac_RC = RC_OK;
     	cmd->ac_RC2 = 0;
     	if (rm->rm_Action & RXFF_RESULT)
@@ -1550,7 +1550,7 @@ uint32 HandleARexxEvents (struct ILBMInfo *Ilbm)
 													  		    
 		    	    if (msg_loadpic->FMRC_LOADPIC_Fast == FALSE)
 		    	    {
-					    Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+					    Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
 		    	    }
 		        
 				    CloseDisplay (Ilbm);
@@ -1607,7 +1607,7 @@ LOAD_PIC_END:
 			    		MYBITMAP = CopyBitMap (Ilbm->win, (uint16) Ilbm->win->LeftEdge, (uint16) Ilbm->win->TopEdge, (uint16) Ilbm->win->Width, (uint16) Ilbm->win->Height);
 				  	}
 		
-					Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+					Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
 					CloseDisplay (Ilbm);
 					Ilbm->Bmhd.pageWidth = 0;
 					Ilbm->Bmhd.pageHeight = 0;
@@ -1626,10 +1626,10 @@ LOAD_PIC_END:
 		      			{
 							SetMenuStop (Ilbm);
 							PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
-							ELAPSEDTIME =DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
+							ELAPSEDTIME =DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
 							PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
 							SetMenuStart (Ilbm, UNDOCOUNTER);
-							ShowTime (Ilbm->win, CATSTR (TXT_RenderTime), ELAPSEDTIME);
+							ShowTime (Ilbm->win, CATSTR (TXT_RenderTime), ELAPSEDTIME, FALSE);
 				      	}
 				  	}
 		
@@ -1664,7 +1664,7 @@ LOAD_PIC_END:
 	    
 				PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
 		    	MYBITMAP =   CopyBitMap (Ilbm->win, (uint16) Ilbm->win->LeftEdge, (uint16) Ilbm->win->TopEdge, (uint16) Ilbm->win->Width, (uint16) Ilbm->win->Height);
-		    	if (msg_setfnt->FMRC_SETFNT_Fast == FALSE) Fade (Ilbm->win, ARGBMEM, PALETTE, 25L, 1L, TOBLACK);
+		    	if (msg_setfnt->FMRC_SETFNT_Fast == FALSE) Fade (Ilbm->win, ARGBMEM, RGBMEM, PALETTE, 25L, 1L, TOBLACK);
 		    	CloseDisplay (Ilbm);
 			
 				if (!MakeDisplay (Ilbm))
