@@ -66,6 +66,7 @@
 **  V5.0 Many bugfixes, added debug options and benchmark mode via Workbench and CLI
 **  V5.1 Speedeup periodicity check and altivec calcs, added Amiga way parsing arguments for cli startup 
 **		 added Bechmarkmod control to invalidate bad tests
+**		 Various improvements and bugfixes
 ******************************************************************************************************************/
 
 #include <stdio.h>
@@ -128,7 +129,7 @@
 #include "Headers/FM_ARexx_Misc.h"
 #endif /* FM_AREXX_SUPPORT */
 
-#define VERSTAG "\0$VER: FlashMandelNG V5.1 (03.11.2024) Dino Papararo - Edgar Schwan"
+#define VERSTAG "\0$VER: FlashMandelNG V5.1 (01.12.2024) Dino Papararo - Edgar Schwan"
 #define GUIDE "SYS:Utilities/Multiview Docs/FlashMandelNG.guide"
 
 /* PALETTE PEN COLORS FOR GUI PENS */
@@ -1826,6 +1827,7 @@ struct Window *OpenDisplay (struct ILBMInfo *Ilbm, int16 Width, int16 Height, in
               						WA_IDCMP, IDCMP_STANDARD, 
 									WA_Flags, WFLG_STANDARD, 
 									WA_MouseQueue, 1L, 
+									WA_RptQueue, FALSE,
 									WA_BusyPointer, TRUE, 
 									WA_NewLookMenus, TRUE, 
 									WA_DropShadows, TRUE, TAG_DONE))
@@ -3757,7 +3759,9 @@ int32 Preview (struct Window *Win, uint8 *PixelVector, uint8 *ARGBMem, uint8 *RG
                    WA_IDCMP, IDCMP_RAWKEY | IDCMP_CLOSEWINDOW,
                    WA_Flags, WFLG_ACTIVATE | WFLG_CLOSEGADGET | WFLG_DRAGBAR | WFLG_NOCAREREFRESH |
                    				WFLG_SMART_REFRESH | WFLG_RMBTRAP | WFLG_GIMMEZEROZERO | WFLG_NW_EXTENDED,
-                   WA_BusyPointer, TRUE, WA_StayTop, TRUE,
+                   WA_BusyPointer, TRUE, 
+				   WA_StayTop, TRUE, 
+				   WA_RptQueue, FALSE,
                    WA_DropShadows, TRUE, TAG_DONE);
 				   
   	if (PreviewWin)
