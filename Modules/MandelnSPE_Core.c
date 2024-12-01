@@ -41,17 +41,14 @@ unsigned MandelnSPE_Core (unsigned Iterations, short Power, int *Cre, int *Cim)
 	  		Zi = ZrZi + ZrZi;
 		}
 	
-		if (PLoop-- == 0) 
+		if (PLoop-- <= 0) 
 		{
-        	if (fabs_diff (Zr, PZr) < Epsilon)
-        	{
-            	if (fabs_diff (Zi, PZi) < Epsilon) 
-				{
-					Iterations = 0L; // return 0L or 254L for debug
-					break;
-				}
-        	}
-
+        	if ((fabs_diff (Zr, PZr) < Epsilon) && (fabs_diff (Zi, PZi) < Epsilon))
+			{
+				Iterations = 0L; // return 0L or 254L for debug
+				break;
+			}
+        	
 	  		PZr = Zr;
 	  		PLoop = MAXPERIOD;
 	  		PZi = Zi;				
