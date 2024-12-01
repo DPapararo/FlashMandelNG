@@ -9,7 +9,7 @@ a  lot  of  interesting  features  like  reaction  GUI, arexx ports and scripts,
 localization, MAPM arbitray precision math, installer script,  a  dedicated  web
 page, and many various bug fixes.
 
-So my actual development system  is ->  Pegasos II G4()1GHz 2GB Ram - Radeon 9250
+So my actual development system  is ->  Pegasos II G4@1GHz 2GB Ram - Radeon 9250
 AmigaOS4.1fe update 2 with latest OS4 SDK and GCC 11.2.0
 
 FlashMandel uses handmade assembler routines for max speed!   ..and "SPEED" it's
@@ -44,13 +44,19 @@ in SPE native code, it should be faster than FPU version. ** Untested version **
 support, it can have better compatibility under emulated environments like QEMU.
 
 ..so what version is the faster  one?  On  a  G4  latest  FlashMandelNG  Altivec
-versions  are about 3x faster than FPU version because it processes 4 pixels per
-time! ..but it's also less accurate due Float32  single  precision  calculations
-(limited  by  hardware)  vs  Float64  FPU doubles, so for deep zooms you need to
+version is really much faster than FPU version because it processes 4 pixels per
+time! ..but it's also less accurate due 'float32' single precision  calculations
+(limited  by  hardware) vs 'float64'  FPU doubles, so for deep zooms you need to
 switch sooner to higher precision GMP Library math calculations.
-In version 4.5 I have introduced A1222/Tabor compatiiblity with full SPE support
-sadly report from different testers is negative. I'll wait for a compiler fix to  
-correct procuce SPE binaries.
+
+In version 5.1 I have introduced an A1222/Tabor compatiiblity 'wrapper' function  
+to enable SPE instructions only for core calcs. I'll wait for a new OS4 SDK with 
+full support for 'A1222' and compiler fixes to enable generation of SPE binaries 
+for all sources of project and not only two core Mandelbrot and Julia functions.
+At this time SPE instructions use scalar capability,  but in future I can enable
+SPE vector instructions, just like done with Altivec version,  in this case with
+only one instruction per cycle instead four,  but with much better precision due 
+float64 vs float32 datatypes involved.
 
 About precision, one of main features of FlashMandel,  is  the  ability  to  use
 arbitrary precision math. To archieve this I used GMP library, Edgar did a great
@@ -62,11 +68,15 @@ and CDs, if so please let me to have a free copy of paper/media support ;-)
 
 Version 5.1 changes:
 Now commandline parameters follows amiga's way rules,  for now it's present only 
-'BENCHMARKMODE' option to start FlashMandelNG with an FPU or Altivec speed test.
-Fixed periodicity check and speededup up core Altivec routines to use 100% power 
+'BENCHMARKMODE ON' option to start FlashMandelNG with an 'FPU', 'Altivec', 'SPE' 
+and 'Integer Math', speed tests.
+Added some checks to validate benchmark results.
+Fixed periodicity check and speededup core 'Altivec' routines to use 100% power.
+Minor improvementents and bugfixes. 
+Updated docs.
 ***
 
-"Bottomless wonders spring from simple rules, which are repeated without end."
+ "Bottomless wonders spring from simple rules, which are repeated without end."
 cit. Benoit Mandelbrot
 
  Enjoy,
