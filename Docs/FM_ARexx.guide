@@ -1,0 +1,2130 @@
+@database "FM_ARexx.guide"
+@author "Edgar Schwan"
+@remark "$VER: FM_ARexx Guide 3.0 (06.02.04)"
+@remark "Created with GoldED 6.18 (22.7.0)"
+@font courier.font 13
+@wordwrap
+
+@node MAIN "Welcome"
+
+  Welcome to the world of @{b}FlashMandel-ARexx!@{ub}
+
+  This guide supports you to write arexx-scripts for FlashMandelNG. Please notice, that on the following pages only the
+  special features of the FlashMandelNG-arexx are explained. If you are not familiar with the basic arexx-syntax,
+  please refer the arexx-manual distributed with the most Amiga-computers (or something like that ;-) ).
+
+
+    @{"general" link GENERAL}                  general informations for writing scripts for FlashMandelNG.
+    @{"commands" link COMMANDS}                 list of all commands implemented in FlashMandelNG.
+    @{"examples" link EXAMPLES}                 the example-scripts.
+    @{"problems" link PROBLEMS}                 when arexx refuses to work.
+
+
+  Important:
+
+  Please notice the new API for some commands in FlashMandelNG! All affected commands are marked with "changed in FlashMandelNG".
+
+@endnode
+@node GENERAL "general informations"
+
+  General informations to FlashMandelNG-arexx:
+
+
+  * Where to @{b}store@{ub} the scripts
+
+    The standard-path is "FLASHMANDEL:arexx". It is easier for you, when you store all script into this drawer.
+
+  * The @{b}hostname@{ub}
+
+    The hostname is allways spelled like this: @{b}FLASHMANDEL.n@{ub}, The first launched process has n = 1, the second n = 2 and
+    so on...
+
+  * How to @{b}launch@{ub} a script
+
+    There are several possibilities for this:
+
+    1. Of course you can start a script by typing it into a shell. For example:
+
+       > rx FLASHMANDEL:arexx/test.rexx FLASHMANDEL.1
+
+    2. You can choose the menu-item "ARexx/Launch...". After this a asl-filerequester appears, where you can click onto the script
+       you want to start.
+
+    3. You can create a sub-item in the arexx-menu by using the icon-tooltypes. The first should have the name REXXCMD.1, the next
+       REXXCMD.2 and so on...
+       There is no limit to the number of menu-items - only the limits of the AmigaOS.
+
+    @{b}@{u}IMPORTANT:@{uu}@{ub}
+
+    Every script started from FlashMandelNG, gets the actual arexx-hostname as the first argument. So you can always set the correct
+    hostname, if you have started FlashMandelNG several times.
+
+  * If there is a special arexx-script named "FLASHMANDEL:arexx/startup.rexx", it will be launched at starttime of FlashMandelNG.
+    Usefull to configure FlashMandelNG or for playing a background-sound or ...
+
+
+@endnode
+@node PROBLEMS "problems"
+
+  Problems with FlashMandelNG-arexx:
+
+  * FlashMandelNG uses the reaction-arexx-class. Because of this you need AmigaOS 3.5+ to use this functionality - sorry.
+    It is not planned to support lower versions,
+    But: Why not updating your system - with OS 3.5+ you will have a modern reaction-GUI as well!
+
+  * No more known problems.
+
+@endnode
+@node EXAMPLES "examples"
+
+  Examples distributed with FlashMandelNG:
+
+  * @{"Benchmark_II.rexx" link "FLASHMANDEL:arexx/_benchmark_ii.rexx/Main"}:
+
+    A script to make some benchmarks with FlashMandel. You can choose between several options. Needs AWNPipe for the GUI.
+    (Is fully localized and remembers the last settings).
+
+  * @{"Create_FMandel_Anim.rexx" link "FLASHMANDEL:arexx/_create_fmandel_anim.rexx/Main"}:
+
+    Creates an IFF-animation. Opens a AWNPipe-GUI, where you can choose between several options (anim-type, scaling...)
+    (Is fully localized and remembers the last settings).
+
+  * @{"Toolbar.rexx" link "FLASHMANDEL:arexx/_toolbar.rexx/Main"}:
+
+    Opens a toolbar on the FlashMandel-screen including the most important functions. Probably you can launch this script
+    using 'startup.rexx'. Needs AWNPipe for the GUI.
+    (Is fully localized and remembers the last settings).
+
+  * @{"PlayMovie.rexx" link "FLASHMANDEL:arexx/PlayMovie.rexx/Main"}:
+
+    Just makes some zooms into your actual picture.
+
+  * @{"RunningColor.rexx" link "FLASHMANDEL:arexx/RunningColor.rexx/Main"}:
+
+    Shows you, how to manipulate the palette. It just moves a color through the palette.
+
+  * @{"startup.rexx" link "FLASHMANDEL:arexx/startup.rexx/Main"}:
+
+    example-statup-script for FlashMandelNG. Will be executed at starttime and plays the welcome sound.
+
+  * @{"StopSound.rexx" link "FLASHMANDEL:arexx/StopSound.rexx/Main"}:
+
+    Just stops playing a sound.
+
+  * @{"Test_ARexx.rexx" link "FLASHMANDEL:arexx/Test_ARexx.rexx/Main"}:
+
+    Here you can find example-code for all arexx-commands implemented in FlashMandelNG. If you want to test a command, you have to set
+    the "IF 0"-line to "IF 1".
+
+
+@endnode
+@node COMMANDS "Welcome"
+
+  Here is a list of all arexx-commands implemented in FlashMandelNG:
+
+  @{u}Project-commands:@{uu}
+
+  @{"ABOUT" link AREXX-COMMAND_ABOUT}                 Open about-requester.
+  @{"SYSINFO" link AREXX-COMMAND_SYSINFO}               Open system-info-requester.
+  @{"HELP" link AREXX-COMMAND_HELP}                  Open help-guide.
+  @{"LOAD_PICTURE" link AREXX-COMMAND_LOAD_PICTURE}          Load a picture.
+  @{"SAVE_PICTURE" link AREXX-COMMAND_SAVE_PICTURE}          Save a picture.
+  @{"LOAD_PALETTE" link AREXX-COMMAND_LOAD_PALETTE}          Load a palette.
+  @{"SAVE_PALETTE" link AREXX-COMMAND_SAVE_PALETTE}          Save a palette.
+  @{"PRINT" link AREXX-COMMAND_PRINT}                 Print picture.
+  @{"QUIT" link AREXX-COMMAND_QUIT}                  Quit FlashMandelNG
+
+  @{u}Options-commands:@{uu}
+
+  @{"SHOW_TITLE" link AREXX-COMMAND_SHOW_TITLE}            Toggle screen-title.
+  @{"SHOW_ELAPSED" link AREXX-COMMAND_SHOW_ELAPSED}          Show elapsed time.
+  @{"SET_COORDINATES" link AREXX-COMMAND_SET_COORDINATES}       Set complex-coordinates.
+  @{"GET_COORDINATES" link AREXX-COMMAND_GET_COORDINATES}       Get complex-coordinates.
+  @{"SET_ITERATIONS" link AREXX-COMMAND_SET_ITERATIONS}        Set number of iterations.
+  @{"GET_ITERATIONS" link AREXX-COMMAND_GET_ITERATIONS}        Get number of iterations.
+  @{"SET_POWER" link AREXX-COMMAND_SET_POWER}             Set power-parameter.
+  @{"GET_POWER" link AREXX-COMMAND_GET_POWER}             Get power-parameter.
+  @{"SET_PRIORITY" link AREXX-COMMAND_SET_PRIORITY}          Set task-priority.
+  @{"GET_PRIORITY" link AREXX-COMMAND_GET_PRIORITY}          Get task-priority.
+  @{"SET_COLOR_REMAP" link AREXX-COMMAND_SET_COLOR_REMAP}       Set color-remap-method.
+  @{"GET_COLOR_REMAP" link AREXX-COMMAND_GET_COLOR_REMAP}       Get color-remap-method.
+  @{"SET_FRACTAL_TYPE" link AREXX-COMMAND_SET_FRACTAL_TYPE}      Set fractal-type (Julia/Mandelbrot).
+  @{"GET_FRACTAL_TYPE" link AREXX-COMMAND_GET_FRACTAL_TYPE}      Get fractal-type (Julia/Mandelbrot).
+  @{"SET_CPU_TYPE" link AREXX-COMMAND_SET_CPU_TYPE}          Set cpu-type (68k/PPC)
+  @{"GET_CPU_TYPE" link AREXX-COMMAND_GET_CPU_TYPE}          Get cpu-time (68k/PPC)
+
+  @{u}calculation-commands:@{uu}
+
+  @{"SHOW_PREVIEW" link AREXX-COMMAND_SHOW_PREVIEW}          Open preview-window.
+  @{"RENDER" link AREXX-COMMAND_RENDER}                Render fractal.
+  @{"UNDO" link AREXX-COMMAND_UNDO}                  Undo last changes.
+  @{"SET_FRAME" link AREXX-COMMAND_SET_FRAME}             Set zoom-frame.
+  @{"GET_FRAME" link AREXX-COMMAND_GET_FRAME}             Get zoom-frame.
+
+  @{u}video-commands:@{uu}
+
+  @{"ZOOM" link AREXX-COMMAND_ZOOM}                  Zoom into the picture.
+  @{"DO_COLORCYCLING" link AREXX-COMMAND_DO_COLORCYCLING}       Start color-cycling.
+  @{"SET_DELAY" link AREXX-COMMAND_SET_DELAY}             Set delay-time for color-cycling.
+  @{"GET_DELAY" link AREXX-COMMAND_GET_DELAY}             Get delay-time for color-cycling.
+  @{"SET_PALETTE" link AREXX-COMMAND_SET_PALETTE}           Set screen-palette. @{b}(changed in FlashMandelNG)@{ub}
+  @{"GET_PALETTE" link AREXX-COMMAND_GET_PALETTE}           Get screen-palette. @{b}(changed in FlashMandelNG)@{ub}
+  @{"SET_SCREENATTRS" link AREXX-COMMAND_SET_SCREENATTRS}       Set screen-attributes. @{b}(changed in FlashMandelNG)@{ub}
+  @{"GET_SCREENATTRS" link AREXX-COMMAND_GET_SCREENATTRS}       Get screen-attributes. @{b}(changed in FlashMandelNG)@{ub}
+  @{"SET_FONT" link AREXX-COMMAND_SET_FONT}              Set screen-font.
+  @{"GET_FONT" link AREXX-COMMAND_GET_FONT}              Get screen-font.
+
+  @{u}misc-commands:@{uu}
+  
+  @{"START_TIMER" link AREXX-COMMAND_START_TIMER}           Start timer.
+  @{"STOP_TIMER" link AREXX-COMMAND_STOP_TIMER}            Stop timer.
+  @{"PLAY_SOUND" link AREXX-COMMAND_PLAY_SOUND}            Play a datatype-sound.
+  @{"STOP_SOUND" link AREXX-COMMAND_STOP_SOUND}            Stop sound.
+
+@endnode
+@node AREXX-COMMAND_ABOUT "arexx-command  ABOUT"
+
+    @{b}NAME@{ub}
+        ABOUT - open about-requester.
+
+    @{b}SYNOPSIS@{ub}
+        "ABOUT"
+
+    @{b}FUNCTION@{ub}
+        Opens the about-requester, just like choosing the 'About...'-menu-item. Must be closed by clicking the 'OK'-button.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "ABOUT"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SYSINFO "arexx-command  SYSINFO"
+
+    @{b}NAME@{ub}
+        SYSINFO - open system-info-requester.
+
+    @{b}SYNOPSIS@{ub}
+        "SYSINFO"
+
+    @{b}FUNCTION@{ub}
+        Opens the system-info-requester, just like choosing the 'System info...'-menu-item. Must be closed by clicking the 'OK'-button.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "SYSINFO"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_HELP "arexx-command   HELP"
+
+    @{b}NAME@{ub}
+        HELP - open help-guide.
+
+    @{b}SYNOPSIS@{ub}
+        "HELP"
+
+    @{b}FUNCTION@{ub}
+        Opens the help-guide, just like choosing the 'Help...'-menu-item.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "HELP"
+        IF RC THEN SAY "Can't open help-guide!"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_LOAD_PICTURE "arexx-command  LOAD_PICTURE"
+
+    @{b}NAME@{ub}
+        LOAD_PICTURE - load a FlashMandelNG-picture.
+
+    @{b}SYNOPSIS@{ub}
+        "LOAD_PICTURE"
+        "LOAD_PICTURE" "PATH,FAST/S"
+
+    @{b}FUNCTION@{ub}
+        Loads an FlashMandelNG-Picture into the program, If you call this command without any parameter, it will behave like
+        choosing the menu-item "Load Picture...".
+
+    @{b}INPUTS@{ub}
+        PATH:
+            path of the desired FlashMandelNG-picture.
+
+        FAST:
+            If specified, the picture will be loaded as fast as possible, this means no fading.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SAVE_PICTURE" link AREXX-COMMAND_SAVE_PICTURE}
+
+    @{b}EXAMPLE@{ub}
+        "LOAD_PICTURE" "FLASHMANDEL:Pictures/Mandelbrot_def.iff" "FAST"
+        IF RC THEN SAY "Can't open picture:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SAVE_PICTURE "arexx-command  SAVE_PICTURE"
+
+    @{b}NAME@{ub}
+        SAVE_PICTURE - save a FlashMandelNG-picture.
+
+    @{b}SYNOPSIS@{ub}
+        "SAVE_PICTURE"
+        "SAVE_PICTURE" "PATH,FORCE/S"
+
+    @{b}FUNCTION@{ub}
+        Save an FlashMandelNG-picture, If you call this command without any parameter, it will behave like choosing
+        the menu-item "Save Picture...".
+
+    @{b}INPUTS@{ub}
+        PATH:
+            desired path to save the FlashMandelNG-picture.
+
+        FORCE:
+            If specified, the picture will be saved, even if the specified filename already exists,
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"LOAD_PICTURE" link AREXX-COMMAND_LOAD_PICTURE}
+
+    @{b}EXAMPLE@{ub}
+        "SAVE_PICTURE" "FLASHMANDEL:Pictures/Mandelbrot_test.iff" "FORCE"
+        IF RC THEN SAY "Can't save picture:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_LOAD_PALETTE "arexx-command  LOAD_PALETTE"
+
+    @{b}NAME@{ub}
+        LOAD_PALETTE - load a FlashMandelNG-palette.
+
+    @{b}SYNOPSIS@{ub}
+        "LOAD_PALETTE"
+        "LOAD_PALETTE" "PATH,FAST/S"
+
+    @{b}FUNCTION@{ub}
+        Loads a FlashMandelNG-palette into the program, If you call this command without any parameter, it will behave like
+        choosing the menu-item "Load Palette...".
+
+    @{b}INPUTS@{ub}
+        PATH:
+            path of the desired FlashMandelNG-palette.
+
+        FAST:
+            If specified, the palette will be loaded as fast as possible, this means no fading.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SAVE_PALETTE" link AREXX-COMMAND_SAVE_PALETTE}
+
+    @{b}EXAMPLE@{ub}
+        "LOAD_PALETTE" "FLASHMANDEL:Palettes/Palette_def.256" "FAST"
+        IF RC THEN SAY "Can't load palette:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SAVE_PALETTE "arexx-command  SAVE_PALETTE"
+
+    @{b}NAME@{ub}
+        SAVE_PALETTE - save a FlashMandelNG-palette.
+
+    @{b}SYNOPSIS@{ub}
+        "SAVE_PALETTE"
+        "SAVE_PALETTE" "PATH,FORCE/S"
+
+    @{b}FUNCTION@{ub}
+        Save an FlashMandelNG-palette, If you call this command without any parameter, it will behave like choosing
+        the menu-item "Save Palette...".
+
+    @{b}INPUTS@{ub}
+        PATH:
+            desired path to save the FlashMandelNG-palette.
+
+        FORCE:
+            If specified, the picture will be saved, even if the specified filename already exists,
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"LOAD_PALETTE" link AREXX-COMMAND_LOAD_PALETTE}
+
+    @{b}EXAMPLE@{ub}
+        "SAVE_PALETTE" "FLASHMANDEL:Palettes/Palette_test.256" "FORCE"
+        IF RC THEN SAY "Can't save palette:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_PRINT "arexx-command  PRINT"
+
+    @{b}NAME@{ub}
+        PRINT - print FlashMandelNG-picture.
+
+    @{b}SYNOPSIS@{ub}
+        "PRINT" "FORCE/S"
+
+    @{b}FUNCTION@{ub}
+        prints the actual picture on your printer.
+
+    @{b}INPUTS@{ub}
+        FORCE:
+            If specified, the picture will be printed immediately without any questions.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "PRINT" "FORCE"
+        IF RC = 5 THEN SAY "User-aborted"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_QUIT "arexx-command  QUIT"
+
+    @{b}NAME@{ub}
+        QUIT - quit FlashMandelNG.
+
+    @{b}SYNOPSIS@{ub}
+        "QUIT" "FORCE/S,FAST/S"
+
+    @{b}FUNCTION@{ub}
+        When calling this command, FlashMandelNG will quit.
+
+    @{b}INPUTS@{ub}
+        FORCE:
+            If specified, FlashMandelNG will quit without any questions.
+
+        FAST:
+            If specified, the command will be executed as fast as possible, this means no fading.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "QUIT" "FORCE"
+
+    @{b}BUGS@{ub}
+        FAST-parameter has no effect.
+
+@endnode
+@node AREXX-COMMAND_SHOW_TITLE "arexx-command  SHOW_TITLE"
+
+    @{b}NAME@{ub}
+        SHOW_TITLE - turn screen-title on/off.
+
+    @{b}SYNOPSIS@{ub}
+        "SHOW_TITLE" "BOOLEAN/A/N"
+
+    @{b}FUNCTION@{ub}
+        Specify, if the screen-title should be visible or not.
+
+    @{b}INPUTS@{ub}
+        BOOLEAN:
+            0 = Hide screen-title.
+            1 = Show screen-title.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "SHOW_TITLE" "0"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SHOW_ELAPSED "arexx-command  SHOW_ELAPSED"
+
+    @{b}NAME@{ub}
+        SHOW_ELAPSED - show elapsed time.
+
+    @{b}SYNOPSIS@{ub}
+        "SHOW_ELAPSED"
+
+    @{b}FUNCTION@{ub}
+        Show needed time for the last calculation in the screen title.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "SHOW_ELAPSED"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_COORDINATES "arexx-command  SET_COORDINATES"
+
+    @{b}NAME@{ub}
+        SET_COORDINATES - set the limits.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_COORDINATES"
+        "SET_COORDINATES" "STEM"
+
+    @{b}FUNCTION@{ub}
+        Set the limits for calculations. If you call this command without any parameter, it behaves just like
+        choosing the menu-item "Limits...".
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which contains all needed data.
+
+            Following extensions are defined:
+                .RMIN: Left complex-coordinate.
+                .RMAX: Right complex-coordinate.
+                .IMIN: Bottom complex-coordinate.
+                .IMAX: Top complex-coordinate.
+                .JKRE: Julia-real constant.
+                .JKIM: Julia-imag constant.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        This command only sets the parameter. If it should take effect to your display, you have to call the
+        command @{"RENDER" link AREXX-COMMAND_RENDER} afterwards.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_COORDINATES" link AREXX-COMMAND_GET_COORDINATES}
+
+    @{b}EXAMPLE@{ub}
+        COORD.RMIN = -2.0
+        COORD.RMAX = +1.2
+        COORD.IMIN = -1.2
+        COORD.IMAX = +1.2
+        COORD.JKRE = -0.72
+        COORD.JKIM = -0.26
+        "SET_COORDINATES" "COORD"
+        IF RC THEN SAY "Can't set coordinates:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_COORDINATES "arexx-command  GET_COORDINATES"
+
+   @{b}NAME@{ub}
+        GET_COORDINATES - get the limits.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_COORDINATES" "STEM/A"
+
+    @{b}FUNCTION@{ub}
+        Get the limits for calculations.
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which will contain all coordinates.
+
+            Following extensions are defined:
+                .RMIN: Left complex-coordinate.
+                .RMAX: Right complex-coordinate.
+                .IMIN: Bottom complex-coordinate.
+                .IMAX: Top complex-coordinate.
+                .JKRE: Julia-real constant.
+                .JKIM: Julia-imag constant.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_COORDINATES" link AREXX-COMMAND_SET_COORDINATES}
+
+    @{b}EXAMPLE@{ub}
+        'GET_COORDINATES' 'COORDS'
+        IF RC THEN SAY "Can't get coordinates:" ErrorText(RC2)
+        ELSE DO
+          SAY "RMIN: " COORDS.RMIN;  /* Left */
+          SAY "RMAX: " COORDS.RMAX;  /* Right */
+          SAY "IMIN: " COORDS.IMIN;  /* Bottom */
+          SAY "IMAX: " COORDS.IMAX;  /* Top */
+          SAY "JKRE: " COORDS.JKRE;  /* Julia Real */
+          SAY "JKIM: " COORDS.JKIM;  /* Julia Imag */
+          END
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_ITERATIONS "arexx-command  SET_ITERATIONS"
+
+    @{b}NAME@{ub}
+        SET_ITERATIONS - set iterations.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_ITERATIONS"
+        "SET_ITERATIONS" "NUMBER/N"
+
+    @{b}FUNCTION@{ub}
+        Specify the number of iterations. If this command is called without any parameters, it behaves just
+        like choosing the menu-item "Iterations/Custom...".
+
+    @{b}INPUTS@{ub}
+        NUMBER:
+            a numeric value between 32 and 32768.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        This command only sets the parameter. If it should take effect to your display, you have to call the
+        command @{"RENDER" link AREXX-COMMAND_RENDER} afterwards.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_ITERATIONS" link AREXX-COMMAND_GET_ITERATIONS}
+
+    @{b}EXAMPLE@{ub}
+        "SET_ITERATIONS" "1024"
+        IF RC THEN SAY "Can't set iterations:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_ITERATIONS "arexx-command  GET_ITERATIONS"
+
+    @{b}NAME@{ub}
+        GET_ITERATIONS - get number of iterations.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_ITERATIONS" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the number of iterations.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which should contain the numer of iterations after calling this command.
+            The result is a number between 32 and 32768.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_ITERATIONS" link AREXX-COMMAND_SET_ITERATIONS}
+
+    @{b}EXAMPLE@{ub}
+        "GET_ITERATIONS" "ITERATIONS"
+        IF RC THEN SAY "Can't set iterations:" ErrorText(RC2)
+        ELSE SAY "Number of iterations:" ITERATIONS
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_POWER "arexx-command  SET_POWER"
+
+    @{b}NAME@{ub}
+        SET_POWER - set power-parameter.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_POWER" "NUMBER/A/N"
+
+    @{b}FUNCTION@{ub}
+        Specify the power-parameter.
+
+    @{b}INPUTS@{ub}
+        NUMBER:
+            a numeric value. Following values are possible:
+                    2
+                    4
+                    8
+                   16
+                   32
+                   64
+                  128
+                  256
+                  512
+                 1024
+                 2048
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        This command only sets the parameter. If it should take effect to your display, you have to call the
+        command @{"RENDER" link AREXX-COMMAND_RENDER} afterwards.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_POWER" link AREXX-COMMAND_GET_POWER}
+
+    @{b}EXAMPLE@{ub}
+        "SET_POWER" "1024"
+        IF RC THEN SAY "Can't set power:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_POWER "arexx-command  GET_POWER"
+
+    @{b}NAME@{ub}
+        GET_POWER - get power-parameter.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_POWER" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the power-parameter.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which should contain the value of the power-parameter after calling this command.
+            Following results are possible:
+                    2
+                    4
+                    8
+                   16
+                   32
+                   64
+                  128
+                  256
+                  512
+                 1024
+                 2048
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_POWER" link AREXX-COMMAND_SET_POWER}
+
+    @{b}EXAMPLE@{ub}
+        "GET_POWER" "POWER"
+        IF RC THEN SAY "Can't get power-parameter:" ErrorText(RC2)
+        ELSE SAY "Power-parameter:" POWER
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_PRIORITY "arexx-command  SET_PRIORITY"
+
+    @{b}NAME@{ub}
+        SET_PRIORITY - set the priority of the own task.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_PRIORITY" "PRI/A"
+
+    @{b}FUNCTION@{ub}
+        Specify the tasks priority.
+
+    @{b}INPUTS@{ub}
+        PRI:
+            a numeric value between -5 and +5.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_PRIORITY" link AREXX-COMMAND_GET_PRIORITY}
+
+    @{b}EXAMPLE@{ub}
+        "SET_PRIORITY" "+1"
+        IF RC THEN SAY "Can't set priority:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_PRIORITY "arexx-command  GET_PRIORITY"
+
+    @{b}NAME@{ub}
+        GET_PRIORITY - get priority of the own task.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_PRIORITY" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the priority of this task.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which should contain the value of the priority after calling this command.
+            The returned values are between -5 and +5.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_PRIORITY" link AREXX-COMMAND_SET_PRIORITY}
+
+    @{b}EXAMPLE@{ub}
+        "GET_PRIORITY" "PRIORITY"
+        IF RC THEN SAY "Can't get the priority:" ErrorText(RC2)
+        ELSE SAY "Priority:" PRIORITY
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_COLOR_REMAP "arexx-command  SET_COLOR_REMAP"
+
+    @{b}NAME@{ub}
+        SET_COLOR_REMAP - set the color-remap-method.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_COLOR_REMAP" "INDEX/A/N"
+
+    @{b}FUNCTION@{ub}
+        Specify the method, how colors are assigned.
+
+    @{b}INPUTS@{ub}
+        INDEX:
+            a numeric value between 1 and 8.
+            The numbers have following meanings:
+                1 = Linear
+                2 = Ln (x)
+                3 = Repeated
+                4 = Sqrt (x)
+                5 = x²-x
+                6 = Sqrt(x³-x²-x)
+                7 = Sinh (Ln (x³))
+                8 = Cosh (Log (x³))
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        This command only sets the parameter. If it should take effect to your display, you have to call the
+        command @{"RENDER" link AREXX-COMMAND_RENDER} afterwards.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_COLOR_REMAP" link AREXX-COMMAND_GET_COLOR_REMAP}
+
+    @{b}EXAMPLE@{ub}
+        "SET_COLOR_REMAP" "2"
+        IF RC THEN SAY "Can't set color-remap-method:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_COLOR_REMAP "arexx-command  GET_COLOR_REMAP"
+
+    @{b}NAME@{ub}
+        GET_COLOR_REMAP - get the color-remap-method.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_COLOR_REMAP" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the specified the method, how colors are assigned.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which should contain the color-remap-method after calling this command.
+            Following results are possible:
+                1 = Linear
+                2 = Ln (x)
+                3 = Repeated
+                4 = Sqrt (x)
+                5 = x²-x
+                6 = Sqrt(x³-x²-x)
+                7 = Sinh (Ln (x³))
+                8 = Cosh (Log (x³))
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_COLOR_REMAP" link AREXX-COMMAND_SET_COLOR_REMAP}
+
+    @{b}EXAMPLE@{ub}
+        "GET_COLOR_REMAP" "REMAP"
+        IF RC THEN SAY "Can't get color-remap-method:" ErrorText(RC2)
+        ELSE SAY "Color-remap-method:" REMAP
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_FRACTAL_TYPE "arexx-command  SET_FRACTAL_TYPE"
+
+    @{b}NAME@{ub}
+        SET_FRACTAL_TYPE - set the fractal type.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_FRACTAL_TYPE" "INDEX/A/N"
+
+    @{b}FUNCTION@{ub}
+        Specify the type of fractal, which should be rendered.
+
+    @{b}INPUTS@{ub}
+        INDEX:
+            a numeric value between 1 and 2.
+            The numbers have following meanings:
+                1 = Julia rendering formula.
+                2 = Mandelbrot rendering formula.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        This command only sets the parameter. If it should take effect to your display, you have to call the
+        command @{"RENDER" link AREXX-COMMAND_RENDER} afterwards.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_FRACTAL_TYPE" link AREXX-COMMAND_GET_FRACTAL_TYPE}
+
+    @{b}EXAMPLE@{ub}
+        "SET_FRACTAL_TYPE" "2"
+        IF RC THEN SAY "Can't set the fractal-type:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_FRACTAL_TYPE "arexx-command  GET_FRACTAL_TYPE"
+
+    @{b}NAME@{ub}
+        GET_FRACTAL_TYPE - get the fractal type.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_FRACTAL_TYPE" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the specified type of the fractal.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which should contain the color-remap-method after calling this command.
+            Following results are possible:
+                1 = Julia rendering formula.
+                2 = Mandelbrot rendering formula.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_FRACTAL_TYPE" link AREXX-COMMAND_SET_FRACTAL_TYPE}
+
+    @{b}EXAMPLE@{ub}
+        "GET_FRACTAL_TYPE" "TYPE"
+        IF RC THEN SAY "Can't get the fractal-type:" ErrorText(RC2)
+        ELSE SAY "Fractal-type:" TYPE
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_CPU_TYPE "arexx-command  SET_CPU_TYPE"
+
+    @{b}NAME@{ub}
+        SET_CPU_TYPE - set the CPU type.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_CPU_TYPE" "INDEX/A/N"
+
+    @{b}FUNCTION@{ub}
+        Specify the type of CPU, which should be used for rendering.
+
+    @{b}INPUTS@{ub}
+        INDEX:
+            a numeric value between 1 and 2.
+            The numbers have following meanings:
+                1 = 68k-processor.
+                2 = PPC-processor.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_CPU_TYPE" link AREXX-COMMAND_GET_CPU_TYPE}
+
+    @{b}EXAMPLE@{ub}
+        "SET_CPU_TYPE" "2"
+        IF RC THEN SAY "Can't set the cpu-type:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_CPU_TYPE "arexx-command  GET_CPU_TYPE"
+
+    @{b}NAME@{ub}
+        GET_CPU_TYPE - get the CPU type.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_CPU_TYPE" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the specified type of CPU, which is used for rendering.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which should contain the color-remap-method after calling this command.
+            Following results are possible:
+                1 = 68k-processor.
+                2 = PPC-processor.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_CPU_TYPE" link AREXX-COMMAND_GET_CPU_TYPE}
+
+    @{b}EXAMPLE@{ub}
+        "SET_CPU_TYPE" "2"
+        IF RC THEN SAY "Can't set the cpu-type:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SHOW_PREVIEW "arexx-command  SHOW_PREVIEW"
+
+    @{b}NAME@{ub}
+        SHOW_PREVIEW - open preview-requester.
+
+    @{b}SYNOPSIS@{ub}
+        "SHOW_PREVIEW"
+
+    @{b}FUNCTION@{ub}
+        Opens the preview-requester, just like choosing the 'Preview'-menu-item. Must be closed by clicking the 'OK'-button.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "SHOW_PREVIEW"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_RENDER "arexx-command  RENDER"
+
+    @{b}NAME@{ub}
+        RENDER - render the fractal.
+
+    @{b}SYNOPSIS@{ub}
+        "RENDER" "FORCE/S"
+
+    @{b}FUNCTION@{ub}
+        Renders the fractal depending on the actual settings. 
+
+    @{b}INPUTS@{ub}
+        FORCE:
+            If specified, the fractal will be rendered without any questions.
+
+    @{b}RETURNS@{ub}
+        RESULT:
+            Elapsed time for the rendering in seconds.
+
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "RENDER" "FORCE"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_UNDO "arexx-command  UNDO"
+
+    @{b}NAME@{ub}
+        UNDO - undo the last changes.
+
+    @{b}SYNOPSIS@{ub}
+        "UNDO"
+
+    @{b}FUNCTION@{ub}
+        Resets the last changes to the render-settings.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        This command only sets the parameters. If it should take effect to your display, you have to call the
+        command @{"RENDER" link AREXX-COMMAND_RENDER} afterwards.
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "UNDO"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_FRAME "arexx-command  SET_FRAME"
+
+    @{b}NAME@{ub}
+        SET_FRAME - set the zoom-frame.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_FRAME" "STEM/A"
+
+    @{b}FUNCTION@{ub}
+        Set the coordinates of the zoom-frame.
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which contains all needed data.
+
+            Following extensions are defined:
+                .LEFT:   Left corner of the frame-box.
+                .TOP:    Top corner of the frame-box.
+                .RIGHT:  Right corner of the frame-box..
+                .BOTTOM: Bottom corner of the frame-box.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        Please check the screen-dimensions before you call this command. Maybe your desired frame is bigger than
+        the screen. Use @{"GET_SCREENATTRS" link AREXX-COMMAND_GET_SCREENATTRS} for it.
+
+        The right-coordinate must be higher than the left-coordinate.
+        The bottom-coordinate must be higher than the top-coordinate.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_FRAME" link AREXX-COMMAND_GET_FRAME}
+
+    @{b}EXAMPLE@{ub}
+        FRAME.LEFT = 10
+        FRAME.TOP = 20
+        FRAME.RIGHT = 200
+        FRAME.BOTTOM = 300
+        "SET_FRAME" "FRAME"
+        IF RC THEN SAY "Can't set frame:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_FRAME "arexx-command  GET_FRAME"
+
+    @{b}NAME@{ub}
+        GET_FRAME - get the zoom-frame.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_FRAME" "STEM/A"
+
+    @{b}FUNCTION@{ub}
+        Get the coordinates of the zoom-frame.
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which will contain the desired coordinates after calling this command.
+
+            Following extensions are defined:
+                .LEFT:   Left corner of the frame-box.
+                .TOP:    Top corner of the frame-box.
+                .RIGHT:  Right corner of the frame-box..
+                .BOTTOM: Bottom corner of the frame-box.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_FRAME" link AREXX-COMMAND_SET_FRAME}
+
+    @{b}EXAMPLE@{ub}
+        "GET_FRAME" "FRAME"
+        IF RC THEN SAY "Can't get frame:" ErrorText(RC2)
+        ELSE DO
+          SAY "Left:" FRAME.LEFT;
+          SAY "Top:" FRAME.TOP;
+          SAY "Right:" FRAME.RIGHT;
+          SAY "Bottom:" FRAME.BOTTOM;
+          END
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_ZOOM "arexx-command  ZOOM"
+
+    @{b}NAME@{ub}
+        ZOOM - zoom into the picture.
+
+    @{b}SYNOPSIS@{ub}
+        "ZOOM" "LEFT/A/N,TOP/A/N,WIDTH/A/N,HEIGHT/A/N,REPEATS/N,FAST/S,STEPS/N"
+
+    @{b}FUNCTION@{ub}
+        Zoom into the picture according to the given dimensions.
+
+    @{b}INPUTS@{ub}
+        LEFT:
+            Left edge of the zoom-frame.
+
+        TOP:
+            Top edge of the zoom-frame.
+
+        WIDTH:
+            Width edge of the zoom-frame.
+
+        HEIGHT:
+            Height edge of the zoom-frame.
+
+        REPEATS:
+            Number of repeats.
+
+        FAST:
+            If specified, the zoom is rendered as fast as possible, this means no fading.
+
+        STEPS:
+            Defines, in how many steps the zoom is divided (Sorry, not supported yet).
+
+    @{b}RETURNS@{ub}
+        RESULT:
+            Elapsed time for the zoom in seconds.
+
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "ZOOM" "30 40 400 300 2" "FAST"
+        IF RC THEN SAY "Can't zoom:" ErrorText(RC2)
+        ELSE SAY "Elapsed time:" RESULT
+
+    @{b}BUGS@{ub}
+        The STEPS-parameter has no effect.
+
+@endnode
+@node AREXX-COMMAND_DO_COLORCYCLING "arexx-command  DO_COLORCYCLING"
+
+    @{b}NAME@{ub}
+        DO_COLORCYCLING - start color-cycling.
+
+    @{b}SYNOPSIS@{ub}
+        "DO_COLORCYCLING" "FORWARD/S,BACKWARD/S"
+
+    @{b}FUNCTION@{ub}
+        Starts the color-cycling, just like choosing the menu-item "Cycle...". To stop it, you have to click into
+        the window.
+
+    @{b}INPUTS@{ub}
+        FORWARD:
+            Colors should move in forward direction.
+
+        BACKWARD:
+            Colors should move in backward direction.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        Of cource only one parameter is possible, otherwise the command fails.
+
+    @{b}SEE ALSO@{ub}
+        -
+
+    @{b}EXAMPLE@{ub}
+        "DO_COLORCYCLING" "FORWARD"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_DELAY "arexx-command  SET_DELAY"
+
+    @{b}NAME@{ub}
+        SET_DELAY - set the delay for color-cycling.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_DELAY"
+        "SET_DELAY" "SECONDS/N"
+
+    @{b}FUNCTION@{ub}
+        Specify the number of seconds between a color-cycling-step. If this command is called without any parameter,
+        it behaves just like choosing the menu-item "Cycle/Delay...".
+
+    @{b}INPUTS@{ub}
+        SECONDS:
+            a numeric value between 0 and 200.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_DELAY" link AREXX-COMMAND_GET_DELAY}
+
+    @{b}EXAMPLE@{ub}
+        "SET_DELAY" "10"
+        IF RC THEN SAY "Can't set delay-time:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_DELAY "arexx-command  GET_DELAY"
+
+    @{b}NAME@{ub}
+        GET_DELAY - get the delay-time for color-cycling.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_DELAY" "VAR/A"
+
+    @{b}FUNCTION@{ub}
+        Get the number of seconds between a color-cycling-step.
+
+    @{b}INPUTS@{ub}
+        VAR:
+            Name of the variable, which will contain the desired delay-time after calling this command.
+            The result is a numeric value between 0 and 200.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_DELAY" link AREXX-COMMAND_SET_DELAY}
+
+    @{b}EXAMPLE@{ub}
+        "GET_DELAY" "TIME"
+        IF RC THEN SAY "Can't get delay-time:" ErrorText(RC2)
+        ELSE SAY "Delay-time:" TIME
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_PALETTE "arexx-command  SET_PALETTE"
+
+    @{b}NAME@{ub}
+        SET_PALETTE - set the screens palette.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_PALETTE"
+        "SET_PALETTE" "STEM,FAST/S"
+
+    @{b}FUNCTION@{ub}
+        Set the screen-colors. If this command is called without any parameter, it behaves just like choosing
+        the menu-item "Palette...".
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which contains the color-values. If a color is not defined, the color will
+            not change. The colors must defined like this:
+
+            COLORS.x = '00RRGGBB'      /* RR = red value, GG = green value, BB = blue value. */
+
+            For example:
+                The name of the variable is 'COLORS'. So the first color must defined like this:
+
+                COLORS.0 = '008833BB'
+
+            Please notify, that the value should be written as a hex-number.
+
+        FAST:
+            If specified, the colors are changed as fast as possible, this means no fading.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        Please determine the number of available colors using the @{"GET_SCREENATTRS" link AREXX-COMMAND_GET_SCREENATTRS} command.
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_PALETTE" link AREXX-COMMAND_GET_PALETTE}
+
+    @{b}EXAMPLE@{ub}
+        COLORS.0 = '008833BB'
+        "SET_PALETTE" "COLORS"
+        IF RC THEN SAY "Can't set palette:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_PALETTE "arexx-command  GET_PALETTE"
+
+    @{b}NAME@{ub}
+        GET_PALETTE - get the screens palette.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_PALETTE" "STEM/A"
+
+    @{b}FUNCTION@{ub}
+        Get the screen-colors.
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which will contains the color-values.
+            The colors are defined like this:
+
+            00RRGGBB      RR = red value, GG = green value, BB = blue value.
+
+            @{u}Important:@{uu}
+                The datatype of the color-definition is a string, which contains a binary value. Because of this,
+                you can use this values directly for @{"SET_PALETTE" link AREXX-COMMAND_SET_PALETTE}.
+                For example:
+
+                'GET_PALETTE' 'COLORS'
+                COLORS.1 = '00FFFFFF'
+                'SET_PALETTE' 'COLORS'
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        Please determine the number of available colors using the @{"GET_SCREENATTRS" link AREXX-COMMAND_GET_SCREENATTRS} command.
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_PALETTE" link AREXX-COMMAND_SET_PALETTE}
+
+    @{b}EXAMPLE@{ub}
+        "GET_PALETTE" "COLORS"
+        IF RC THEN SAY "Can't get palette:" ErrorText(RC2)
+        ELSE DO
+           DO I = 0 TO NumColors
+              SAY "Color" I ||": '" || COLORS.I || "'x";
+              END I
+           END
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_SCREENATTRS "arexx-command  SET_SCREENATTRS"
+
+    @{b}NAME@{ub}
+        SET_SCREENATTRS - set screens-attributes.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_SCREENATTRS""
+        "SET_SCREENATTRS" "STEM,FAST/S"
+
+    @{b}FUNCTION@{ub}
+        Set the attributes of the screen. If this command is called without any parameter, it behaves just like
+        choosing the menu-item "Screen mode...".
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which contains the needed data.
+            Following extentions are defined:
+
+                .MODE:      desired screen-mode.
+                .WIDTH:     width of the screen.
+                .HEIGHT:    height of the screen.
+                .DEPTH:     screen-depth.
+                .OSCANTYPE: definition of the desired overscan-type. Following definitions are possible:
+
+                     - "TEXT"
+                     - "STANDARD"
+                     - "MAX"
+                     - "VIDEO"
+
+                     Default is "TEXT".
+
+        FAST:
+            If specified, the attributes are changed as fast as possible, this means no fading.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_SCREENATTRS" link AREXX-COMMAND_GET_SCREENATTRS}
+
+    @{b}EXAMPLE@{ub}
+        DIMS.MODE = '40D20001'
+        DIMS.WIDTH = 640
+        DIMS.HEIGHT = 480
+        DIMS.DEPTH = 8
+        DIMS.OSCANTYPE = "TEXT"
+        "SET_SCREENATTRS" "DIMS"
+        IF RC THEN SAY "Can't set screen-attributes:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_SCREENATTRS "arexx-command  GET_SCREENATTRS"
+
+    @{b}NAME@{ub}
+        GET_SCREENATTRS - get screens-attributes.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_SCREENATTRS" "STEM/A"
+
+    @{b}FUNCTION@{ub}
+        Get the attributes of the screen.
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which will contain the desired data.
+            Following extentions are defined:
+
+                .MODE:      desired screen-mode.
+                .WIDTH:     width of the screen.
+                .HEIGHT:    height of the screen.
+                .DEPTH:     screen-depth.
+
+            @{u}Important:@{uu}
+                The datatype of the screenmode-definition is a string, which contains a binary value. Because of this,
+                you can use this values directly for @{"SET_SCREENATTRS" link AREXX-COMMAND_SET_SCREENATTRS}.
+                For example:
+
+                'GET_SCREENATTRS' 'DIMS'
+                'SET_SCREENATTRS' 'DIMS'
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_SCREENATTRS" link AREXX-COMMAND_SET_SCREENATTRS}
+
+    @{b}EXAMPLE@{ub}
+        "GET_SCREENATTRS" "DIMS"
+        IF RC THEN SAY "Can't get screen-attributes:" ErrorText(RC2)
+        ELSE DO
+          SAY "screenmode: '" || DIMS.MODE || "'x";
+          SAY "width:" DIMS.WIDTH
+          SAY "height:" DIMS.HEIGHT
+          SAY "depth:" DIMS.DEPTH
+          END
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_SET_FONT "arexx-command  SET_FONT"
+
+    @{b}NAME@{ub}
+        SET_FONT - set screen-font.
+
+    @{b}SYNOPSIS@{ub}
+        "SET_FONT"
+        "SET_FONT" "STEM,FAST/S"
+
+    @{b}FUNCTION@{ub}
+        Set the screen-font. If this command is called without any parameter, it behaves just like choosing the
+        menu-item "Font settings...".
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which contains the needed data.
+            Following extentions are defined:
+
+                .FONTNAME: name of the desired font.
+                .SIZE:     font size.
+                .STYLE:    font-style. Following definitions are possible:
+
+                     - "NORMAL"
+                     - "BOLD"
+                     - "ITALIC"
+                     - "UNDERLINED"
+                     - "EXTENDED"
+
+                     Default is "NORMAL"
+
+        FAST:
+            If specified, the font is changed as fast as possible, this means no fading.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"GET_FONT" link AREXX-COMMAND_GET_FONT}
+
+    @{b}EXAMPLE@{ub}
+        FONT.FONTNAME = "diamond.font"
+        FONT.SIZE = 13
+        FONT.STYLE = "BOLD,ITALIC"
+        "SET_FONT" "FONT"
+        IF RC THEN SAY "Can't set screen-font:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_GET_FONT "arexx-command  GET_FONT"
+
+    @{b}NAME@{ub}
+        GET_FONT - get screen-font.
+
+    @{b}SYNOPSIS@{ub}
+        "GET_FONT" "STEM/A"
+
+    @{b}FUNCTION@{ub}
+        Get the screen-font definitions.
+
+    @{b}INPUTS@{ub}
+        STEM:
+            Name of the stem-variable, which will contain the desired data.
+            Following extentions are defined:
+
+                .FONTNAME: name of the desired font.
+                .SIZE:     font-size.
+                .STYLE:    font-style. Following definitions are possible:
+
+                     - "NORMAL"
+                     - "BOLD"
+                     - "ITALIC"
+                     - "UNDERLINED"
+                     - "EXTENDED"
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"SET_FONT" link AREXX-COMMAND_SET_FONT}
+
+    @{b}EXAMPLE@{ub}
+        "GET_FONT" "FONT"
+        IF RC THEN SAY "Can't get screen-font:" ErrorText(RC2)
+        ELSE DO
+          SAY "fontname:" FONT.FONTNAME
+          SAY "font-size:" FONT.SIZE
+          SAY "font-style:" FONT.STYLE
+          END
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_START_TIMER "arexx-command  START_TIMER"
+
+    @{b}NAME@{ub}
+        START_TIMER - start timer.
+
+    @{b}SYNOPSIS@{ub}
+        "START_TIMER"
+
+    @{b}FUNCTION@{ub}
+        Set timer to 0 and start the timer. Usefull for speed calculations.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"STOP_TIMER" link AREXX-COMMAND_STOP_TIMER}
+
+    @{b}EXAMPLE@{ub}
+        "START_TIMER"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_STOP_TIMER "arexx-command  STOP_TIMER"
+
+    @{b}NAME@{ub}
+        STOP_TIMER - stop timer.
+
+    @{b}SYNOPSIS@{ub}
+        "STOP_TIMER"
+
+    @{b}FUNCTION@{ub}
+        Stop timer and return the passed time since the last call of the @{"START_TIMER" link AREXX-COMMAND_START_TIMER}-command. Usefull for speed
+        calculations.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RESULT:
+            the passed time since the last @{"START_TIMER" link AREXX-COMMAND_START_TIMER}-call in seconds.
+
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"START_TIMER" link AREXX-COMMAND_START_TIMER}
+
+    @{b}EXAMPLE@{ub}
+        "STOP_TIMER"
+        SAY "needed time:" RESULT
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_PLAY_SOUND "arexx-command  PLAY_SOUND"
+
+    @{b}NAME@{ub}
+        PLAY_SOUND - play a sound-file.
+
+    @{b}SYNOPSIS@{ub}
+        "PLAY_SOUND" "PATH/A,ASYNC/S,REPEAT/S"
+
+    @{b}FUNCTION@{ub}
+        Plays a sound-file using the AmigaOS-datatypes.
+
+    @{b}INPUTS@{ub}
+        PATH:
+            The path of the sound-file.
+
+        ASYNC:
+            If TRUE, FlashMandelNG starts an own process for playing the sound.
+
+        REPEAT:
+            If TRUE, the sound will be played in an endless loop. Will be ignored, if ASYNC is not specified.
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"STOP_SOUND" link AREXX-COMMAND_STOP_SOUND}
+
+    @{b}EXAMPLE@{ub}
+        "PLAY_SOUND" "FLASHMANDEL:Welcome.8svx"
+        IF RC THEN SAY "Can't play sound:" ErrorText(RC2)
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-COMMAND_STOP_SOUND "arexx-command  STOP_SOUND"
+
+    @{b}NAME@{ub}
+        STOP_SOUND - stop sound.
+
+    @{b}SYNOPSIS@{ub}
+        "STOP_SOUND"
+
+    @{b}FUNCTION@{ub}
+        stop a sound started with @{"PLAY_SOUND" link AREXX-COMMAND_PLAY_SOUND}.
+
+    @{b}INPUTS@{ub}
+        -
+
+    @{b}RETURNS@{ub}
+        RC:
+            @{"error-level" link AREXX-ERROR-LEVELS}, 0 if successfull.
+
+        RC2:
+            @{"error-code" link AREXX-ERROR-CODES}, 0 if successfull.
+
+    @{b}NOTES@{ub}
+        -
+
+    @{b}SEE ALSO@{ub}
+        @{"PLAY_SOUND" link AREXX-COMMAND_PLAY_SOUND}
+
+    @{b}EXAMPLE@{ub}
+        "STOP_SOUND"
+
+    @{b}BUGS@{ub}
+        -
+
+@endnode
+@node AREXX-ERROR-LEVELS "arexx-error-levels"
+
+  Following error-levels are defined:
+
+    0 = OK             everything is o.k.
+    5 = WARN           just a feedback, e.g. a requester was cancelled.
+   10 = ERROR          an error occured, e.g. a wrong parameter was defined.
+   20 = FATAL          a serious error - program should quit.
+
+   Every command returns one of this level-codes in the variable 'RC'.
+
+@endnode
+@node AREXX-ERROR-CODES "arexx-error-codes"
+
+   Following error-codes are defined:
+
+    0 = everything is o.k.
+
+   01 = program not found
+   02 = execution halted
+   03 = no memory available
+   04 = invalid character in program
+   05 = unmatched quote
+   06 = unterminated comment
+   07 = clause too long
+   08 = unrecognized token
+   09 = symbol or string too long
+
+   10 = invalid message packet
+   11 = command string error
+   12 = error return from function
+   13 = host environment not found
+   14 = required library not found
+   15 = function not found
+   16 = no return value
+   17 = wrong number of arguments
+   18 = invalid argument to function
+   19 = invalid PROCEDURE
+
+   20 = unexpected THEN/ELSE
+   21 = unexpected WHEN/OTHERWISE
+   22 = unexpected LEAVE or ITERATE
+   23 = invalid statement in SELECT
+   24 = missing THEN clauses
+   25 = missing OTHERWISE
+   26 = missing or unexpected END
+   27 = symbol mismatch on END
+   28 = invalid DO syntax
+   29 = incomplete DO/IF/SELECT
+
+   30 = label not found
+   31 = symbol expected
+   32 = string or symbol expected
+   33 = invalid sub-keyword
+   34 = required keyword missing
+   35 = extraneous characters
+   36 = sub-keyword conflict
+   37 = invalid template
+   38 = invalid TRACE request
+   39 = uninitialized variable
+
+   40 = invalid variable name
+   41 = invalid expression
+   42 = unbalanced parentheses
+   43 = nesting level exceeded
+   44 = invalid expression result
+   45 = expression required
+   46 = boolean value not 0 or 1
+   47 = arithmetic conversion error
+   48 = invalid operand
+
+   Every command returns one of this error-codes in the variable 'RC2'.
+
+@endnode
+

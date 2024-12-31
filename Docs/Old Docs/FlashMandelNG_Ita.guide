@@ -1,0 +1,650 @@
+@Database FlashMandelNG.guide
+@Author "Dino Papararo"
+@(c) "Copyright (c) 1995-2005 Dino Papararo"
+@$VER: FlashMandelNG.guide 1.0 (19/February/2005)
+@font courier.font 13
+@wordwrap
+
+@node Main "FlashMandelNG Guide"
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} 2.3 Copyright 1995-2020 Dino Papararo & Edgar Schwan
+
+Un nuovo programma per l'esplorazione dell'@{"insieme di Mandelbrot" link Mandelbrot}.
+
+    @{"Installazione  " link Install}  Istruzioni per l'installazione
+    @{"Requisiti      " link Required}  Requisiti minimi di sistema
+    @{"YAFG           " link YAFG}  @{fg highlight}Yet Another Fractal Generator (Ancora un altro generatore di frattali)@{fg text}
+    @{"Interfaccia    " link Interfc}  L'interfaccia del programma
+    @{"Caratteristiche" link Caratte}  Caratteristiche principali
+    @{"ARexx          " link "FLASHMANDEL:docs/FM_ARexx_Ita.guide/Main"}  Come utilizzare la porta Arexx
+    @{"Storia         " link History}  Cronologia 
+    @{"In futuro      " link Futuro}  Da fare...
+    @{"Autore         " link Autore}  Eccomi, siamo noi...
+    @{"Grazie a...    " link Ringra}  ... ciao amici!
+    @{"Copyright      " link CopyRg}  Informazioni aggiuntive
+
+@{b}NEW:@{ub}
+Come puoi intuire dal nome del programma, ci sono state alcune variazioni in FlashMandel. Dal momento che io (Edgar Schwan) ora
+sono div enuto un felice possessore di un AmigaOne, FlashMandel ha visto nuova luce con una versione per AmigaOS4. Per questo motivo, sono stati effettuati molti cambiamenti interni.
+Ci sono due versioni di FlashMandelNG: una versione per AmigaOS4 e una versione per Amiga68k con OS 3. Lo sviluppo ella versione WOS sarà solo sviluppata marginalmente.
+
+Potrai trovare le versioni più recenti di FlashMandelNG ai seguenti URL:
+* OS4-Depot:           @{u}@{fg fill}http://os4depot.net/index.php?function=browse&cat=graphics/misc @{fg text}@{uu}
+* Aminet:              @{u}@{fg fill}http://wuarchive.wustl.edu/pub/aminet/pix/fract/ @{fg text}@{uu}
+                       (at the time of the creation of this manual no upload is possible)
+* FlashMandel-Support: @{u}@{fg fill}http://www.schwan-clan.de/amiga/FlashMandel_GB.shtml@{fg text}@{uu}
+
+@endnode
+
+@node Install "Installation"
+
+Per installare il programma clicca sull'icona @{b}@{fg highlight}"Install FlashMandelNG"@{fg text}@{ub}. Verrà aggiunto un assegnamento all'interno della user-startup in riferimento alla directory di installazione. Per richiamare la guida dall'interno del programma è necessario avere la utility di sistema Multiview nel percorso SYS:Utilities, altrimenti non sarà possibile l'apertura.
+
+Per utilizzare FlashMandel-ARexx è necessario avere almeno AmigaOS 3.5!
+
+@next Required
+
+@endnode
+
+@node Mandelbrot "Informazioni su Mandelbrot"
+
+@prev Mandelbrot
+
+Benoit Mandelbrot fu l'inventore dei frattali. Nel 1975 coniò questa parola riferendosi alle formule auto-similari e frammentate, caratteristiche di ogni frattale. L'@{fg highlight}insieme di Mandelbrot@{fg text} è un frattale generato dalla formula matematica @{fg fill}Z = Z²+C@{fg text}. Questa funzione è iterata diverse volte nel piano complesso (si ha un numero complesso inizialmente uguale a zero, lo si eleva al quadrato e si aggiunge una costante, per poi ricominciare la procedura un tot di volte; "@{i}tot di volte@{ui}" corrisponde alle "@{i}Iterazioni@{ui}", valore presente in molti generatori di frattali.
+Il risultato di queste iterazioni può convergere in un numero o procedere all'infinito. Nel caso in cui tenda all'infinito il punto in cosiderazione non appartiene all'insieme di Mandelbrot e lo tracciamo con un colore corrispondente alla velocità di fuga del piano complesso ottenuto proprio dal numero di iterazioni eseguite, altrimenti se tale risultato converge ad un valore appartenente all'insieme di Mandelbrot viene tracciato un pixel di colore nero.
+
+@next Mandelbrot
+
+@endnode
+
+@node Required "Requisiti di sistema"
+
+@prev Install
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} non necessita di configurazioni eccezionalmente pompate. 
+
+@{u}Versione OS4 (FlashMandelNG):@{uu}
+
+- Kickstart 4.0
+- 2 MB RAM
+- PowerPC-CPU (G3/G4 or PPC6xx for OS4 for CyberStormPPC / BlizzardPPC)
+
+@{u}Versione 68k (FlashMandelNG_68k):@{uu}
+
+- Kickstart 3.1 or @{b}3.0@{ub} with IWantChunky patch
+- 1 MB RAM
+- 68020-CPU (con o senza una FPU) o meglio (@{"68020 to 68060" link Processori})
+
+Tutti i @{"chipset" link ChipSet} sono supportTI.
+Se in presenza di @{"Schede grafiche particolari" link ChipSet}, questa saranno supportate dallo @{b}Screen Database@{ub} e dai @{b}ToolTypes@{ub}.
+Ad ogni modo ti suggerisco di procurati almeno una scheda grafica con 16 MB di ram, AmigaOS 3.9, CPU MC68040@40, ed un buon monitor da 17" o superiore.
+
+Per la porta Arexx è necessario avere AmigaOS 3.5+, perchè FlashMandel usa la "arexx-reaction-class".
+
+@endnode
+
+@node YAFG "Yet Another Fractal Generator" (Ancora un altro generatore di frattali)
+
+@{b}@{i}@{fg highlight}@{bg text}Perchè un altro generatore di frattali?@{bg back}@{fg text}@{ui}@{ub}
+
+Innanzitutto per una sfida con me stesso riguardo la velocità di rendering e poi anche per le stupende immagini ottenute, ed ancora perchè non esisteva niente altro che fosse @{b}completamente@{ub} basato sull'@{b}Amiga OS@{ub}, e che non facesse trucchetti sporchi per aumentare la velocità a scapito della precisione o altro. Al momento il codice del programma occupa circa 470 KB (OS4) o 230 KB (68k); inoltre gli altri programmi simili non supportano il PowerPC, Schede grafiche, AGA/ECS Overscan, il Multitasking, o scrivono direttamente nella chipram/videoram etc.. etc... Ovviamente potrebbero esserci dei Bug !
+
+Per le caratteristiche cliccare @{"qui" link Caratte}.
+
+@endnode
+
+@node Interfc "L'interfaccia del programma"
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} è conforme al sistema operativo, e rispetta la @{b}@{fg highlight}Style Guide@{fg text}@{ub}, quindi tutti i gadget, i menu e i requester sono perettamente comprensibili.
+
+@{b}ToolType@{ub} supportati:
+
+@{b}@{fg highlight}SCREENWIDTH@{fg text}@{ub}   : Larghezza in pixel dello schermo, compresa tra 640 e 16368 (default=800).
+@{b}@{fg highlight}SCREENHEIGHT@{fg text}@{ub}  : Altezza in pixel dello schermo, compresa tra 480 e 16384 (default=600).
+@{b}@{fg highlight}SCREENPLANES@{fg text}@{ub}  : Profondità dello schermo, tra 3 e 8 bitplane (default=8).
+@{b}@{fg highlight}SCREENMODE@{fg text}@{ub}    : Valore esadecimale del modo schermo OCS,ECS,AGA,RTG (default=500410000).
+@{b}@{fg highlight}REALMIN@{fg text}@{ub}       : Limite reale iniziale sinistro tra -8 e +8 (default=-2.0).
+@{b}@{fg highlight}REALMAX@{fg text}@{ub}       : Limite reale iniziale destro tra -8 e +8 (default=+1.0).
+@{b}@{fg highlight}IMAGMIN@{fg text}@{ub}       : Limite immaginario inferiore tra -8 e +8 (default=-1.125).
+@{b}@{fg highlight}IMAGMAX@{fg text}@{ub}       : Limite immaginario superiore tra -8 e +8 (default=+1.125).
+@{b}@{fg highlight}FONTNAME@{fg text}@{ub}      : Font dello schermo (default=courier.font).
+@{b}@{fg highlight}FONTSIZE@{fg text}@{ub}      : Dimensione del font (default=13).
+@{b}@{fg highlight}STARTPRI@{fg text}@{ub}      : Priorità del programma (default=-3).
+@{b}@{fg highlight}POWER@{fg text}@{ub}         : Esponente n del polinomio Z = (Z^(2^n)) + C (default=1).
+@{b}@{fg highlight}STARTWITHJULIA@{fg text}@{ub}: Formula iniziale, '0' per Mandelbrot e '1' for Julia (default=0).
+@{b}@{fg highlight}JULIACONSTREAL@{fg text}@{ub}: Costante reale di Julia (default=-0.72).
+@{b}@{fg highlight}JULIACONSTIMAG@{fg text}@{ub}: Costante immaginaria di Julia (default=-0.26).
+@{b}@{fg highlight}COLORSREMAP@{fg text}@{ub}   : Linear=0, Ln(x)=1, Repeated=2, Sqrt(x)=3, x²-x=4, Sqrt(x³-x²-x)=5, Sinh(Ln(x³))=6, Cosh(Log(x³))=7, (default=0).
+@{b}@{fg highlight}USEPPC@{fg text}@{ub}        : Impostando questo tooltype a 1 viene attivato il supporto PPC (default=1).
+@{b}@{fg highlight}USERNAME@{fg text}@{ub}      : Il nome qui inserito verrà memorizzato all'interno dei file iff generati (immagini e tavolozze) (default=Amiga Rules!) ;-).
+@{b}@{fg highlight}REXXCMDx@{fg text}@{ub}      : Percorso dello script Arexx da aggiungere nell'Arexx 'quick menu', dove 'x' sta per un numero intero a partire da '1'.
+@{b}@{fg highlight}MATHMODE@{fg text}@{ub}      : Precisione dei calcoli. '1' imposta calcoli in hardware a precisione standard, '2' imposta calcoli più lenti ma ad alta precisione.
+@{b}@{fg highlight}DIGITS@{fg text}@{ub}        : Numero di cifre da considerare per calcoli ad alta precisione (10 - 1000).
+
+
+All'inizio, senza modificare i tooltype, viene eseguito il @{"set di Mandelbrot" link FLASHMANDEL:Pictures/Mandelbrot_def.iff/main} tra i limiti @{b}(-2.0,-1.125i)@{ub} e @{b}(+1.0,+1.125i)@{ub}, con una risoluzione dello schermo di 800 x 600 al massimo dei colori disponibile (256 per @{"AGA/RTG" link ChipSet}, 16 con @{"ECS/OCS" link ChipSet}). Dopo il rendering, che dura un istante con il PPC, viene mostrato il requester di about che indica la versione del programma e ricorda che la licenza d'uso è di tipo Giftware :-) Cliccando su 'More' vengono visualizzate informazioni aggiuntive. Per continuare cliccare su "Ok".
+
+Sulla barra del titolo vengono visualizzate le seguenti informazioni:
+
+@{b}@{fg highlight}Real@{fg text}@{ub} coordinate correnti per l'asse reale.
+@{b}@{fg highlight}Imag@{fg text}@{ub} coordinate correnti per l'asse immaginario.
+Questi due parametri vengono aggiornati in tempo reale in base alla posizione del puntatore.
+
+@{b}@{fg highlight}W:H@{fg text}@{ub} è il rapporto tra le dimensioni dello schermo.
+@{b}@{fg highlight}R:I@{fg text}@{ub} è il rapporto tra le dimensioni del frattale.
+
+Per una rappresentazione reale delle proporzioni questi due parametri @{b}DEVONO@{ub} essere uguali!
+Altrimenti, è @{b}NECESSARIO@{ub} andare nella @{b}@{fg highlight}Finestra delle Coordinate@{fg text}@{ub} ShortCut @{b}@{fg highlight}Amiga C@{fg text}@{ub} e selezionare il pulsante @{b}@{fg highlight}Proporziona@{fg text}@{ub}, per poi ricalcolare l'immagine con i nuovi valori.
+
+Ci sono quattro menu:
+
+    @{" Progetto " link Project}
+    @{" Opzioni " link Options}
+    @{" Calcola " link Calculate}
+    @{"  Video  " link Video}
+    @{"  Arexx  " link ARexxMenu}
+
+
+Cliccando con il pulsante sinistro del mouse sull'immagine del frattale, apparirà un rettangolo che corrisponde alle coordinate per l'ingrandimento o l'anteprima. Durante il rendering, si può utilizzare il tasto @{b}@{fg highlight}Tab@{fg text}@{ub} per saltare al @{"rettangolo corrente" link CProb}; il tasto {b}@{fg highlight}Esc@{fg text}@{ub} o il menu @{b}@{fg highlight}Ferma@{fg text}@{ub} ShortCut @{b}@{fg highlight}Amiga X@{fg text}@{ub}, interrompono il rendering.
+
+@next Caratte
+
+@endnode
+
+@node Project "Menu Project"
+
+@prev Interfc
+
+Sono presenti nove opzioni, @{b}Informazioni generali@{ub}, @{b}Informazioni sul sistema@{ub}, @{b}Guida in linea@{ub}, @{b}Carica immagine@{ub}, @{b}Salva immagine@{ub}, @{b}Carica tavolozza@{ub}, @{b}Salva tavolozza@{ub}, @{b}Stampa@{ub} e @{b}Fine@{ub}.
+
+@{b}Informazioni generali@{ub} è lo stesso requester che viene visualizzato all'inizio, dà informazioni sull'@{"Autore" link Autore} e il gruppo di lavoro.
+Shortcut: @{b}Amiga A@{ub}
+
+@{b}Informazioni sul sistema@{ub} Mostra un requester riguardante le informazioni sui processori 68k & PowerPC e sulla memoria libera.
+Shortcut: @{b}Amiga N@{ub}
+
+@{b}Guida in linea@{ub} Mostra la guida di FlashMandelNG in maniera asincrona, così da non interrompere i renderings. Nota: per funzionare il Multiview deve trovarsi in SYS:Utilities/Multiview. La guida appare anche premendo il tasto 'HELP' nella finestra principale.
+Shortcut: @{b}Amiga H@{ub}
+
+@{b}Carica immagine@{ub} Carica una immagine IFF precedentemente salvata, impostando i parametri del frattale automaticamente in base a quelli memorizzati al momento del salvataggio.
+Shortcut: @{b}Amiga L@{ub}
+
+@{b}Salva immagine@{ub} Salva l'immagine corrente in formato IFF, con un @{b}Chunk@{ub} speciale in cui vengono memorizzati parametri e coordinate del frattale (iterazioni, mapping, etc...). Il file generato può essere visualizzato con qualsiasi programma in grado di aprire file IFF. Attenti a non sovrascrivere file già esistenti, anche se in questo caso il programma vi informerà.
+Shortcut: @{b}Amiga S@{ub}
+
+@{b}Carica tavolozza@{ub} Carica una palette in formato IFF.
+Shortcut: @{b}Amiga Y@{ub}
+
+@{b}Salva tavolozza@{ub} Salva la palette corrente in formato IFF, il file generato è compatibile con tutti i software di grafica che gestiscono il formato palette-IFF.
+Shortcut: @{b}Amiga E@{ub}
+
+@{b}Stampa@{ub} Copia in memoria lo schermo e lo stampa così com'è, con le impostazioni di defalut del sistema. La barra del titolo, se presente, non viene stampata.
+Shortcut: @{b}Amiga D@{ub}
+
+@{b}Fine@{ub} Esce dal programma sbloccando le risorse allocate.
+Shortcut: @{b}Amiga Q@{ub}
+
+@endnode
+
+@node Options "Menu Options"
+
+Sono presenti nove opzioni: @{b}Titolo@{ub}, @{b}Limiti@{ub}, @{b}Iterazioni@{ub}, @{b}Priorità@{ub}, @{b}Distribuzione dei colori@{ub}, @{b}Tipo di frattale@{ub}, @{b}Processore@{ub}.
+
+@{b}Titolo@{ub} è un menu @{"booleano" link BoolFlag} che indica se mostrare o no la barra del titolo (Shortcut: @{b}Amiga O@{ub}); se la barra del titolo è nascosta, è possibile zoomare nella parte superiore dello schermo, ma premendo il pulsante destro del mouse, la barra apparirà di nuovo. Il sottomenu @{b}Last time@{ub} (Shortcut: @{b}Amiga T@{ub}) mostra sulla barra del titolo il tempo impiegato per l'ultimo rendering e la velocità in pixel per secondo. Ovviamente questo valore risulterà falsato se il rendering viene interrotto, visto che solo una parte del frattale viene visualizzata. La velocità di rendering in FlashMandelNG non è proporzionale alle dimensioni dello schermo, a causa del metodo di rendering, il così chiamato 'Divide et Impera'. Con altri programmi, un rendering richiede un tempo direttamente proporzionale alla risoluzione dello schermo, mentre in @{b}FlashMandelNG@{ub} il tempo di attesa è non varia di molto.
+
+@{b}Limiti@{ub} apre una finestra con alcuni gadget numerici e permette di inserire a mano nuovi valori per le coordinate del piano complesso e la costante di Julia. Quattro @{"gadget" link ButtGad} @{b}Accetta, Proporziona, Inizializza, Annulla@{ub} permettono di accettare e applicare i cambiamenti, ripristinare il rapporto tra l'ampiezza dele coordinate del piano complesso e le dimensioni dello schermo, ritornare ai valori originali, o chiudere la finestra senza apportare cambiamenti. L'altro pulsante invece, permette la modifica di una sola delle due dimensioni del campo complesso per permettere la regolazione del rapporto pari a quello delle dimensioni dello schermo; il settaggio predefinito mantiene costanti le coordinate reali (asse delle X) del frattale.
+Shortcut: @{b}Amiga C@{ub}
+
+@{b}Iterazioni@{ub} è un sottomenu dove vanno selezionate le @{"iterazioni" link Mandelbrot}, tra 8 valori preimpostati o con un requester numerico. Il miglior numero per le iterazioni @{b}DEVE@{ub} essere più alto del numero dei colori su schermo, o non sarà possibile usare tutti i colori disponibili. Valori alti per per i primi zoom potrebbero dare cattivi risultati, le iterazioni vanno aumentate gradualmente procedendo nelle zoomate, passo dopo passo. Questo parametro influisce moltissimo sul risultato finale e sui tempi di rendering ! Le iterazioni massime sono pari a ((2^15)-1) -> 32767.
+Shortcut: @{b}Amiga I@{ub} per inserire un numero di iterazioni non presente.
+
+@{b}Grado del polinomio@{ub} è un sottomenu per selezionare il grado n del polinomio del tipo Z=(Z^(2^n))+C dove n per l'appunto può variare tra 1 e 11. Ponendo n=1 si ottengono i classici frattali di Mandelbrot e Julia.
+
+@{b}Priorità@{ub} è un sottomenu per la priorità del task tra -5 e +5, per non interferire con la normale attività del sistema operativo.
+Shortcut: @{b}Amiga <n>@{ub} per impostare la priorità a +<n>, dove <n> è un numero tra 1 e 5.
+          @{b}Amiga Shift <n>@{ub} per impostare la priorità a -<n>, dove <n> è un numero tra 1 e 5.
+
+@{b}Distribuzione dei colori@{ub} i colori sono calcolati in funzione delle iterazioni eseguite per ogni punto. FlashMandel ha 8 differenti modi di assegnare un colore ad un punto.
+@{b}Lineare@{ub} i colori sono rimappati seguendo l'andamento della funzione y=x.
+@{b}Ln(x)@{ub} i colori sono rimappati seguendo l'andamento della funzione y=Ln(x).
+@{b}Ripetuto@{ub} i colori sono rimappati seguendo l'andamento della funzione y=x e ripetuti se necessario quando si raggiunge l'ultimo.
+@{b}Sqrt(x)@{ub} i colori sono rimappati seguendo l'andamento della funzione y=Sqrt(x).
+@{b}x²-x@{ub} i colori sono rimappati seguendo l'andamento della funzione y=x²-x.
+@{b}Sqrt(x³-x²-x)@{ub} i colori sono rimappati seguendo l'andamento della funzione y=Sqrt(x³-x²-x).
+@{b}Sinh(Ln(x³))@{ub} i colori sono rimappati seguendo l'andamento della funzione y=Sinh(Ln(x)).
+@{b}Cosh(Log(x³))@{ub} i colori sono rimappati seguendo l'andamento della funzione y=Cosh(Log(x)).
+Shortcut: @{b}Amiga <n>@{ub} per scegliere tra i primi 4 metodi di assegnamento dei colori del frattale.
+          @{b}Amiga Shift <n>@{ub} per scegliere tra gli ultimi 4 metodi di assegnamento dei colori del frattale.
+
+@{b}Tipo di frattale@{ub} è un sottomenu per scegliere la @{"formula di rendering" link Formula}.
+
+    @{b}Julia@{ub} Per selezionare la formula di Julia.
+    Shortcut: @{b}Amiga J@{ub}
+
+    @{b}Mandelbrot@{ub} Per selezionare la formula di Mandelbrot.
+    Shortcut: @{b}Amiga M@{ub}
+    
+@{b}Modalità di rendering@{ub} è un sottomenu, dal quale puoi impostare o deselezionale ma modalità turbo.
+
+    @{b}Turbo:@{ub}  se selezionato, il video non sarà aggiornato durante il rendering.
+    Shortcut: @{b}Amiga +@{ub}
+
+@{b}Modalità di calcolo@{ub} è un sottomenu dal quale si imposta la precisione dei calcoli.
+    Questa modalità è valida solo per l'alta precisione con iterazioni più profonde.
+
+    Per utilizzare questa modalità è necessaria tanta potenza di calcolo, anche un PPC-G4
+    a 800Mhz necessita per il rendering dell'intero set di mandelbrot a 640x480 con 50 cifre di precione circa 6 minuti!
+    A causa di queso fatto, per ora questa carateristica è sperimentale!
+
+    @{u}Importante:@{uu} Non è possibile interrompere il rendering!
+
+    @{b}Veloce:@{ub}  Per selezionare calcoli veloci in hardware .
+
+    @{b}Alta precisione(xx cifre):@{ub}  Per selezionare calcoli lenti in software ma ad alta precisione.
+
+    @{b}Cambia precisione...:@{ub}  per impostare il numero di cifre da considerare per la modalità alta precisione.
+
+@endnode
+
+@node Calculate "Menu Calculate"
+
+Ci sono cinque opzioni: @{b}Anteprima@{ub}, @{b}Ricalcola@{ub}, @{b}Annulla modifica@{ub}, @{b}Ingrandisci@{ub}, @{b}Ferma@{ub}.
+
+@{b}Anteprima@{ub} apre una finestra ampia un quarto di schermo per un rendering più veloce.
+Shortcut: @{b}Amiga W@{ub}
+
+@{b}Ricalcola@{ub} ricalcola il frattale con il nuovo set di parametri.
+Shortcut: @{b}Amiga R@{ub}
+
+@{b}Annulla modifica@{ub} annulla le modifiche sulle coordinate.
+Shortcut: @{b}Amiga U@{ub}
+
+@{b}Ingrandisci@{ub} effettua il rendering del frattale all'interno del rettangolo che indica le nuove coordinate.
+Shortcut: @{b}Amiga Z@{ub}
+
+@{b}Ferma@{ub} interrompe il rendering.
+Shortcut: @{b}Amiga X@{ub}, o il tasto ESC.
+
+@endnode
+
+@node Video "Menu Video"
+
+Sono presenti quattro opzioni: @{b}Ciclo dei colori@{ub}, @{b}Tavolozza@{ub}, @{b}Modifica schermo@{ub}, @{b}Modifica caratteri@{ub}.
+
+@{b}Ciclo dei colori@{ub} è un sottomenu con tre opzioni:
+
+  @{b}Avanti@{ub} inizia il @{"color cycling" link ColCyc} in avanti (Shortcut: @{b}Amiga >@{ub}).
+
+  @{b}Indietro@{ub} inizia il @{"color cycling" link ColCyc} indietro (Shortcut: @{b}Amiga <@{ub}).
+
+  @{b}Ritardo@{ub} imposta il ritardo tra i susseguirsi dei colori 0 per nessun ritardo (0..100) (Shortcut: @{b}Amiga -@{ub}).
+
+
+@{b}Tavolozza@{ub} apre il @{"Palette requester" link PalReq} per impostare i colori (Shortcut: @{b}Amiga P@{ub})..
+
+@{b}Modifica schermo@{ub} per selezionare nuove risoluzioni dello schermo, per tutti i modi c'è una finestra con le proprietà per scegliere il modo video più adatto (Shortcut: @{b}Amiga V@{ub})..
+
+@{b}Modifica caratteri@{ub} per modificare i caratteri dello schermo per alte risoluzioni. La GUI cambierà automaticamente con il nuovo carattere scelto. La dimensione massima consentita è di 24 pixel, sono supportati sia i font proporzionali che i fissi (Shortcut: @{b}Amiga F@{ub})..
+
+@endnode
+
+@node ARexxMenu "Menù ARexx"
+
+@{b}ARexx menù rapido@{ub} le prime scelte del menù sono definibili dall'utente tramite i tooltype. In questo vcontesto puoi aggiungere i riferimenti ad alcuni script arexx per un accesso immediato. Per definire la prima scelta inserisci nei tooltype la seguente riga: AREXXCMD1="example.rexx" per la seconda AREXXCMD2=... per la terza AREXXCMD3=... e così via.
+@{b}Avvia...@{ub} apre una finestra dalla quale selezionare lo script arexx da eseguire.
+Per saperne di più sulle caratteristiche Arexx supportate da FlashMandelNG leggi la seguente guida @{"Guida Arexx" link "FLASHMANDEL:docs/fm_arexx_ita.guide/main"}.
+
+@next Interfc
+
+@endnode
+
+@node BoolFlag "Boolean Flag"
+
+@prev BoolFlag
+
+Un interruttore booleano ha due stati, vero/falso, acceso/spento, zero/uno...; in questo caso mostra o nasconde la barra del titolo.
+@next BoolFlag
+
+@endnode
+
+@node ButtGad "Button Gadget"
+
+@prev ButtGad
+
+Un @{b}gadget a pulsante@{ub} è un Gadget (Elemento Selezionabile dell'Interfaccia) che può essere premuto per eseguire una funzione.
+(@{fg fill}Ma credo che questo lo sappiate tutti...@{fg text})
+
+@next ButtGad
+
+@endnode
+
+@node PalReq "Palette Requester"
+
+@prev PalReq
+
+@{b}Tavolozza dei colori@{ub} è una finestra in cui è possibile modificare, copiare, scambiare, sfumare, ruotare ed invertire i colori.
+
+Questa finestra ha molti gadget. Il primo sulla sinistra è un rettangolo con tutti i colori modificabili, selezionandone uno è possibile agire su tutte le tre componenti cromatiche. I colori sono ordinati da sinistra a destra e dall'alto verso il basso; il primo colore è in alto a sinistra, l'ultimo è quello in basso a destra. I primi 4 colori non dovrebbero essere toccati, perchè usati per l'interfaccia, in ogni caso potete fare, se volete, qualche esperimento... ma siete avvertiti!
+@{b}Copia@{ub} copia il colore selezionato da una posizione ad un'altra. Selezionare il colore da copiare e premere il pulsante @{b}Copia@{ub}, selezionare quindi la destinazione.
+@{b}Scambia@{ub} scambia i colori di due celle.
+@{b}Sfuma@{ub} sfuma i colori tra quello selezionato e quello scelto in seguito, creando una piacevole sfumatura.
+@{b}Inverti@{ub} inverte i colori della tavolozza. E' utile per provare a fondo le palette senza fare zoom troppo profondi e per importare palette da altri generatori di frattali. @{b}FlashMandelNG@{ub} per motivi di velocità usa i colori in maniera differente dagli altri programmi, la penna 255 è la prima ad essere usata, la penna 254 la seconda e così via...
+@{b}<<@{ub} ruota di una posizione l'intera palette da destra verso sinistra.
+@{b}>>@{ub} ruota di una posizione l'intera palette da sinistra verso destra.
+@{b}Ritorna@{ub} annulla l'ultima operazione.
+
+I tre scroller modificano le tre componenti del colore, rosso, verde e blu della penna selezionata.
+Suggerisco di modificare le singole componenti di colore con i tasti @{b}'e'-'t'@{ub} per il rosso, @{b}'f'-'h'@{ub} per il verde, @{b}'v'-'n'@{ub} per il blu. I tasti sono @{b}'case sensitive'@{ub} e se usati con lo @{b}shift/caps lock@{ub} è possibile addizionare-sottrarre @{b}10@{ub} unità alla volta.
+
+I tre gadget @{b}Accetta@{ub}, @{b}Inizializza@{ub} e @{b}Annulla@{ub} confermano i cambiamenti, resettano i colori o annullano i cambiamenti.
+
+@next PalReq
+
+@endnode
+
+@node ColCyc "Color Cycling"
+
+@prev ColCyc
+
+Il @{i}Ciclo dei colori@{ui} è una funzione speciale che "anima" l'immagine, ruotando i colori della palette.
+In una @{"barra di colori" link Bar.brush/main} con una sequenza di colori, se noi copiamo il primo sul secondo, il secondo sul terzo e così via, otteniamo un effetto animazione.
+Il @{"set di Mandelbrot" link Mandelbrot} generato ha questa proprietà: per tutti i punti dell'insieme che hanno una uguale velocità di fuga i pixel sullo schermo adottano lo stesso colore, la rotazione della palette, in questo caso, genera un particolare effetto grafico.
+
+@next ColCyc
+
+@endnode
+
+@node Formula "Rendering formula"
+
+@prev Formula
+
+Sono presenti due tipi di formule di @{b}rendering@{ub} del tipo Z = (Z^(2^n)) + C di default n = 1.
+
+L'@{b}Insieme di Julia@{ub} è disegnato calcolando le coordinate complesse di ogni pixel Z, e portando al quadrato il numero e aggiungendo un secondo numero complesso costante C ad ogni iterazione. Se il numero tende all'infinito, allora il pixel è colorato di nero, altrimenti dipendentemente al numero di iterazioni eseguite viene assegnato un colore. C'è un numero infinito di insiemi di Julia visto che la costante C può essere un qualsiasi numero nel campo complesso tra (-2,-2i) e (+2,+2i).
+
+L'@{b}Insieme di Mandelbrot@{ub}, usa lo stesso processo di base per ogni pixel, iniziando con Z=0 anzichè con il numero complesso del pixel, e aggiungendo il numero del valore di C ad ogni iterazione dopo l'elevazione al quadrato di (Z) anzichè aggiungere una constante. Come per il set di Julia, possono essere creati diversi frattali con diversi valori di C, si può anche cambiare il valore iniziale di Z. Si può anche calcolare Z con una potenza diversa da 2 prima di aggiungere C. Z³+C è un Mandelbrot cubico, etc...
+
+Ognuno di questi insiemi inoltre può essere calcolato anche per potenze diverse dal 2, le classiche formule di Mandelbrot e Julia per l'appunto, permettendo all'esponente 'n' di variare tra 1 e 11 ottenendo così insiemi diversi ma aventi tutti le stesse caratteristiche dei classici Mandelbrot e Julia.
+
+@next Formula
+
+@endnode
+
+@node Caratte "Program features"
+
+@prev Interfc
+
+FlashmandelNG è conforme al sistema operativo, rispettando completamente l'AmigaOS ed il multitasking, usa solo funzioni standard delle librerie, e non DOVREBBE causare Enforcer o Mungwall Hit. FlashMandelNG è sviluppato e testato su un AmigaOne G4@800MHz con scheda video Radeon 9200. Il programma è scritto con l'efficienza in testa, quindi vi assicuro che ogni registro del Mc 68k e del PPC ed ogni cella di memoria riservata è utilizzata al meglio e completamente sfruttata. Il rendering è velocizzato con un accesso diretto a TUTTE le variabili nei registri della FPU sia per il 68k che per il PPC, quindi non preoccupatevi di avere particolari librerie matematiche, ma procuratevi una FPU veloce e perfettamente funzionante ;-)
+Utilizza il metodo recursivo @{"Divide et Impera" link CProb} per guadagnare tempo per il rendering dell'@{"Insieme di Mandelbrot" link Mandelbrot}
+Utilizza i ToolType per essere completamente configurabile fin dal primo utilizzo.
+Supporta ogni display grafico del database dei modi video, OCS, ECS, AGA, P96, CGX.
+Supporta due differenti tipi di rendering di frattali: gli insiemi di Mandelbrot e di Julia con 11 diversi esponenti compresi tra 2 e 2048.
+E' possibile renderizzare una immagine, salvarla e ricaricarla in seguito, continuando l'esplorazione da quel punto senza perdere il lavoro fatto.
+I sorgenti sono distribuiti liberamente, come esempio di programmazione e per migliorarne e continuarne lo sviluppo.
+FlashMandelNG usa la nuova semplice ed elegante interfaccia grafica Reaction, è localizzato ed ha uno script di installazione anche per eventuali aggiornamenti o per la disinstallazione; La versione per OS4 per ora ha solo l'interfaccia GadTools.
+E' possibile stampare le immagini ottenute su di una qualsiasi stampante supportata dal sistema operativo.
+E' veramente veloce e rispetta le proporzioni tra il piano complesso e le dimensioni dello schermo, mostrando i VERI insiemi di Mandelbrot e Julia !
+Nell'archivio sono presenti immagini precalcolate ottime anche come punti di partenza per le tue esplorazioni, inoltre puoi scegliere anche tra molte tavolozze di colori predefinite.
+@endnode
+
+@node Futuro "Futuro"
+
+Nella prossima versione mi piacerebbe aggiungere almeno queste cose, ma non sono molto sicuro di farcela... dipenderà molto dal mio tempo libero e dal vostro feedback!
+
+@{b}1)@{ub} Aggiungere @{fg highlight}il supporto per i rendering in 3D ed consentire l'uso di tavolozze in true color @{fg text}.
+@{b}2)@{ub} Aggiungere il supporto per l'unità AltiVec dei processori G4/G5 e velocizzare i calcoli in software.
+
+Per favore inviate@{"mi" link Autore} commenti, suggerimenti, bug, per posta normale o elettronica:  @{fg highlight}Dino.Papararo@fastwebnet.It@{fg text} or @{fg highlight}eds@rz-online.de@{fg text}.
+
+@next History
+
+@endnode
+
+@node History "FlashMandel History"
+
+@prev Futuro
+
+@{b}@{fg highlight}FlashMandelNG 1.0@{fg text}@{ub}
+
+ Il nuovo obiettivo per FlashMandel è AmigaOS4, d'ora in poi avremo una versione nativa per questo nuovo PPC-OS.
+ Il processore 68k sarà ancora supportato, ma non lo saranno più i PPC sotto WarpOS.
+ Nota bene:
+ A causa di alcune variazioni nelle API delle funzioni di sistema arexx, anche nei comandi arexx di FlashMandel ci sono stati dei cambiamenti.
+ Questo è valido sia per la versione in 68k che la versione per OS4.
+ Clikka sul seguente link per l'approffondimento @{"arexx-docs" link "FLASHMANDEL:docs/FM_ARexx.guide/Main"}.
+ (Edgar Schwan)
+
+ Bugfixes
+
+@{b}@{fg highlight}FlashMandelMixed/68k 2.5@{fg text}@{ub}
+
+ Aggiunte le routine per i calcoli in alta precisione, il numero di cifre può variare tra 10 e 1000.
+ (Edgar Schwan)
+
+ Ora ci sono due differenti progetti. Il primo è la vacchia versione WarpOS ed il secondo è una nuova particolare versione in codice 68k. la versione in 68k
+ dovrebbe essere installata solo sui sistemi con cpu 68xxx. Questa versione è la base per porting verso MorphOS e AmigaOS 4.0.
+ (Dino Papararo)
+
+ Bugfixes
+
+@{b}@{fg highlight}FlashMandelWOS 2.2@{fg text}@{ub}
+
+ Aggiunti tre nuovi script Arexx:
+
+	1) Benchmark_II.rexx (un nuovo script di benchmark con nuove funzioni ed un'interfaccia utente localizzata)
+
+	2) Create_FMandel_Anim.rexx (uno script per creare animazioni ANIM IFF sempre con interfaccia utente localizzata)
+
+	3) ToolBar.rexx (aggiunge una barra strumenti sullo schermo del programma con tutte le funzioni più importanti)
+
+ Modificate tutte le finestre reaction in modo da poter confermare i requester con il tasto 'invio' ed annullarli con il tasto 'esc'
+
+ Aggiunta localizzazione in polacco, grazie a 'Spider' & 'TranceLetters' ;-) Purtroppo  il file è relativo solo alla versione 1.5 di FlashMandelWOS :-(
+ 
+ Eliminati alcuni bug negli script arexx
+
+ Tutte le modifiche sono state eseguite da Edgar Schwan a causa dell'improvviso guasto dell'Amiga di Dino.
+
+@{b}@{fg highlight}FlashMandelWOS 2.1@{fg text}@{ub}
+
+ Ora le iterazioni possono assumere di nuovo valori compresi tra 31 e 32767 ((2^15)-1) (difetto riscontrato da Bonnie Dalznell).
+
+ ora il PPC DOVREBBE essere riconosciuto sia dal MorphOS che dall'AmigaOS 4.
+
+@{b}@{fg highlight}FlashMandelWOS 2.0@{fg text}@{ub}
+
+ Aggiunto il supporto per Arexx. (Edgar Schwan)
+
+ Creata una guida per spiegare tutte le caratteristiche della porta ARexx di FlashMandelWOS. (Edgar Schwan)
+
+ Creati alcuni script Arexx di esempio. (Edgar Schwan)
+
+ Compilata una speciale versione che non richiede la presenza della FPU del 68k per i possessori della Blizzard MC040LC/PPC603e ed in generale per tutti gli Amiga senza FPU.
+
+@{b}@{fg highlight}FlashMandelWOS 1.6@{fg text}@{ub}
+
+ Estesa la formula da Z = Z² + C a Z = Z^(2^n) + C con 1 <= n <= 11.
+
+ Aggiunto un nuovo ToolType POWER per impostare il grado di partenza del polinomio, di default è impostato a 1.
+
+ Cambiate le coordinate di default in (-2,+1.125i) (+1,-1.125i).
+
+ Diviso l'archivio in 2 parti, una per le immagini pix/fract/FlashMandelPic.lha (prelevabile da qualsiasi mirror Aminet) e l'altra per tutto il resto.
+
+ Ricompilato il tutto con il nuovo AmigaOS 3.9 developer archive, includes and libs.
+
+ Eseguiti vari miglioramenti interni.
+
+ Aggiornata la documentazione per rifletterne le nuove aggiunte.
+
+@{b}@{fg highlight}FlashMandelWOS 1.5@{fg text}@{ub}
+
+********************************************************************************************************************************
+********************************************************************************************************************************
+Senza il duro lavoro Edgar Schwan questa versione di FlashMandelWOS non potrebbe mai essere stata realizzata! Grazie mille Edgar.
+********************************************************************************************************************************
+********************************************************************************************************************************
+
+ Aggiunto il supporto per l'interfaccia Reaction, ora è possibile usare tutte caratteristiche con il solo mouse.
+
+ Aggiunta la localizzazione in Italiano e Tedesco, altre traduzioni sono le benvenute ;-)
+
+ Aggiunto uno script di installazione, aggiornamento o disinstallazione del programma.
+
+ Migliorata la velocità dei renderings di circa il 12% con il PPC.
+
+ Migliorato il supporto per le stampanti, ora dovrebbe essere stampata l'intera pagina A4.
+
+ Aggiornata la documentazione.
+
+ Ora FlashMandelWOS ha un sito internet non ufficiale http://rz-home.de/~eschwan/FlashMandel_GB.shtml il webmaster è Edgar Schwan.
+
+ Eseguite piccole modifiche ed ottimizzazioni interne aumentando la compatibilità con tutti i futuri cloni Amiga ;-)
+
+ Ora è necessario almeno il Kickstart 3.1 (V40) per eseguire il programma a causa dell'utilizzo della funzione WriteChunkyPixels.
+
+
+@{b}@{fg highlight}FlashMandelPPC 1.2@{fg text}@{ub}
+
+ Ora è possibile scegliere tra 8 differenti funzioni per il remap dei colori.
+
+ I rendering in modalità 68k sono molto più veloci, circa del 30% sul mio 68060 per una migliore gestione della cache dati.
+
+ Ottimizzato il codice PPC per un accesso più veloce alla memoria.
+
+ Ricompilato utilizzando la PPCMathLib di Andreas Heumann aumentando da 1,5 a 9 volte la velocità di tutte le funzioni matematiche.
+
+ Ora i dati per la FPU del PPC sono allineati ai 32 bit aumentando la velocita' di rendering, bugfixed by Frank Mariak.
+
+ FlashMandelPPC funziona anche su MorphOS in emulazione WarpOS ;-)
+
+ Diminuendo la profondità di schermo i colori erano rimappati in modo errato, fixed.
+
+ Lo schermo iniziale è del tipo Picasso96 800x600x256, testato su WinUAE Jit.
+
+ Cambiato nuovamente il record per la memorizzazione delle coordinate nei files iff, non è possibile caricare vecchie immagini salvate con versioni precedenti alla 1.2 :-((
+
+ Aggiunto un menu per mostrare informazioni sul tipo di processore posseduto sia 68k che ppc e sulla memoria disponibile.
+
+ Esteso l'effetto fade 'Al Nero/Dal Nero' per ogni nuova immagine o tavola dei colori caricata.
+
+ Aggiunta la documentazione in italiano tradotta da Giorgio Signori.
+
+ Nuove icone per la documentazione create Edgar Schwan.
+
+ Aggiornato l'archivio delle immagini a corredo di FlashMandel.
+
+ Eseguite molte modifiche interne al programma.
+
+ Aggiunti nuovi ToolTypes.
+
+@{b}@{fg highlight}FlashMandelPPC 1.0@{fg text}@{ub}
+
+ Prima versione pubblica non beta.
+
+@next Ringra
+
+@endnode
+
+@node Autore "How reach the author"
+
+@prev RBrandner
+
+Posta (se hai @{fg highlight}mooolta@{fg text} pazienza):
+
+    Dino Papararo
+    Via Manzoni 184
+    80123 Napoli
+    Italy
+
+Indirizzo E-Mail:
+
+    Dino.papararo@fastwebnet.it
+    DinoP@IName.Com
+
+HomePage:
+
+    @{u}@{fg fill}http://spazioinwind.libero.it/dinop/@{fg text}@{uu}
+
+* @{b}Edgar Schwan@{ub}
+
+  Mail: eds@rz-online.de
+
+  Homepage:
+
+    @{u}@{fg fill}http://www.schwan-clan.de@{fg text}@{uu}
+
+Sito di supporto non ufficiale:
+
+    @{u}@{fg fill}http://www.schwan-clan.de/amiga/FlashMandel_GB.shtml@{fg text}@{uu}
+
+Programmatori di @{b}@{fg highlight}FlashMandel@{fg text}@{ub}.
+
+@next Ringra
+
+@endnode
+
+@node Ringra "FlashMandelNG workgroup"
+
+@prev History
+
+@{"L'autore" link Autore} desidera ringraziare in ordine alfabetico le seguenti persone che lo hanno aiutato durante lo sviluppo:
+
+@{fg highlight}Edgar Schwan@{fg text} per la nuova interfaccia Reaction, la localizzazione, lo script di installazione, la documentazione in tedesco il sito di supporto non ufficiale, il beta testing.
+
+@{fg highlight}Elena Novaretti@{fg text} per aver contribuito con nuove idee, critiche e suggerimenti allo sviluppo di FlashMandelNG e per il prezioso aiuto nel debug e beta testing.
+
+@{fg highlight}Giorgio Signori@{fg text} per il beta testing, la traduzione della documentazione in italiano e l'icona di FlashMandelWOS in standard GlowIcon.
+
+Ultimi ma non meno importanti le persone che hanno contribuito con critiche e suggerimenti per il debug e per il miglioramento costante di FlashMandel & FlashMandelWOS:
+
+@{fg highlight}Vincenzo Iodice@{fg text},@{fg highlight}Guillaume Ubbelohde@{fg text},@{fg highlight}Jen Allen@{fg text},@{fg highlight}Illya Rudkyn@{fg text},@{fg highlight}Jarle Thorsen@{fg text},@{fg highlight}Francis Labrie@{fg text},@{fg highlight}Carol Meilicke@{fg text},@{fg highlight}Steffen Haeuser@{fg text},@{fg highlight}Staffan Lindberg@{fg text},@{fg highlight}Thomas Lorenz@{fg text},@{fg highlight}Andreas Steup@{fg text},@{fg highlight}Stu Casper@{fg text},@{fg highlight}Paula-Christiina Wirtanen@{fg text},@{fg highlight}Jon B. Peterson@{fg text},@{fg highlight}Ronald Teune@{fg text},@{fg highlight}Claudio Pucci@{fg text},@{fg highlight}Sergio Tassi@{fg text},@{fg highlight}Frank Mariak@{fg text},@{fg highlight}Fabrizio Bartoloni@{fg text},@{fg highlight}R-Tea@{fg text}...
+
+TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX !
+
+@endnode
+
+@node CopyRg "CopyRight infos"
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} è GiftWare, mandate quello che volete all'@{"autore" link Autore}, se vi va.
+
+UTILIZZATE @{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} A VOSTRO RISCHIO, NON ESISTE ALCUNA GARANZIA DI FUNZIONAMENTO. @{"L'AUTORE" link Autore} NON SI ASSUME ALCUNA RESPONSABILITA' PER ALCUN INCONVENIENTE.
+
+L'intero archivio di @{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} o parte di esso non può essere incluso in cambio di qualsiasi forma di pagamento, è comunque liberamente distribuibile nei canali di Pubblico Dominio, ShareWare o GiftWare, nelle collezioni purchè costino meno di 30 US $. Fred Fish, Aminet, AmyResource, AmigaMagazin, Amiga.it, BitPlane e altri sono autorizzati ad includere il programma nei propri CD in archivio originale o scompattato, ma lasciando i contenuti inalterati.
+
+@next CopyRg
+
+@endnode
+
+@node Processori "Processori Supportati"
+
+@prev Processori
+
+E' supportato ogni processore Motorola® a partire dal Mc68020 con FPU in poi. La versione per OS4 è stata testata su di un AmigaOne ccon CPU G4@800MHz e dovrebbe essere compatibile anche con le prossime versioni. FlashMandelNG è compilato per generare codice ottimizzato per Mc68020 con FPU, ma è pienamente compatibile con Mc68030/040/060 ed è particolarmente ottimizzato per le pipeline dei processori Mc68040/060, Mc68882, PowerPc G3/G4. Le routine di rendering in codive Mc68k/PowerPC sono tutte ottimizzate a mano in assembly 68k & PPC con una particolare attenzione allo scheduling dei processori più evoluti.
+
+@next Processori
+
+@endnode
+
+@node ChipSet "I chipset supportati"
+
+@prev ChipSet
+
+Sono supportati i display grafici nativi di AmigaOS @{b}OCS@{ub}, @{b}ECS@{ub} e @{b}AGA@{ub}. Il programma si adatta automaticamente alle risorse disponobili, permettendo un massimo di 32 colori su @{b}OCS@{ub} e @{b}ECS@{ub}, e schermi fino a 256 colori su @{b}AGA@{ub}. Se avete una scheda grafica che aggiunge i propri modi video al database dello schermo, il programma potrà usare qualsiasi risoluzione fino a 256 colori.
+
+@next ChipSet
+
+@endnode
+
+@node CProb "Continuità Probabilistica"
+
+@prev CProb
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} utilizza le proprietà del @{"set di Mandelbrot" link Mandelbrot} conosciute come @{b}continuità probabilistica@{ub}, che è come dire:
+
+@{b}@{i}Dato un rettangolo sul piano complesso che contiene l'@{"Insieme di Mandelbrot" link Mandelbrot}, se tutti i punti del rettangolo hanno la stessa velocità di fuga, è "molto probabile" che l'area interna al rettangolo abbia la stessa velocità di fuga.@{ui}@{ub} Il programma traccia i bordi del rettangolo per poi controllarli, e se hanno lo stesso colore (ossia la stessa velocità di fuga), anche l'area all'interno viene riempita con questo, altrimenti divide il rettangolo in due parti e inizia di nuovo il controllo in entrambe, con una strategia chiamata@{i}divide et impera@{ui}.
+Una spiegazione della parola @{i}probabilistica@{ui} è data permettendo al programma di tracciare il piano complesso con le coordinate (-8,-8i) (+8,+8i) che risulta in un solo colore: non è un bug del programma, è solo un errore di probabilità...
+
+@next CProb
+
+@endnode

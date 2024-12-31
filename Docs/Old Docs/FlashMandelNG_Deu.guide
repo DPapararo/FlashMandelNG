@@ -1,0 +1,718 @@
+@Database FlashMandelNG_Deu.guide
+@Author "Edgar Schwan"
+@(c) "Copyright (c) 1995-2005 Dino Papararo / Edgar Schwan"
+@$VER: FlashMandelNG_Deu.guide 1.0 (19.02.2005)
+@font courier.font 13
+@wordwrap
+
+@node Main "FlashMandelNG Guide"
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} 1.0 © 1996-2005 Dino Papararo und Edgar Schwan
+
+Ein Programm, mit dem man @{"Mandelbrot-Grafiken" link Mandelbrot} erzeugen kann.
+
+    @{"Installation   " link Install}  Wie man FlashMandelNG installiert
+    @{"Voraussetzungen" link Required}  Minimale Systemvoraussetzungen
+    @{"YAFG           " link YAFG}  @{fg highlight}Yet Another Fractal Generator@{fg text}
+    @{"Oberfläche     " link Interfc}  Die Programmoberfläche
+    @{"Features       " link Caratte}  Die Besonnderheiten des Programms
+    @{"ARexx          " link "FLASHMANDEL:docs/FM_ARexx.guide/Main"}  Wie man FlashMandel-ARexx benutzt (Im Moment leider nur in Englisch)
+    @{"Historie       " link History}  Historie und alte Versionen
+    @{"Zukunft        " link Futuro}  Noch zu tun...
+    @{"Autoren        " link Autore}  Das Team
+    @{"Grüße          " link Ringra}  ... Hallo jedermann!
+    @{"Copyright      " link CopyRg}  Notwendige Informationen
+
+
+@{b}Achtung - neu:@{ub}
+Wie man schon am NG im Namen des Programms erkennen kann, hat sich verschiedenes bei FlashMandel geändert.
+Da ich (Edgar Schwan) mittlerweile auf einen AmigaOne-Rechner umgestiegen bin, liegt FlashMandel nun in einer
+OS4-Version und in einer 68k-Version vor. Die WOS-Version wird nur noch sporadisch weiterentwickelt. Details
+zu den Änderungen bitte @{"hier" link History} nachlesen.
+
+Die jeweils aktuellsten Versionen sind unter den folgenden Adressen downloadbar:
+* OS4-Depot:           @{u}@{fg fill}http://os4depot.net/index.php?function=browse&cat=graphics/misc @{fg text}@{uu}
+* Aminet:              @{u}@{fg fill}http://wuarchive.wustl.edu/pub/aminet/pix/fract/ @{fg text}@{uu}
+                       (zur Zeit der Erstellung der Dokumentation jedoch kein Upload möglich)
+* FlashMandel-Support: @{u}@{fg fill}http://www.schwan-clan.de/amiga/FlashMandel.shtml@{fg text}@{uu}
+
+
+@endnode
+
+@node Install "Installation"
+
+Um das Programm zu installieren, klicken Sie einfach auf das Icon des Installer-Skripts @{b}@{fg highlight}"Install FlashMandelNG"@{fg text}@{ub}.
+Ein expliziter Assign auf das von Ihnen gewählte Zielverzeichnis wird Ihrer user-startup hinzugefügt.
+Um innerhalb des Programm diese Hilfe aufrufen zu können, muß sich das Programm @{u}Multiview@{uu} im Verzeichnis "SYS:Utilities/" befinden.
+
+Um FlashMandel-ARexx nutzen zu können, muß mindestens OS 3.5 installiert sein, da hierfür die reaction-arexx-class verwendet wird.
+@next Required
+
+@endnode
+
+@node Mandelbrot "Mandelbrot's informations"
+
+@prev Mandelbrot
+
+Benoit Mandelbrot ist der Erfinder der Fraktalgrafiken. Im Jahr 1975 prägte er dieses Wort, um damit selbstähnliche und fragmentierte Formen zu beschreiben, die charakteristisch für alle Fraktale sind. 
+Die @{fg highlight}Mandelbrotmenge@{fg text} ist ein Fraktal, das durch die Formel @{fg fill}Z = Z²+C@{fg text} erzeugt wird.
+Diese Funktion wird viele male wiederholt auf eine komplexe Ebene, entsprechend der im Programm eingestellten "@{i}Iterationen@{ui}". Man erhält eine komplexe Zahl, indem man eine Zahl zuerst gleich Null quadriert, eine Konstante addiert und dann diese Prozedur wiederholt.
+Das Ergebnis dieser Iterationen kann man bis zu einer bestimmten Anzahl oder unendlich laufen lassen. Läuft es unendlich, ordnen wir entsprechend der Geschwindigkeit der Abweichung in der komplexen Ebene eine Farbe zu. Das ist das @{"Apfelmännchen" link FLASHMANDEL:Pictures/Mandelbrot_def.iff/main}.
+
+@next Mandelbrot
+
+@endnode
+
+@node Required "Systemvoraussetzungen"
+
+@prev Install
+
+Für @{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} benötigt man nicht viele Resourcen.
+
+@{u}OS4-Version (FlashMandelNG):@{uu}
+
+- Kickstart 4.0
+- 2 MB RAM
+- PowerPC-CPU (G3/G4 oder PPC6xx bei OS4 für CyberStormPPC / BlizzardPPC)
+
+@{u}68k-Version (FlashMandelNG_68k):@{uu}
+
+- Kickstart 3.1 oder @{b}3.0@{ub} mit IWantChunky-Patch
+- 1 MB RAM
+- 68020-CPU oder höher (@{"68020 bis zum 68060" link Processori})
+
+  Ist eine @{"Grafikkarte" link ChipSet} installiert, wird sie über die @{b}Screen Database@{ub} und die @{b}ToolTypes@{ub} unterstützt.
+  Wie auch immer, ich empfehle mindestens 16 MB RAM, AmigaOS 3.9, eine 68040/40-CPU, eine Grafikkarte und einen guten 17"-Monitor.
+
+Da auf direkten Zugriff auf die Hardware verzichtet wird, besteht keine Abhängigkeit von den Custom-Chips.
+
+@endnode
+
+@node YAFG "Yet Another Fractal Generator"
+
+@{b}@{i}@{fg highlight}@{bg text}Warum ein neuer Fraktal-Generator? @{bg back}@{fg text}@{ui}@{ub}
+Zu aller erst der Herausforderung willen, ein möglichst schnelles Programm zu schreiben und um diese wirklich coolen Bilder zu erzeugen. Außerdem weil noch kein anderes Programm wie dieses existiert, das voll auf Amiga-OS setzt und nicht irgendwelche schmutzigen Tricks zur Geschwindigkeitssteigerung macht.
+Bis jetzt ist der Programmcode auf über 470 KB (OS4) bzw. 230 KB (68k) angewachsen.
+
+Für mehr Informationen zu den Programm-Features lesen Sie den Abschnitt @{"Features" link Caratte}.
+
+@endnode
+
+@node Interfc "Die Programmoberfläche"
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} ist systemfreundlich und respektiert den @{b}@{fg highlight}Style Guide@{fg text}@{ub}, so daß alle Gadgets, Menüs und Requester sehr einfach zu bedienen sind.
+
+Folgende @{b}ToolTypes@{ub} werden unterstützt:
+
+@{b}@{fg highlight}SCREENWIDTH@{fg text}@{ub}   : Breite des Bildschirms bei Programmstart zwischen 640 und 16368 Pixel (default=800).
+@{b}@{fg highlight}SCREENHEIGHT@{fg text}@{ub}  : Höhe des Bildschirms bei Programmstart zwischen 480 und 16384 Pixel (default=600).
+@{b}@{fg highlight}SCREENPLANES@{fg text}@{ub}  : Tiefe des Bildschirms bei Programmstart zwischen 3 und 8 Bitplanes (default=8).
+@{b}@{fg highlight}SCREENMODE@{fg text}@{ub}    : Initialer hexadezimaler Display-Modus OCS,ECS,AGA,RTG (default=40d20001 CGX 640x480x8).
+@{b}@{fg highlight}REALMIN@{fg text}@{ub}       : Initiales rechtes Real-Limit zwischen -8 und +8 (default=-2.0).
+@{b}@{fg highlight}REALMAX@{fg text}@{ub}       : Initiales rechtes Real-Limit zwischen -8 und +8 (default=+2.0).
+@{b}@{fg highlight}IMAGMIN@{fg text}@{ub}       : Initiales unteres Grafiklimit zwischen -8 und +8 (default=-1.5).
+@{b}@{fg highlight}IMAGMAX@{fg text}@{ub}       : Initiales oberes Grafiklimit zwischen -8 und +8 (default=+1.5).
+@{b}@{fg highlight}FONTNAME@{fg text}@{ub}      : Initialer Bildschirmzeichensatz (default=courier.font).
+@{b}@{fg highlight}FONTSIZE@{fg text}@{ub}      : Initiale Zeichensatzgröße (default=13).
+@{b}@{fg highlight}POWER@{fg text}@{ub}         : Initialer Exponent der Z = (Z^(2^n)) + C Formel (default=1).
+@{b}@{fg highlight}STARTPRI@{fg text}@{ub}      : Initiale Programmpriorität (default=-3).
+@{b}@{fg highlight}STARTWITHJULIA@{fg text}@{ub}: Initiale Formel: '0' für Mandelbrot und '1' für die Juliamenge (default=0).
+@{b}@{fg highlight}JULIACONSTREAL@{fg text}@{ub}: Initiale Julia-Real-Konstante (default=-0.72).
+@{b}@{fg highlight}JULIACONSTIMAG@{fg text}@{ub}: Initiale Julia-Grafikkonstante (default=-0.26).
+@{b}@{fg highlight}COLORSREMAP@{fg text}@{ub}   : Linear=0, Ln(x)=1, Repeated=2, Sqrt(x)=3, x²-x=4, Sqrt(x³-x²-x)=5, Sinh(Ln(x³))=6, Cosh(Log(x³))=7, (default=0).
+@{b}@{fg highlight}USEPPC@{fg text}@{ub}        : Auf '1' gesetzt, wird - falls vorhanden - der PPC benutzt (default=1).
+@{b}@{fg highlight}USERNAME@{fg text}@{ub}      : Schreiben Sie Ihren Namen hier hin und Sie werden als Autor in die abgespeicherten Bilder und Paletten eingetragen (default=Amiga Rules) ;-).
+@{b}@{fg highlight}REXXCMDx@{fg text}@{ub}      : Hiermit können Einträge im ARexx-Quickmenü erzeugt werden. Als Argument wird der Pfad eines ARexx-Skriptes erwartet. 'x' steht für eine fortlaufende Zahl beginnend mit 1.
+@{b}@{fg highlight}MATHMODE@{fg text}@{ub}      : Hiermit kann die Genauigkeit der Berechnungen vorgewählt werden. '1' steht für normale, schnelle Berechnung, '2' für genaue, langsame Berechnung.
+@{b}@{fg highlight}DIGITS@{fg text}@{ub}        : Hiermit kann die Anzahl der Dezimalstellen im genauen Berechnungsmodus eingestellt werden (10 - 1000).
+
+Wird mit unmodifizierten ToolTypes gestartet, wird das @{"Apfelmännchen" link FLASHMANDEL:Pictures/Mandelbrot_def.iff/main} mit den Grenzen @{b}(-2.0,-1.125i)@{ub} and @{b}(+1.0,+1.125i)@{ub} gerendert, in den Dimensionen 800 x 600 mit den maximal unterstützten Farben (256 für @{"AGA/RTG" link ChipSet}, 16 bei @{"ECS/OCS" link ChipSet}).
+Nach dem Zeichnen, nur ein Augenblick bei einem PPC, wird der About-Requester geöffnet, der die Programmversion und den Giftware-Status anzeigt.
+Beim Anklicken des "More"-Gadgets wird die Arbeitsgruppe ebenfalls angezeigt.
+Zum Weitermachen "OK" anklicken.
+
+In der Bildschirm-Titelzeile werden folgende Parameter angezeigt:
+
+@{b}@{fg highlight}Real@{fg text}@{ub} Aktuelle Koordinate in der Real-Achse.
+@{b}@{fg highlight}Imag@{fg text}@{ub} Aktuelle Koordinate in der Grafik-Achse.
+Diese beiden Parameter verändern sich, wenn der Mauszeiger bewegt wird.
+
+@{b}@{fg highlight}W:H@{fg text}@{ub} ist das Verhältnis der Bildschirmdimensionen.
+@{b}@{fg highlight}R:I@{fg text}@{ub} ist das Verhältnis der Dimensions des Fraktals.
+Für eine echte Representation @{b}MÜSSEN@{ub} diese beiden Parameter gleich sein!
+Wenn nicht, ist es @{b}NOTWENDIG@{ub} in den @{b}@{fg highlight}Koordinaten-Requester @{fg text}@{ub} - kurz @{b}@{fg highlight}Amiga C@{fg text}@{ub} - zu gehen, wähle den @{b}@{fg highlight}Ratio@{fg text}@{ub}-Button und berechne das Bild mit den neuen Werten neu.
+
+Es bestehen fünf Menüs mit Shortcuts:
+
+    @{" Project " link Project}
+    @{" Options " link Options}
+    @{"Calculate" link Calculate}
+    @{"  Video  " link Video}
+    @{"  ARexx  " link ARexxMenu}
+
+Bei über der Fraktal-Grafik gedrückten linken Maustaste erscheint ein Rechteck entsprechend den neuen Koordinaten für einen Zoom oder eine Vorschau (Preview).
+Während des Neuzeichnens, kann man mit der @{b}@{fg highlight}Tab@{fg text}@{ub}-Taste zum @{"Aktuellen Rechteck" link CProb} springen; drückt man die @{b}@{fg highlight}Esc@{fg text}@{ub}-Taste oder den @{b}@{fg highlight}Stop@{fg text}@{ub}-ShortCut @{b}@{fg highlight}Amiga X@{fg text}@{ub} wird das Neuzeichnen abgebrochen.
+
+@next Caratte
+
+@endnode
+
+@node Project "MenÜ Project"
+
+@prev Interfc
+
+Hier gibt es 9 Auswahlpunkte, @{b}Über@{ub}, @{b}Systeminformationen@{ub}, @{b}Hilfe@{ub}, @{b}Bild laden@{ub}, @{b}Bild speichern@{ub}, @{b}Palette laden@{ub}, @{b}Palette speichern@{ub}, @{b}Drucken@{ub} und @{b}Beenden@{ub}.
+
+@{b}Über...@{ub} Es ist der selbe Requester, der nach dem Start erscheint, er gibt Informationen über die @{"Autoren" link Autore} und deren Arbeitsgruppe.
+Shortcut: @{b}Amiga A@{ub}
+
+@{b}Systeminformationen...@{ub} zeigt Informationen über die erkannten Prozessoren (68k & PowerPC) und den freien Speicher.
+Shortcut: @{b}Amiga N@{ub}
+
+@{b}Hilfe...@{ub} zeigt die Anleitung von FlashMandelNG asynkron an, so daß man mit dem Programm fortfahren kann.  Bedenken Sie, daß Multiview im Standard-Pfad SYS:Utilities/Multiview zu finden sein muß. Die Anleitung erscheint auch, wenn im Hauptfenster die Help-Taste gedrückt wird.
+Shortcut: @{b}Amiga H@{ub}
+
+@{b}Bild laden...@{ub} lädt ein vorher als IFF-Bild gespeichertes Bild, die Parametereinstellungen werden automatisch so gesetzt, wie sie zum Zeitpunkt des Abspeicherns standen.
+Shortcut: @{b}Amiga L@{ub}
+
+@{b}Bild speichern...@{ub} speichert das aktuelle Bild im IFF-Format mit einem speziellen @{b}Chunk@{ub}, in dem die Fraktal-Koordinaten und andere Parameter (Iterationen, Mapping, etc...) geschrieben werden. Die erzeugte Datei kann mit jedem Programm angesehen werden, das IFF-ILBM Dateien anzeigen kann. Vorsicht beim Überschreiben existierender Dateien - ein Requester warnt jedesmal davor.
+Shortcut: @{b}Amiga S@{ub}
+
+@{b}Palette laden...@{ub} lädt eine IFF-Palette-Datei.
+Shortcut: @{b}Amiga Y@{ub}
+
+@{b}Palette speichern...@{ub} speichert die aktuelle Palette im IFF-Format. Die erzeugte Datei kann für jedes andere Grafikprogramm genutzt werden.
+Shortcut: @{b}Amiga E@{ub}
+
+@{b}Drucken...@{ub} macht eine @{i}Hardcopy@{ui} des Bildschirmes. Es druckt den Bildschirm aus so wie er ist (Die Einstellungen basieren auf den System-Preferences). Die Titelzeile wird, wenn vorhanden, nicht mit ausgedruckt.
+Shortcut: @{b}Amiga D@{ub}
+
+@{b}Beenden...@{ub} Verläßt das Programm und alle Resourcen werden wieder freigegeben.
+Shortcut: @{b}Amiga Q@{ub}
+
+@endnode
+
+@node Options "Menü Options"
+
+Hier sind 9 Auswahlmöglichkeiten:
+@{b}Titel@{ub}, @{b}Grenzen@{ub}, @{b}Iterationen@{ub}, @{b}Priorität@{ub}, @{b}Exponent@{ub}, @{b}Farbbestimmung@{ub}, @{b}Fractal-Typ@{ub}, @{b}Rendering-Modus@{ub}, @{b}Berechnungs-Modus@{ub}.
+
+@{b}Titel@{ub} ist ein Unterpunkt, das ein @{"Boolean-Flag" link BoolFlag} besitzt. Das heißt, hier wird festgelegt, ob der Bildschirmtitel zu sehen ist oder nicht (Shortcut: @{b}Amiga O@{ub}). Wenn der Titel nicht zu sehen ist, kann in einem größeren Bereich gezoomt werden. Wird die rechte Maustaste gedrückt, ist das Menü trotzdem jederzeit erreichbar.
+Dieser Unterpunkt hat einen weiteren Unterpunkt @{b}Last time@{ub} (Shortcut: @{b}Amiga T@{ub}), der in der Titelzeile die zuletzt benötigte Zeit zum Rendern und die durchschnittliche Pixelgeschwindigkeit in Pixel pro Sekunde anzeigt. Wenn Sie das Rendern vorzeitig abgebrochen haben, werden die angezeigten Werte nicht stimmen.
+Beachten Sie, daß bei FlashMandelNG die Zeichengeschwindigkeit nicht proportional zu den Screendimensionen ist, bedingt durch die Rendering-Methode ('Divide et Impera').
+In anderen Programmen benötigt das Rendern auf 800x600-Bildschirmen viermal so lange als auf 400x300-Bildschirmen (480.000 Vs 120.000 Pixel), im Gegensatz dazu muß man bei @{b}FlashMandelNG@{ub} die gleiche Zeit warten.
+
+@{b}Grenzen...@{ub} zeigt ein Fenster mit einigen numerischen Gadgets und erlaubt die Eingabe von neuen Werten per Hand für komplexe Koordinaten und die Julia-Konstante.
+Vier @{"Button-Gadgets" link ButtGad} @{b}Accept, Ratio, Reset, Cancel@{ub} sind vorhanden, um Änderungen zu akzeptieren und durchzuführen, die Koordinaten an das Seitenverhältnis des Bildschirmes anzupassen und um auf die letzten Werte zurückzusetzen und das Fenster zuschließen, ohne etwas zu verändern.
+Der andere Button hält nur eine der komplexen Koordinaten für eine erfolgreiche nächste Anpassung des Seitenverhältnisses; die Standardeinstellung ist die Real-Koordinaten des Fraktals.
+Shortcut: @{b}Amiga C@{ub}
+
+@{b}Iterationen@{ub} ist ein Unterpunkt, in dem die @{"Iterationen" link Mandelbrot} gesetzt werden können, zwischen 8 Standardwerten und einer numerischen Eingabe kann gewählt werden. Sie sind gewarnt, die Iterationsnummer @{b}MUSS@{ub} größer als die Anzahl der Bildschirmfarben sein, ansonsten werden nicht alle Farben genutzt. Seien Sie gewarnt beim ersten Rendern zu hohe Werte zu nutzen, sie führen auch zu schlechten Ergebnissen. Sie sollten die Iteration in kleinen Schritten erhöhen. Dieser Parameter hat einen großen Einfluß auf das letztendliche Ergebnis und die Rendering-Zeit!
+Die maximale Anzahl der Iterationen beträgt ((2^15)-1) -> 32767.
+Shortcut: @{b}Amiga I@{ub} um einen numerischen Wert einzugeben.
+
+@{b}Exponent@{ub} Ist ein Untermenü, in dem der Exponent der Formel Z = (Z^(2^n)) + C in den Grenzen 1 <= n <= 11 gesetzt werden kann. Wird n auf den Standardwert 1 gesetzt, erhält man die klassische Form der Mandelbrot-Grafik bzw. der Juliamenge.
+
+@{b}Priorität@{ub} ist ein Unterpunkt für die Task-Priorität. Werte sollten zwischen -5 und +5 liegen, damit nicht die normale OS Aktivität beeinflußt wird.
+Shortcuts:
+@{b}Amiga <n>@{ub} um die Priorität auf +<n> zu setzen, wobei <n> ein numerischer Wert zwischen 0 und 5 ist.
+@{b}Amiga Shift <n>@{ub} um die Priorität auf -<n> zu setzen, wobei <n> ein numerischer Wert zwischen 0 und 5 ist.
+@{b}HINWEIS:@{ub} für negative Prioritäten sind die Tasten entsprechend von -1 zu -5: <@{b}!@{ub}> <@{b}"@{ub}>. <@{b}#@{ub}> <@{b}$@{ub}> <@{b}%@{ub}>
+
+@{b}Farbbestimmung@{ub} FlashMandel kennt nun acht verschiedene Wege, die Farbe eines Punktes zu bestimmen:
+   @{b}Linear@{ub} Die Farben werden dem Graph der Funktion y=x folgend bestimmt.
+   @{b}Ln(x)@{ub} Die Farben werden dem Graph der Funktion y=Ln(x) folgend bestimmt.
+   @{b}Repeated@{ub} Die Farben werden dem Graph der Funktion y=x folgend bestimmt und werden wiederholt, wenn die letzte Farbe erreicht wird.
+   @{b}Sqrt(x)@{ub} Die Farben werden dem Graph der Funktion y=Sqrt(x) folgend bestimmt.
+   @{b}x²-x@{ub} Die Farben werden dem Graph der Funktion y=x²-x  folgend bestimmt.
+   @{b}Sqrt(x³-x²-x)@{ub} Die Farben werden dem Graph der Funktion y=Sqrt(x³-x²-x) folgend bestimmt.
+   @{b}Sinh(Ln(x³))@{ub} Die Farben werden dem Graph der Funktion y=Sinh(Ln(x)) folgend bestimmt.
+   @{b}Cosh(Log(x³))@{ub} Die Farben werden dem Graph der Funktion y=Cosh(Log(x)) folgend bestimmt.
+   Shortcut: @{b}Amiga <n>@{ub} um zwischen den ersten vier Funktionen zu wählen.
+             @{b}Amiga Shift <n>@{ub} um zwischen den letzten vier Funktionen zu wählen.
+
+@{b}Fractal-Typ@{ub} ist ein Unterpunkt, um die @{"Rendering-Formel" link Formula} zu setzen.
+
+    @{b}Julia:@{ub}  Um die Julia-Rendering-Formel zu setzen.
+    Shortcut: @{b}Amiga J@{ub}
+
+    @{b}Mandelbrot:@{ub}  Um die Mandelbrot-Rendering-Formel zu setzen.
+    Shortcut: @{b}Amiga M@{ub}
+    
+@{b}Rendering-Modus@{ub} ist ein Unterpunkt, in dem der Turbo-Modus ein- bzw. ausgeschaltet werden kann.
+
+    @{b}Turbo:@{ub}  Ist dieser Menüpunkt abgehakt, wird die Bildschirmdarstellung während der Berechnung nicht aktualisiert.
+    Shortcut: @{b}Amiga +@{ub}
+
+@{b}Berechnungs-Modus@{ub} ist ein Unterpunkt, bei dem man die Genauigkeit der Berechnungen einstellen kann.
+    Sinn dieser Option ist es, die zunehmende Ungenauigkeit bei tiefen Iterationen auszugleichen.
+
+    Für die Berechnung mit hoher Genauigkeit ist extreme CPU-Power gefragt, selbst ein G4 mit 800Mhz benötigt für die Grund-Mandelbrotgrafik in 640x480 und
+    50 Stellen Genauigkeit ca. 6 Minuten!! Deshalb muß dieses Feature als experimentell angesehen werden.
+
+    @{u}Achtung:@{uu} Die Berechnung läßt sich im Turbo-Modus nicht abbrechen!
+
+    @{b}Schnell:@{ub}  Um den normalen, schnellen Berechnungs-Modus anzuwählen.
+
+    @{b}Hohe Präzision (xx Stellen):@{ub}  Um den genauen Berechnungs-Modus anzuwählen. Achtung: Sehr langsam!
+
+    @{b}Präzision ändern...:@{ub}  Um die Anzahl der Dezimalstellen beim genauen Berechnungs-Modus zu ändern.
+
+@endnode
+
+@node Calculate "Menü Calculate"
+
+Hier gibt es fünf Möglichkeiten: @{b}Vorschau@{ub}, @{b}Neuberechnen@{ub}, @{b}UnDo@{ub}, @{b}Zoom@{ub}, @{b}Stop@{ub}.
+
+@{b}Vorschau@{ub} Öffnet ein Fenster, das ein Viertel der Größe des Bildschirms besitzt, in dem eine Vorschau angezeigt wird.
+Shortcut: @{b}Amiga W@{ub}
+
+@{b}Neuberechnen@{ub} Berechnet das Bild mit anderen Parametern neu.
+Shortcut: @{b}Amiga R@{ub}
+
+@{b}UnDo@{ub} Setzt die letzte Vergrößerung zurück.
+Shortcut: @{b}Amiga U@{ub}
+
+@{b}Zoom@{ub} Berechnet das Fraktal innerhalb der neuen Koordinaten neu.
+Shortcut: @{b}Amiga Z@{ub}
+
+@{b}Stop@{ub} Beendet das Rendern.
+Shortcut: @{b}Amiga X@{ub}, Die ESC-Taste bewirkt das Gleiche.
+
+@endnode
+
+@node Video "Menu Video"
+
+Hier gibt es 4 Auswahlmöglichkeiten: @{b}Farbrotation@{ub}, @{b}Palette@{ub}, @{b}Bildschirmmodus@{ub}, @{b}Zeichensatz@{ub}.
+
+@{b}Farbrotation@{ub} ist ein Unterpunkt mit 3 Optionen:
+
+  @{b}Vorwärts@{ub}  startet das @{"Color-Cycling" link ColCyc} in Vorwärtsrichtung (Shortcut: @{b}Amiga >@{ub}).
+
+  @{b}Rückwärts@{ub} startet das @{"Color-Cycling" link ColCyc} in Rückwärtsrichtung (Shortcut: @{b}Amiga <@{ub}).
+
+  @{b}Verzögerung@{ub}    setzt die Pausen zwischen den Farbrotationen (0..100) (Shortcut: @{b}Amiga -@{ub}).
+
+
+@{b}Palette@{ub} offnet den @{"Paletten-Requester" link PalReq}, um die Farben ändern zu können.
+
+@{b}Bildschirmmodus@{ub} um eine neue Bildschirmauflösung zu wählen.
+
+@{b}Zeichensatz@{ub} um den Bildschirm-Zeichensatz zu ändern. Ist sinnvoll bei einer höheren Bildschirmauflösung. Die Oberfläche wird automatisch auf den neuen Zeichensatz angepaßt. Die maximale Größe beträgt 24 Pixel. Proportionale Zeichensätze werden unterstützt.
+
+@next Interfc
+
+@endnode
+
+@node ARexxMenu "Menu ARexx"
+
+@{b}ARexx-Quickmenu@{ub} Die oberen Menüpunkte sind über die Tooltypes benutzerdefinierbar. Hier kann man ARexx-Skripte eintragen,
+                auf die man einen schnellen Zugriff haben möchte. Die Definition des ersten Eintrages muß lauten: AREXXCMD1="... .rexx".
+                Für die nächsten Einträge muß einfach die Zahl um eins erhöht werden: AREXXCMD2=... , AREXXCMD3=... etc.
+
+@{b}Launch...@{ub}       Öffnet einen ASL-Requester, von dem aus man ein ARexx-Skript starten kann.
+
+Um mehr über die ARexx-Fähigkeiten zu lernen, schauen sie in den @{"ARexx-Guide" link "FLASHMANDEL:docs/FM_ARexx.guide/Main"}.
+
+@endnode
+
+@node BoolFlag "Boolean Flag"
+
+@prev BoolFlag
+
+Ein Boolean-Flag hat zwei Zustände: wahr/falsch, ein/aus, Null/Eins. In diesem Fall Bildschirmtitel anzeigen/nicht anzeigen.
+@next BoolFlag
+
+@endnode
+
+@node ButtGad "Button Gadget"
+
+@prev ButtGad
+
+Ein @{b}Button-Gadget@{ub} ist ein Gadget (=Anwählbares Oberflächenelement), das gedrückt werden kann, um eine Funktion auszuführen.
+(@{fg fill}Ich glaube nicht, das es jemanden gibt, der das nicht weiß...@{fg text})
+
+@next ButtGad
+
+@endnode
+
+@node PalReq "Palette Requester"
+
+@prev PalReq
+
+Der @{b}Palette-Requester@{ub} ist ein Fenster, um die Farben zu ändern, zu kopieren, zu verfielfältigen etc.
+
+Das Fenster hat viele Gadgets. Das erste auf der linken Seite ist ein Rechteck mit allen veränderbaren Farben. Wird eine angewählt, kann man jede Chroma-Komponente ändern. Die Farben sind von links nach rechts und von oben nach unten sortiert. Die erste Farbe in der linken oberen Ecke und die letzte in der rechten unteren. Die vier ersten Farben sollten nicht geändert werden, da sie für die Oberflächendarstellung benötigt werden. Natürlich kann man dies tun, jedoch sollte man vorsichtig sein - Sie sind gewarnt.
+
+Das @{b}Copy@{ub}-Gadget kopiert die angewählte Farbe in eine andere. Wählen Sie die zu kopierende Farbe, klicken Sie das @{b}Copy@{ub}-Gadget an und dann die Zielposition anwählen und @{b}Paste@{ub} anklicken. 
+
+Das @{b}Paste@{ub}-Gadget fügt die vorher kopierte Farbe in die aktuelle Position ein.
+
+Das @{b}Spread@{ub}-Gadget erzeugt einen Farbverlauf zwischen der aktuellen Farbe und der danach angewählten Farbe.
+
+Das @{b}Invert@{ub}-Gadget invertiert die Farbpalette von oben nach unten. Kann zum Testen der oberen Farben benutzt werden, ohne zu tief in das Bild hineinzuzoomen. Und um Paletten anderer Mandelbrot-Programme zu importieren. @{b}FlashMandelNG@{ub} benutzt aus Geschwindigkeitsgründen die Farbpalette in einer anderen Art als andere Programme: zuerst wird Farbe 255 verwendet, dann Farbe 254 und so weiter...
+
+Das @{b}<<@{ub}-Gadget rotiert die gesamte Farbpalette um eine Position von rechts nach links.
+
+Das @{b}>>@{ub}-Gadget rotiert die gesamte Farbpalette um eine Position von links nach rechts.
+
+Das @{b}UnDo@{ub}-Gadget nimmt die letzte Operation zurück.
+
+Mit den drei Scroller-Gadgets können die drei Farbkomponenten rot (R), grün (G) und blau (B) der angewählten Farbe verändert werden.
+Ich schlage vor, die einzelnen Komponenten einer Farbe mit den Tasten @{b}'e'-'t'@{ub} für rot, @{b}'f'-'h'@{ub} für grün und @{b}'v'-'n'@{ub} für blau zu verändern. Die Tasten sind @{b}'case-sensitiv'@{ub} - durch Umschalten mit der Shift-Taste können sie die Werte erhöhen bzw. verkleinern.
+
+Die drei unteren Gadgets @{b}Accept@{ub}, @{b}Reset@{ub} und @{b}Cancel@{ub} können die Änderungen akzeptiert, die Einstellungen zurückgesetzt oder alle Änderungen verworfen werden. 
+
+@next PalReq
+
+@endnode
+
+@node ColCyc "Color Cycling"
+
+@prev ColCyc
+
+Das @{i}Color-Cycling@{ui} ist eine spezielle Funktion, um die Farben eines Bildes zu animieren, indem die Farben der Palette verschoben werden. Hierzu wird in einer @{"Farbzeile" link Bar.brush/main} mit einer Folge von Farben die erste in die zweite kopiert und so weiter...
+Eine erzeugte @{"Apfelmännchen-Grafik" link Mandelbrot} hat seine eigenen Eigenschaften. Die Palettenrotation hat erzeugt einen speziellen eigenen Effekt.
+
+@next ColCyc
+
+@endnode
+
+@node Formula "Rendering formula"
+
+@prev Formula
+
+Aufgrund fehlendem Hintergundwissens kann ich leider den folgenden Text nicht korrekt übersetzen. Er erklärt die Funktionsweise der beiden möglichen Formeln zum Erzeugen der Fraktale. Es folgt also der originale englische Text.
+(Der Übersetzer).
+
+Es gibt also zwei Arten von @{b}Zeichenformeln@{ub}:
+
+The @{b}Julia Set@{ub} is graphed by calculating the complex coordinate of each pixel Z, and by squaring that number and adding a second constant complex number C each iteration. if that number never goes to infinity, then that number i in the set, and the pixel is colored with the black color. If not, the corresponding to the number of iterations it took to determine that number is going to infinity is plotted. There are an infinite number of Julia Sets, as the constant C can be any complex number.
+
+The @{b}Mandelbrot Set@{ub}, modeled after the Julia Set, uses the same basic process for each pixel, starting with Z equal to zero instead of starting out with the pixel's complex number value, and adding the pixel's number value C each iteration after squaring what you've got (Z) instead of adding a constant. Just as with the Julia Set, you can create different fractal by using different C values, in the Mandelbrot Set, you can use different starting Z value. You can also you compute Z to a power other than 2 before adding C. Z³+C is a cubic Mandelbrot, etc..
+
+@next Formula
+
+@endnode
+
+@node Caratte "Program features"
+
+@prev Interfc
+
+FlashMandelNG ist ein systemfreundliches Programm, daß das OS und das Multitasking voll respektiert. Es benutzt nur Standard-Library-Funktionen und SOLLTE keinen Enforcer oder Mungwall-Hit erzeugen.
+
+FlashMandelNG wurde auf einem AmigaOne mit einem G4/800Mhz und einer Radeon 9200 entwickelt und getestet.
+Das Programm wurde mit Hinblick auf Effizienz geschrieben. Jede Verwendung eines Registers der beiden Prozessoren (68k und PPC) und jeder Speicherplatz wurde von FlashMandelNG korrekt vom System angefordert.
+Das Rendern wurde beim 68k und beim PPC durch Speichern aller Variablen in FPU-Registern beschleunigt, also machen Sie sich keine Gedanken über die installierten Mathe-Libraries, sondern nur darüber, das die installierte FPU korrekt funktioniert ;-).
+
+Benutzt die rekursive @{"Divide et Impera" link CProb}-Methode, um beim Zeichnen einer @{"Apfelmännchen-Grafik" link Mandelbrot} Zeit zu gewinnen.
+
+Die Verwendung der ToolTypes macht das Programm beim ersten Start sehr konfigurierbar.
+
+Unterstützt jede Grafikanzeige, das eine Video-Mode-Database unterstützt: OCS, ECS, AGA, P96, CGX.
+
+Sie können zwischen zwei Fraktal-Typen wählen, der Mandelbrotmenge und der Juliamenge.
+
+Sie können ein Bild berechnen lassen, es abspeichern und es später wieder laden, dann weiter in das Bild zoomen, ohne daß die Arbeit verloren ist.
+
+FlashMandelNG_68k verwendet eine elegante und einfache Reaction-GUI. Bei der PPC-Version wird z.Z. leider nur eine GadTools-GUI unterstützt, da zur Erstellung der Reaction-GUI das Programm "Reactor" verwendet wurde, das mit den OS4-Compilern nicht verwendet werden kann.
+
+Beide GUIs sind lokalisiert.
+
+FlashMandelNG besitzt ein Installer-Skript, um das Programm zu updaten oder zu löschen.
+
+Sie können Ihre Bilder auf jedem unterstützen Workbench-Drucker ausdrucken.
+
+Die Quelltexte sind mitveröffendlicht, um daraus zu lernen und um die Weiterentwicklung des Programms zu fördern bzw. zu ermöglichen.
+
+FlashMandelNG ist wirklich schnell und die Berücksichtigung des Verhältnisses zwischen der komplexen Ebene und den Bildschirm-Dimensionen zeigt Ihnen die WIRKLICHEN Mandelbrot- und Julia-Fraktale.
+
+Das FlashMandelNG-Archiv beinhaltet viele vorberechnete Bilder, um Ihnen den Start Ihrer Entdeckungsreise erleichtern. Außerdem können Sie zwischen vielen vordefinierten Farbpaletten wählen.
+
+@endnode
+
+@node Futuro "FlashMandelNG Future"
+
+Ich möchte in der Zukunft folgende Features hinzufügen, ich weiß jedoch nicht, ob ich es wirklich tue... es hängt eine Menge von
+meiner verfügbaren Zeit und von Eurem Feedback ab:
+
+@{b}1)@{ub} Hinzufügen der Möglichkeit von @{fg highlight}3D-Berechnungen und 24bit-Paletten@{fg text}.
+@{b}2)@{ub} Unterstützung von AltiVec für G4-Prozessoren.
+
+Bitte senden Sie @{"uns" link Autore} jeden Kommentar, Vorschlag, Fehler mit der normalen Post oder per E-Mail @{fg highlight}Dino.Papararo@fastwebnet.It@{fg text} oder @{fg highlight}eds@rz-online.de@{fg text}.
+
+@next History
+
+@endnode
+
+@node History "FlashMandelNG Historie"
+
+@prev Futuro
+
+@{b}@{fg highlight}FlashMandelNG 1.0@{fg text}@{ub}
+
+ Neuausrichtung des Codes auf AmigaOS 4.0 und damit endlich eine native Version für dieses PPC-Betriebssystem.
+ Der 68k wird jedoch noch immer unterstützt.
+ Bitte beachten:
+ Eine Änderung in der API einiger System-ARexx-Funtionen, machte die Änderung einiger FlashMandel-ARexx-Befehle notwendig.
+ Dies betrifft sowohl die 68k- als auch die OS4-Version.
+ Siehe @{"hier" link "FLASHMANDEL:docs/FM_ARexx.guide/Main"}.
+ (Edgar Schwan)
+
+ Bugfixes
+
+@{b}@{fg highlight}FlashMandelMixed/68k 2.5@{fg text}@{ub}
+
+ Routinen für hochgenaue Berechnungen eingefügt. Die Genauigkeit läßt sich dabei zwischen 10 und 1000 Stellen vorwählen.
+ (Edgar Schwan)
+
+ Es existieren jetzt zwei getrennte Projekte. Einmal wie gehabt eine WarpOS-Version und jetzt neu ein spezielle 68K-Version.
+ Die 68K-Version sollte von Besitzern reiner 68K-Rechner installiert werden. Diese Version wird auch in Zukunft die
+ Grundlage für Umsetzungen auf andere Systeme - wie MorphOS und AmigaOS 4.0 - sein.
+ (Dino Papararo)
+
+ Bugfixes
+
+@{b}@{fg highlight}FlashMandelWOS 2.2@{fg text}@{ub}
+
+ Drei neue ARexx-Skripte hinzugefügt:
+
+   1. Benchmark_II.rexx:
+      Ein neuer Benchmark-Skript mit neuen Funktionen und einer lokalisierten Reaction-GUI (Benötigt AWNPipe).
+
+   2. Create_FMandel_Anim.rexx:
+      Ein Skript, mit dem man IFF-Animationen erstellen kann. Mit einer lokalisierten Reaction-GUI (Benötigt AWN-Pipe).
+
+   3. Toolbar.rexx:
+      Fügt dem FlashMandel-Bildschirm eine Werkzeugleiste hinzu. Hier sind die wichtigsten funktionen direkt zu erreichen.
+      (Benötigt AWN-Pipe).
+
+ Einige Änderungen im Code für die Reaction-Fenster durchgeführt. So kann man jetzt z.B. durch Drücken von "Return" das
+ Fenster bestätigen und durch Drücken von "ESC" abbrechen. 
+
+ Ein polnischer locale-catalog ist jetzt enthalten. Vielen Dank an Spider & TranceLetters. Die Datei ist leider v1.5.
+
+ Einige Fehler im ARexx-code behoben.
+
+
+  * Alle Änderungen wurden von Edgar Schwan durchgeführt. Dino's Amiga ist leider tot - wegen einer defekten CyberStormPPC :-(
+
+@{b}@{fg highlight}FlashMandelWOS 2.1@{fg text}@{ub}
+
+ Fixed a bug into the iterations requester, now the iterations can be accepted from 31 to 32767 ((2^15)-1) (Reported by Bonnie Dalznell).
+
+ Fixed a bug into the System info requester, now the PPC is SHOULD be recognized by both MorphOS and AmigaOS 4.
+
+@{b}@{fg highlight}FlashMandelWOS 2.0@{fg text}@{ub}
+
+ Neuer ARexx-Port programmiert von Edgar Schwan.
+
+ Neuer Guide, der alle Fähigkeiten von FlashMandelWOS-ARexx erklärt (Edgar Schwan)
+
+ Einige Beispiel-ARexx-Skripte sind beigefügt. (Edgar Schwan)
+
+ Neu kompilierte Version für Amigas ohne FPU. Besonnders interessant für Besitzer einer Blizzard MC040LC/PPC603e,
+
+@{b}@{fg highlight}FlashMandelWOS 1.6@{fg text}@{ub}
+
+ Erweiterte Hauptformel von @{fg shine}Z = Z² + C@{fg text} zu @{fg shine}Z = (Z^(2^n)) + C@{fg text}, wobei n in den Grenzen 1 <= n <= 11 liegen muß.
+
+ Neuer POWER-Tooltype um den Startwert des Exponenten zu setzen. Standardwert ist 1.
+
+ Geänderte Standardwerte für die Koordinaten: (-2,+1.125i) (+1,-1.125i).
+
+ Das Hauptarchiv wurde in 2 Teile gespalten, eines für die Beispielgrafiken @{fg fill}pix/fract/FlashMandelPic.lha@{fg text} (Downzuloaden von jedem aminet-mirror), das andere von jeder anderen Quelle.
+
+ Neucompiliert mit dem neuen AmigaOS 3.9 Entwickler-Archiv (includes und libs):
+
+ Viele verschiedene interne Änderungen.
+
+ Dokumentation entsprechend den Änderungen erweitert.
+
+@{b}@{fg shine}FlashMandelWOS 1.5@{fg text}@{ub}
+
+**************************************************************************************************************
+**************************************************************************************************************
+Without the hard work of Edgar Schwan this version of FlashMandel could never be released! Thanks a lot Edgar.
+**************************************************************************************************************
+**************************************************************************************************************
+ - Bleibt unübersezt ;-) -
+
+ Neue Reaction-Oberfläche (neu seit OS 3.5), jetzt ist es möglich alle Features nur über die Maus zu bedienen.
+
+ Neue Unterstützung der Locale-Library. Es werden jetzt auch die italienische und die deutsche Sprache unterstützt, andere sind willkommen ;-)
+
+ Neues Installer-Script, um FlashMandel mithilfe des Installers zu installieren, zu updaten und zu entfernen.
+
+ Schnellere Berechnung um ca. 12% für Berechnungen im PPC-Modus.
+
+ Bessere Drucker-Unterstützung für eine bessere Ausgabe, jetzt sollte eine DIN-A4-Seite komplett bedruckt werden.
+
+ Überarbeitung der Dokumentation.
+
+ FlashMandel hat jetzt eine inoffizielle Web-Seite unter @{b}http://rz-home.de/~eschwan/FlashMandel_GB.shtml@{ub} (englisch) oder
+ @{b}http://rz-home.de/~eschwan/FlashMandel.shtml@{ub} (deutsch), erstellt von Edgar Schwan.
+
+ Einige interne Änderungen und Verbesserungen für bessere Kompatibilität mit allen zukünftigen Amiga-Clones ;-)
+
+ Ab jetzt wird Kickstart 3.1 (V40) für den Betrieb von FlashMandel vorausgesetzt, da auf die ROM-Funktion WriteChunkyPixels()
+ zugegriffen wird.
+
+@{b}@{fg highlight}FlashMandelPPC 1.2@{fg text}@{ub}
+
+ Das Zeichnen im 68k-Modus ist nun um einiges schneller. Mit meiner Mc68060-CPU ist das Zeichnen aufgrund einer besseren Ausnutzung
+ des Daten-Caches um ca. 30% schneller.
+
+ Die PowerPC-FPU-Daten sind nun 32-bit-aligned für etwas mehr Geschwindigkeit. Bugfixed von Frank Mariack.
+
+ FlashMandelPPC läuft nun auch unter MorphOS, falls die WarpOS-Emulation installiert ist ;-)
+
+ Die Reduzierung der Bildtiefe (Farbanzahl) verursachte einen Fehler bei der Farbbestimmung - behoben.
+
+ Der Default-Bildschirmmodus wurde auf 'Picasso 800x600x256' geändert. Getestet mit WinUAE Jit.
+
+ Der IFF-Chunk für die Koordinatensicherung in IFF-Bildern wurde geändert, ältere Bilder können nicht mehr geöffnet werden :-((
+
+ Ein neuer Info-Requester zeigt, welcher Prozessor erkannt wurde (68k & PowerPC) und den verfügbaren Speicher.
+
+ Der Überblendeffekt von schwarz nach schwarz beim Laden eines neuen Bildes wurde erweitert.
+
+ Ein neuer Guide in italienisch ist nun auch beigefügt, erstellt von Giorgio Signori.
+
+ Man kann nun zwischen acht verschiedenen Wegen wählen, wie die Farben ausgewählt werden.
+
+ Der PPC-Code wurde verbessert für besseren Speicherzugriff.
+
+ Neucompilierung unter Verwendung der PPCMathLib von Andreas Heumann. Dabei wurde die Geschwindigkeit der
+ Mathefunktionen um den Faktor 1,5 bis 9 erhöht.
+
+ Neue Doc-Icons von Edgar Schwan.
+
+ Neue Bilder im Archiv von FlashMandel.
+
+ Viele interne Änderungen im Code.
+
+ Es wurden neue ToolTypes hinzugefügt.
+
+@{b}@{fg highlight}FlashMandelPPC 1.0@{fg text}@{ub}
+
+ Erste öffendliche Version.
+
+@next Ringra
+
+@endnode
+
+@node Autore "Wie Sie den Autor erreichen können"
+
+@prev RBrandner
+
+* @{b}Dino Papararo@{ub}
+
+  Snail-Mail-Addresse (Wenn Sie @{fg highlight}eine ganze Menge@{fg text} Geduld haben):
+
+    Dino Papararo
+    Via Manzoni 184
+    80123 Napoli
+    Italy
+
+  EMail-Addresse:
+
+    Dino.papararo@fastwebnet.it
+    DinoP@IName.Com
+
+  HomePage:
+
+    @{u}@{fg fill}http://spazioinwind.libero.it/dinop/@{fg text}@{uu}
+
+
+
+* @{b}Edgar Schwan@{ub}
+
+  Mail: eds@rz-online.de
+
+  Homepage:
+
+    @{u}@{fg fill}http://www.schwan-clan.de@{fg text}@{uu}
+
+
+
+Inoffizielle Support-Seite in Englisch und Deutsch (Webmaster Edgar Schwan):
+
+    @{u}@{fg fill}http://www.schwan-clan.de/amiga/FlashMandel.shtml@{fg text}@{uu}
+
+@next Ringra
+
+@endnode
+
+@node Ringra "FlashMandelNG-Arbeitsgruppe"
+
+@prev History
+
+Die @{"Autoren" link Autore} grüßen folgende Leute, die ihm bei der Entwicklung dieses Projektes geholfen haben:
+
+@{fg highlight}Elena Novaretti@{fg text} für das Einbringen von neuen Ideen, Kritik und Vorschlägen zur Weiterentwicklung von FlashMandelWOS. Außerdem für Ihre Hilfe bei der Fehlerbeseitigung und beim Beta-Testing.
+
+@{fg highlight}Giorgio Signori@{fg text} für das FlashMandelWOS-GlowIcon, die italienische Dokumentation, Beta-Testing.
+
+Last but not least haben mich folgende Personen mit Kritik und Tips für das Debuggen und Weiterentwickeln von FlashMandel und FlashMandelWOS ständig unterstützt:
+
+@{fg highlight}Vincenzo Iodice@{fg text},@{fg highlight}Guillaume Ubbelohde@{fg text},@{fg highlight}Jen Allen@{fg text},@{fg highlight}Illya Rudkyn@{fg text},@{fg highlight}Jarle Thorsen@{fg text},@{fg highlight}Francis Labrie@{fg text},@{fg highlight}Carol Meilicke@{fg text},@{fg highlight}Steffen Haeuser@{fg text},@{fg highlight}Staffan Lindberg@{fg text},@{fg highlight}Giorgio Signori@{fg text},@{fg highlight}Thomas Lorenz@{fg text},@{fg highlight}Andreas Steup@{fg text},@{fg highlight}Stu Casper@{fg text},@{fg highlight}Paula-Christiina Wirtanen@{fg text},@{fg highlight}Jon B. Peterson@{fg text},@{fg highlight}Ronald Teune@{fg text},@{fg highlight}Claudio Pucci@{fg text},@{fg highlight}Sergio Tassi@{fg text},@{fg highlight}Frank Mariack@{fg text},@{fg highlight}Fabrizio Bartoloni@{fg text}.....
+
+TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX ! TNX !
+
+@endnode
+
+@node CopyRg "CopyRight infos"
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} ist GiftWare, senden Sie den @{"Autoren" link Autore} alles was Sie möchten, wenn Sie das Programm mögen.
+
+BENUTZEN SIE @{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} AUF IHR EIGENES RISIKO, ES GIBT KEINE GARANTIE FÜR DAS FUNKTIONIEREN DES PROGRAMMS. DER @{"AUTOR" link Autore} ÜBERNIMMT KEINE VERANTWORTUNG FÜR JEDE UNBEQUEMLICHKEIT.
+
+Das ganze Archiv von @{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} oder Teile davon dürfen nicht kommerziell verwendet werden. Es kann frei in Public-Domain-, Shareware- oder Giftware-Sammlungen vertrieben werden, unter der Bedingung, daß dafür nicht mehr als 30 US $ verlangt wird. OS4-Depot, Aminet, AmyResource, BitPlane, Amiga.It, AmigaMagazin und andere Zeitschriften können dieses Programm frei auf ihren CDs - in archivierten oder unarchivierten Dateien - vertreiben, das gesamte Programmpaket darf jedoch nicht verändert werden.
+
+@next CopyRg
+
+@endnode
+
+@node Processori "Unterstützte Prozessoren"
+
+@prev Processori
+
+Bei der 68k-Version wird jeder Motorola® -Prozessor der 68020+ Familie mit oder ohne FPU unterstützt.
+Die OS4-Version wurde auf einem G4/800Mhz getestet.
+Dieses Archiv enthält Versionen für Mc68020/68030 mit oder ohne Mc68881/2 FPU und eine Version für PowerPC
+FlashMandelNG wurde für die Verwendung eines Mc68020 mit FPU kompiliert, aber es ist voll vorwärtskompatibel mit Mc68030/040/060 und optimiert für Pipelines der Mc68040/060 Cpu mit Mc68882+ Fpu, PowerPc G3/G4.
+Die MC68k & PPC Zeichenroutinen sind alle von Hand in 68k- & PPC-Assemblercode optimiert.
+
+@next Processori
+
+@endnode
+
+@node ChipSet "Unterstützte Chipsets"
+
+@prev ChipSet
+
+Es werden alle originalen @{b}Amiga@{ub}-Chipsets unterstützt: @{b}OCS@{ub}, @{b}ECS@{ub} und @{b}AGA@{ub}. Das Programm stellt sich automatisch auf Ihr System ein; eine maximale Anzahl von 32 Farben bei @{b}OCS@{ub} und @{b}ECS@{ub}, eine maximale Anzahl von 256 Farben bei @{b}AGA@{ub}.
+Haben sie eine Grafikkarte, die ihre Bildschirmmodi in die @{fg highlight}Screen-Database@{fg text} einfügt, wird das Programm jede Auflösung nutzen können (Zur Zeit mit einem Limit von 256 Farben).
+
+@next ChipSet
+
+@endnode
+
+@node CProb "Probabilistic Continuity"
+
+@prev CProb
+
+Leider muß der Übersetzer hier seine Waffen strecken. Fehlendes Hintergrundwissen macht die Übersetzung unmöglich. Hier also der originale englische Text:
+
+
+@{b}@{fg highlight}FlashMandelNG@{fg text}@{ub} uses the properties of @{"Mandelbrot's set" link Mandelbrot} known as @{b}Probabilistic Continuity@{ub} that is to say:
+
+@{b}@{i}Given a rectangle on the complex plane containing @{"Mandelbrot's set" link Mandelbrot}, if all the points on the rectangle outline have the same escape speed, in that case is "very probable" that the inner area has the same escape speed too.@{ui}@{ub}
+
+The program traces the borders of the rectangle to draw and later check them, if as result they have the same color, fills the area with this one, otherwise it divides the rectangle in two parts and starts again on the two drawn rectangles repeatedly, with a strategy called @{i}divide et impera@{ui}.
+An explanation of the word @{i}probabilistic@{ui} is given if you let the program trace the complex plane area with the coordinates (-8,-8i) (8,8i), which it fills with a uniform color: it's not a program bug, it made only a probability error...
+
+@next CProb
+
+@endnode
