@@ -358,7 +358,7 @@ void ARexxFunc_About (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *r
       	cmd->ac_RC2 = 0;
     }
 #else /* internal */
-  	ModifyIDCMP (MYILBM.win, NULL);
+  	ModifyIDCMP (MYILBM.win, 0L);
   	ClearMenuStrip (MYILBM.win);
 #ifdef FM_REACT_SUPPORT
   	Do_InfoRequest (MYILBM.win, FMSCREENNAME, 0, 0);
@@ -382,7 +382,7 @@ void ARexxFunc_SysInfo (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg 
       cmd->ac_RC2 = 0;
     }
 #else /* internal */
-  	ModifyIDCMP (MYILBM.win, NULL);
+  	ModifyIDCMP (MYILBM.win, 0L);
   	ClearMenuStrip (MYILBM.win);
 #ifdef FM_REACT_SUPPORT
   	Do_SysInfoRequest (MYILBM.win, FMSCREENNAME, 0, 0);
@@ -519,7 +519,7 @@ void ARexxFunc_LoadPicture (REG (a0, struct ARexxCmd *cmd), REG (a1, struct Rexx
 			cmd->ac_RC2 = ERR10_012; /* error return from function */
 	    }
 	  
-		PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+		PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
     }
     
 	else
@@ -621,7 +621,7 @@ void ARexxFunc_SavePicture (REG (a0, struct ARexxCmd *cmd), REG (a1, struct Rexx
    	if (SaveMandPic (&MYILBM, LSFMChunk, USERNAME_STRING, COPYRIGHT_STRING, MYPATH)) DisplayError (MYILBM.win, TXT_ERR_SaveMandPic, 5L);
    	if (TMASK & MASK) ShowTitle (MYILBM.scr, TRUE);      	  
   
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
   	cmd->ac_RC = RC_OK;
   	cmd->ac_RC2 = 0;
 }
@@ -658,7 +658,7 @@ void ARexxFunc_LoadPalette (REG (a0, struct ARexxCmd *cmd),
   	
 	else DisplayError (MYILBM.win, TXT_ERR_NoMem, 5L);
 
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
   	cmd->ac_RC = RC_OK;
   	cmd->ac_RC2 = 0;
 }
@@ -720,7 +720,7 @@ void ARexxFunc_SavePalette (REG (a0, struct ARexxCmd *cmd), REG (a1, struct Rexx
   
   	else DisplayError (MYILBM.win, TXT_ERR_NoMem, 5L);
 
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
   	cmd->ac_RC = RC_OK;
   	cmd->ac_RC2 = 0;
 }
@@ -747,7 +747,7 @@ void ARexxFunc_Print (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *r
 		else FreeVec (args);
     }
 #else /* internal */
-  	ModifyIDCMP (MYILBM.win, NULL);
+  	ModifyIDCMP (MYILBM.win, 0L);
   	ClearMenuStrip (MYILBM.win);
   	PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
   	
@@ -769,7 +769,7 @@ void ARexxFunc_Print (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *r
       	cmd->ac_RC2 = 0;
     } /* user-abort */
   
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
   	ResetMenuStrip (MYILBM.win, MAINMENU);
   	ModifyIDCMP (MYILBM.win, IDCMP_STANDARD);
 #endif
@@ -1040,7 +1040,7 @@ void ARexxFunc_ShowPreview (REG (a0, struct ARexxCmd *cmd), REG (a1, struct Rexx
 {
   	if (NewCoords (MYILBM.win, ZOOMLINE[6], ZOOMLINE[3], ZOOMLINE[4], ZOOMLINE[5]))
     {
-      	ModifyIDCMP (MYILBM.win, NULL);
+      	ModifyIDCMP (MYILBM.win, 0L);
       	ClearMenuStrip (MYILBM.win);
       	Preview (MYILBM.win, PIXELVECTOR, ARGBMEM, RGBMEM, RNDMEM, PIXMEM, GFXMEM, MYILBM.win->GZZWidth, MYILBM.win->GZZHeight);
       	ResetMenuStrip (MYILBM.win, MAINMENU);
@@ -1102,7 +1102,7 @@ struct FM_RxCmd_RENDER *args = NULL;
   	SetMenuStop (&MYILBM);
   	PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
   	ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
   	SetMenuStart (&MYILBM, UNDOCOUNTER);
   	ShowTime (MYILBM.win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME, FALSE);
 
@@ -1214,7 +1214,7 @@ void ARexxFunc_Zoom (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMsg *rm
 					SetMenuStop (&MYILBM);
 					PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
 					elapsed += ELAPSEDTIME =  DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
-					PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+					PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
 					SetMenuStart (&MYILBM, UNDOCOUNTER);
       			}
 	  		}
@@ -1275,7 +1275,7 @@ void ARexxFunc_DoColorcycling (REG (a0, struct ARexxCmd *cmd), REG (a1, struct R
   	ClearMenuStrip (MYILBM.win);
   	PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
   	Cycle (MYILBM.win, DELAY, flag);
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
   	ResetMenuStrip (MYILBM.win, MAINMENU);
   	if (TMASK & MASK) ShowTitle (MYILBM.win->WScreen, TRUE);	
   	LoadRGB32 (MYILBM.vp, PALETTE);	
@@ -1424,7 +1424,7 @@ void ARexxFunc_PlaySound (REG (a0, struct ARexxCmd *cmd), REG (a1, struct RexxMs
       	cmd->ac_RC2 = ERR10_018;
     } /* invalid argument to function */
   
-  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+  	PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
 }
 
 /* ARexxFunc_StopSound(): Handle ARexx-Command 'STOP_SOUND'.  Template: - */
@@ -1569,13 +1569,13 @@ uint32 HandleARexxEvents (struct ILBMInfo *Ilbm)
 				    if (LoadMandPic (Ilbm, MYPATH)) DisplayError (Ilbm->win, TXT_ERR_LoadMandPic, 5L);
 		    	    if (TMASK & MASK) ShowTitle (Ilbm->scr, TRUE);
 		    	    GetRGB32 (Ilbm->vp->ColorMap, 0L, (uint32) Ilbm->vp->ColorMap->Count, PALETTE + 1L);
-		    	    SetMenuStart (Ilbm,UNDOCOUNTER);
+		    	    SetMenuStart (Ilbm, UNDOCOUNTER);
 			    }
 		    
 			    else DisplayError (Ilbm->win, TXT_ERR_QueryMandPic, 0);
 		
 LOAD_PIC_END:
-	  			PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+	  			PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
 	    	break;
 	  		}
 
@@ -1627,7 +1627,7 @@ LOAD_PIC_END:
 							SetMenuStop (Ilbm);
 							PutPointer (Ilbm->win, 0, 0, 0, 0, 0, BUSY_POINTER);
 							ELAPSEDTIME =DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, FALSE);
-							PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+							PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
 							SetMenuStart (Ilbm, UNDOCOUNTER);
 							ShowTime (Ilbm->win, CATSTR (TXT_RenderTime), ELAPSEDTIME, FALSE);
 				      	}
@@ -1675,7 +1675,7 @@ LOAD_PIC_END:
 		      	}
 	    
 				PasteBitMap (MYBITMAP, Ilbm->win, (uint16) Ilbm->win->LeftEdge, (uint16) Ilbm->win->TopEdge, (uint16) Ilbm->win->Width, (uint16) Ilbm->win->Height);
-		    	PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+		    	PutPointer (Ilbm->win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
 		    	break;
 		  	}
 		}
@@ -1778,7 +1778,7 @@ int16 InitARexx (void)
       	IAREXX = ((struct ARexxIFace *) GetInterface ((struct Library *) ARexxBase, "main", 1, NULL));
       	if (IAREXX)
 		{
-	  		TimerMP =  (struct MsgPort *) AllocSysObject (ASOT_PORT, (struct TagItem *) NULL);
+	  		TimerMP =  (struct MsgPort *) AllocSysObjectTags (ASOT_PORT, TAG_DONE);
 	  		if (TimerMP)
 	    	{
 	      		TimerIO = (struct TimeRequest *) AllocSysObjectTags (ASOT_IOREQUEST, ASOIOR_Size, sizeof (struct TimeRequest), ASOIOR_ReplyPort, TimerMP, TAG_DONE);

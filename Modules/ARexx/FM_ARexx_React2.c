@@ -310,7 +310,7 @@ void ARexxFunc_SetCoordinates (REG (a0, struct ARexxCmd *cmd), REG (a1, struct R
 	  		SetMenuStop (&MYILBM);
 	  		PutPointer (MYILBM.win, 0, 0, 0, 0, 0, BUSY_POINTER);
 	  		ELAPSEDTIME = DrawFractal (MANDChunk, MYILBM.win, ARGBMEM, RGBMEM, PIXMEM, GFXMEM, PIXELVECTOR, RNDMEM, TRUE);
-	  		PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, ZOOM_POINTER);
+	  		PutPointer (MYILBM.win, &ZOOMPOINTER, ZPW, ZPH, ZPXO, ZPYO, CROSS_POINTER);
 	  		SetMenuStart (&MYILBM, UNDOCOUNTER);
 	  		ShowTime (MYILBM.win, CATSTR (TXT_RecalculateTime), ELAPSEDTIME, FALSE);
 		}

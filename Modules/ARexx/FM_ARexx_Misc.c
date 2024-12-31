@@ -135,19 +135,22 @@ int16 LaunchARexxScript (struct ILBMInfo *Ilbm)
 
   	if (AREXXOBJ)
     {
-      	if (ARexxFileReq = AllocAslRequest (ASL_FileRequest, 0))
+      	if (ARexxFileReq = AllocAslRequest (ASL_FileRequest, TAG_DONE))
 		{
-	  		if (AslRequestTags (ARexxFileReq, ASLFR_Window, Ilbm->win,
-			      ASLFR_InitialLeftEdge, Ilbm->win->LeftEdge + 25,
-			      ASLFR_InitialTopEdge, Ilbm->win->TopEdge + 35,
-			      ASLFR_InitialWidth, 300,
-			      ASLFR_InitialHeight,
-			      ((Ilbm->win->Height) * 7) >> 3, ASLFR_SleepWindow,
-			      TRUE, ASLFR_TextAttr, &MYFONTSTRUCT,
-			      ASLFR_TitleText, CATSTR (TXT_SelectRxScript),
-			      ASLFR_InitialDrawer, &ARexxDir, ASLFR_InitialFile,
-			      &ARexxFilename, ASLFR_DoSaveMode, FALSE,
-			      ASLFR_RejectIcons, TRUE, TAG_DONE))
+	  		if (AslRequestTags (ARexxFileReq, 
+					ASLFR_Window, Ilbm->win,
+			      	ASLFR_InitialLeftEdge, Ilbm->win->LeftEdge + 25,
+			      	ASLFR_InitialTopEdge, Ilbm->win->TopEdge + 35,
+			      	ASLFR_InitialWidth, 300,
+			      	ASLFR_InitialHeight, ((Ilbm->win->Height) * 7) >> 3, 
+					ASLFR_SleepWindow, TRUE, 
+					ASLFR_TextAttr, &MYFONTSTRUCT,
+			      	ASLFR_TitleText, CATSTR (TXT_SelectRxScript),
+			      	ASLFR_InitialDrawer, &ARexxDir, 
+					ASLFR_InitialFile, &ARexxFilename, 
+					ASLFR_DoSaveMode, FALSE,
+			      	ASLFR_RejectIcons, TRUE, 
+					TAG_DONE))
 	    	{
 	      		Strlcpy (ARexxFilename, ARexxFileReq->fr_File, sizeof (ARexxFilename));
 	      		Strlcpy (ARexxDir, ARexxFileReq->fr_Drawer, sizeof (ARexxDir));
@@ -179,7 +182,7 @@ int16 LaunchARexxScript (struct ILBMInfo *Ilbm)
 int16 CreateARexxMenu (struct DiskObject *dobj)
 {
   int16 success = FALSE;
-  char ttnamebuf[50];
+  char ttnamebuf [50];
   const char title_txt[] = "ARexx";
   const STRPTR launch_txt = (const STRPTR) CATSTR (TXT_Launch);
   int32 numcmds = 0, i;
@@ -349,7 +352,7 @@ int16 SetARexxMenu (struct ILBMInfo *Ilbm)
 		      			last_menu = last_menu->NextMenu;
 		    		}
 		  
-		  			ModifyIDCMP (Ilbm->win, NULL);
+		  			ModifyIDCMP (Ilbm->win, 0L);
 		  			ClearMenuStrip (Ilbm->win);
 		  			last_menu->NextMenu = ARexxMenu;
 		  			LayoutMenus (win_menu, vi, GTMN_TextAttr, &MYFONTSTRUCT,
@@ -395,7 +398,7 @@ int16 RemoveARexxMenu (struct ILBMInfo *Ilbm)
 	    	{
 	      		if (act_menu == ARexxMenu)
 				{
-		  			ModifyIDCMP (Ilbm->win, NULL);
+		  			ModifyIDCMP (Ilbm->win, 0L);
 		  			ClearMenuStrip (Ilbm->win);
 		  			if (prev_menu) prev_menu->NextMenu = ARexxMenu->NextMenu;
 		  			LayoutMenus (win_menu, vi, GTMN_TextAttr, &MYFONTSTRUCT,
@@ -489,6 +492,7 @@ void HandleARexxMenu (struct ILBMInfo *Ilbm, uint16 MenuCode)
 					case REXX_MENUITEM_LAUNCH:
 		  				LaunchARexxScript (Ilbm);
 		  			break;
+					
 					default:
 		  				DisplayBeep (Ilbm->scr);
 				}
