@@ -4,19 +4,20 @@
 
 /* Modified for ARexx-support by E. Schwan 23.1.2002 */
 /* added ppc g3/g4/g5 support by D. Papararo 30.3.2002 */
-/* added PREVIEW_MSG definition for Orbit Window support 20.02.2003 */
+/* added PREVIEW_MSG definition for Orbit Window support 20.02.2003 Dino Papararo */
 /* Modified for AmigaOS4/GCC 15.09.2004, Edgar Schwan */
-/* Added MINLIMIT2 and MINLIMIT4 #define values for better reading 18.01.2010 */
-/* Removed as much as possible 68k related code 01.06.2018 dino papararo */
-/* Added CMASK screen custom bitmap flag 03.06.2018 dpapararo */
-/* optimized altivec routines 01.11.18 */
+/* Added MINLIMIT2 and MINLIMIT4 #define values for better reading 18.01.2010 Dino Papararo */
+/* Removed as much as possible 68k related code 01.06.2018 Dino Papararo */
+/* Added CMASK screen custom bitmap flag 03.06.2018 Dino Papararo */
+/* optimized altivec routines 01.11.18 Dino Papararo */
 /* added prototypes for Altivec functions and updated email address 03 Feb 2019 dpapararo */
-/* modified DEF_MONITOR values */
-/* added GMP support in MandelChunk and changed ID_MAND 03-04-2020 */
-/* added Histogram mask HMASK 01-01-2021 */
-/* added Histogram function  17-01-2021 */
-/* added support for SPE 02-01-2023 */
-/* added Boundary trace algorithm 08-11-2023 */
+/* modified DEF_MONITOR values - Dino Papararo */
+/* added GMP support in MandelChunk and changed ID_MAND - 03-04-2020 Dino Papararo */
+/* added Histogram mask HMASK 01-01-2021 Dino Papararo */
+/* added Histogram function  17-01-2021 Dino Papararo */
+/* added support for SPE 02-01-2023 Dino Papararo */
+/* added Boundary trace algorithm 08-11-2023 Dino Papararo */
+/* added mouse pointers 22-12-24 Dino Papararo */
 
 #ifndef FLASHMANDEL_H
 #define FLASHMANDEL_H
@@ -26,7 +27,7 @@
 
 #define Lib_Version 50L
 
-#define VERSION  "FlashMandelNG 5.1 "
+#define VERSION  "FlashMandelNG 5.3 "
 #define AUTHOR   "Dino Papararo "
 #define COPYRIGHT_DATE "(c)1995-2024 "
 #define ADDRESS  "Via Manzoni, 184\n  80123 Napoli\n  Italy "
@@ -86,6 +87,8 @@ struct UndoBuffer
 };
 
 /* prototypes */
+void BenchMarkMode (void);
+void PrintPalette (void);
 void Init_GMP (uint32);
 void Clear_GMP (void);
 void Reset_GMP (uint32);
@@ -98,7 +101,7 @@ uint32 CheckCPU (void);
 uint32 Fail (STRPTR, uint32);
 void FreeBitMapSafety (struct BitMap *);
 int16 ClearZoomFrame (struct RastPort *);
-void PutPointer (struct Window *,uint16 *,int16,int16,int16,int16,uint8);
+int16 PutPointer (struct Window *,uint16 *,int16,int16,int16,int16,uint8);
 int32 About (struct Window *);
 void AdjustRatio (mpf_t *,mpf_t *,mpf_t *,mpf_t *,int16,int16,int16);
 int16 ShowTime (struct Window *,STRPTR,int32,int16);
@@ -136,7 +139,7 @@ void AddQueue (uint32, uint32);
 int32 AllocateBoundary (uint32, uint32);
 void DeallocateBoundary (void); 
 void CheckMenu (struct Window *);
-void ProcessMouse (struct Window *,int16,int16,int32);
+uint16 ProcessMouse (struct Window *,int16,int16,int32);
 uint32 HandleEvents (struct ILBMInfo *,struct MandelChunk *);
 int32 WinDump (struct Window *);
 int32 MainProg (struct ILBMInfo *,struct MandelChunk *);
@@ -306,12 +309,20 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 #define INITIALZOOM  18
 
 #define CLEAR_POINTER 0
-#define BUSY_POINTER 1
-#define ZOOM_POINTER 2
+#define NORMAL_POINTER 1
+#define BUSY_POINTER 2
+#define ZOOMIN_POINTER 3
+#define ZOOMOUT_POINTER 4
+#define CROSS_POINTER 5
+#define HIDE_POINTER 6
+#define NOTALLOWED_POINTER 7
+#define SELECT_POINTER 8
+#define PROGRESS_POINTER 9
+#define MYCROSS_POINTER 10
 
-#define ZPW 15
-#define ZPH 15
-#define ZPXO -8
+#define ZPW 16
+#define ZPH 16
+#define ZPXO -7
 #define ZPYO -7
 
 #define MAXCHARS 20
@@ -382,28 +393,28 @@ int32 SavePalette (struct ILBMInfo *,struct Chunk *,struct Chunk *,STRPTR);
 
 #define DATE __DATE__
 
-#define HISTOGRAM_BIT  (1L << 9)
-#define TITLE_BIT     (1L << 10)
-#define BRUTE_BIT     (1L << 11)
-#define TILING_BIT    (1L << 12)
-#define BOUNDARY_BIT  (1L << 13)
-#define HIGHPREC_BIT  (1L << 14)
-#define FOUR_BIT      (1L << 15)
-#define LINEAR_BIT    (1L << 16)
-#define REPEATED_BIT  (1L << 17)
-#define LOG_BIT       (1L << 18)
-#define SQUARE_BIT    (1L << 19)
-#define ONE_BIT       (1L << 20)
-#define TWO_BIT       (1L << 21)
-#define THREE_BIT     (1L << 22)
-#define FIXED_BIT     (1L << 23)
-#define REAL_BIT      (1L << 24)
-#define MC68K_BIT     (1L << 25)
-#define PPC_BIT       (1L << 26)
-#define JULIA4_BIT    (1L << 27)
-#define JULIA_BIT     (1L << 28)
-#define MANDEL_BIT    (1L << 29)
-#define MANDEL4_BIT   (1L << 30)
-#define TURBO_BIT     (1L << 31)
+#define HISTOGRAM_BIT (((uint32) 1L) << 9)
+#define TITLE_BIT     (((uint32) 1L) << 10)
+#define BRUTE_BIT     (((uint32) 1L) << 11)
+#define TILING_BIT    (((uint32) 1L) << 12)
+#define BOUNDARY_BIT  (((uint32) 1L) << 13)
+#define HIGHPREC_BIT  (((uint32) 1L) << 14)
+#define FOUR_BIT      (((uint32) 1L) << 15)
+#define LINEAR_BIT    (((uint32) 1L) << 16)
+#define REPEATED_BIT  (((uint32) 1L) << 17)
+#define LOG_BIT       (((uint32) 1L) << 18)
+#define SQUARE_BIT    (((uint32) 1L) << 19)
+#define ONE_BIT       (((uint32) 1L) << 20)
+#define TWO_BIT       (((uint32) 1L) << 21)
+#define THREE_BIT     (((uint32) 1L) << 22)
+#define FIXED_BIT     (((uint32) 1L) << 23)
+#define REAL_BIT      (((uint32) 1L) << 24)
+#define MC68K_BIT     (((uint32) 1L) << 25)
+#define PPC_BIT       (((uint32) 1L) << 26)
+#define JULIA4_BIT    (((uint32) 1L) << 27)
+#define JULIA_BIT     (((uint32) 1L) << 28)
+#define MANDEL_BIT    (((uint32) 1L) << 29)
+#define MANDEL4_BIT   (((uint32) 1L) << 30)
+#define TURBO_BIT     (((uint32) 1L) << 31)
 
 #endif /* FLASHMANDEL_H */
