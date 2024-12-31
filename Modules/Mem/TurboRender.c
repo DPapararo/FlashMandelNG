@@ -21,6 +21,7 @@
 **  3.0 Now (*COLORREMAP) is extern to to avoid conflicts - 09-10-2022 dpapararo
 **	3.1 Mem renderings can be stopped and you can draw boxes for any rectangle processeds 07/01/2023 dpapararo
 **  3.2 added Boundary Trace algorithm 9/11/2023 dpapararo
+**  3.3 added Benchmarckmode and other changes
 **************************************************************************************************************/
 
 #include <exec/types.h>
@@ -40,7 +41,7 @@ extern uint32 TwoRemap (const float64, const float64, const float64, const float
 extern uint32 ThreeRemap (const float64, const float64, const float64, const float64, const float64);
 extern uint32 FourRemap (const float64, const float64, const float64, const float64, const float64);
 
-extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
+extern uint32 (*COLORREMAP) (const uint32, const uint32, const uint32);
 
 static void MCPointMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16);
 static void JCPointMem (struct MandelChunk *, uint32 *, uint32 *, uint32 *, const int16, const int16);
@@ -99,14 +100,12 @@ static void MCPointMem (struct MandelChunk *MandelInfo, uint32 *PixelVecBase, ui
 #ifdef USE_ALTIVEC_MATH
   float32 Cre = (float32) mpf_get_d (gcre);
   float32 Cim = (float32) mpf_get_d (gcim);
-#ifdef USE_ALTIVEC_ASM
-  	MandelnAltivecPPC (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
-#else
+
   	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim);
-#endif /* USE_ALTIVEC_ASM */
+
   	Color = *(PixelVecBase + 0);
 #else		  
-#if USE_POWERPC_MATH
+#ifdef USE_POWERPC_MATH
   	Color = MandelnPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_C_MATH
   	Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
@@ -154,11 +153,7 @@ static void MVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
       	mpf_mul_ui (gtmp, gincremimag, (y - 3));
       	mpf_sub (gcim3, gimax, gtmp);
 
-#ifdef USE_ALTIVEC_ASM
-      	MandelnAltivecPPC (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, (float32) mpf_get_d (gcim), Cre, (float32) mpf_get_d (gcim1), Cre, (float32) mpf_get_d (gcim2), Cre, (float32) mpf_get_d (gcim3));
-#elif USE_ALTIVEC_MATH 
       	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, (float32) mpf_get_d (gcim), Cre, (float32) mpf_get_d (gcim1), Cre, (float32) mpf_get_d (gcim2), Cre, (float32) mpf_get_d (gcim3));
-#endif		
 
 		for (i = 0; i < 4; i++)
 		{
@@ -173,7 +168,7 @@ static void MVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 			if ((y--) <= b1) break;
 		}
     }
-#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
+#else
   uint32 Color;
 
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
@@ -236,11 +231,8 @@ static void MHLineMem (struct MandelChunk *MandelInfo, uint32 *PixelVecBase, uin
       	mpf_mul_ui (gtmp, gincremreal, (x + 3));
       	mpf_add (gcre3, grmin, gtmp);
 
-#ifdef USE_ALTIVEC_ASM
-      	MandelnAltivecPPC (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, (float32) mpf_get_d (gcre), Cim, (float32) mpf_get_d (gcre1), Cim, (float32) mpf_get_d (gcre2), Cim, (float32) mpf_get_d (gcre3), Cim);
-#elif USE_ALTIVEC_MATH
       	MandelnAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, (float32) mpf_get_d (gcre), Cim, (float32) mpf_get_d (gcre1), Cim, (float32) mpf_get_d (gcre2), Cim, (float32) mpf_get_d (gcre3), Cim);
-#endif
+
 		tmp1 = y * MandelInfo->Width + x;
 
 		for (i = 0; i < 4; i++)
@@ -258,7 +250,7 @@ static void MHLineMem (struct MandelChunk *MandelInfo, uint32 *PixelVecBase, uin
 			if (x > a2) break;
 		}
     }
-#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
+#else
   	uint32 Color;
 	
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
@@ -275,6 +267,7 @@ static void MHLineMem (struct MandelChunk *MandelInfo, uint32 *PixelVecBase, uin
    		Color = Mandeln (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
 #elif USE_SPE_MATH
 		Color = MandelnSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim));
+#elif USE_SPE_MATH
 #endif /* USE_POWERPC_MATH */	
 		
       	if (Color)
@@ -339,7 +332,7 @@ static void JCPointMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, u
   	JulianAltivec (PixelVecBase, MandelInfo->Iterations, MandelInfo->Power, Cre, Cim, Cre, Cim, Cre, Cim, Cre, Cim, (float32) mpf_get_d (gjkre), (float32) mpf_get_d (gjkim));
   	Color = *(PixelVecBase + 0);
 #else	
-#if USE_POWERPC_MATH
+#ifdef USE_POWERPC_MATH
   	Color = JulianPPC (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_C_MATH
   	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
@@ -402,7 +395,7 @@ static void JVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 			if ((y--) <= b1) break;
 		}      	
     }
-#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
+#else
   uint32 Color;
   	/* Cim = MandelInfo->IMax - gincremimag * b2; */
   	mpf_mul_ui (gtmp, gincremimag, b2);
@@ -416,7 +409,7 @@ static void JVLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
       	Color = Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_SPE_MATH
 		Color =	JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#endif
+#endif /* USE_POWERPC_MATH */
 
       	if (Color)
 		{
@@ -483,7 +476,7 @@ static void JHLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
 			if (x > a2) break;
 		}
     }
-#elif USE_POWERPC_MATH || USE_C_MATH || USE_SPE_MATH
+#else
   	uint32 Color;
   	/* Cre = MandelInfo->RMin + gincremreal * a1; */
   	mpf_mul_ui (gtmp, gincremreal, a1);
@@ -499,7 +492,7 @@ static void JHLineMem (struct MandelChunk *MandelInfo, uint32 * PixelVecBase, ui
       	Color =	Julian (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
 #elif USE_SPE_MATH
 		Color =	JulianSPE (MandelInfo->Iterations, MandelInfo->Power, mpf_get_d (gcre), mpf_get_d (gcim), mpf_get_d (gjkre), mpf_get_d (gjkim));
-#endif
+#endif /* USE_POWERPC_MATH */
       	if (Color)
 		{
 	  		*(RenderMem + (tmp1 + x)) = Color;
@@ -968,6 +961,7 @@ void CalcFractalMem (struct MandelChunk *MandelInfo, struct Window *Win, uint32 
       	if (MandelInfo->Flags & MANDEL_BIT) 
 		{
 			if (MandelInfo->Flags & FIXED_BIT) H_LINE_MEM = MHLineMemFP; /* set fixed point math only for BENCHMARKMODE */
+			else if (MandelInfo->Flags & REAL_BIT) H_LINE_MEM = MHLineMem;
 		}
 	
 	  	BruteDrawMem (MandelInfo, Win, PixelVecBase, RenderMem, HistogramMem, MandelInfo->LeftEdge, MandelInfo->TopEdge, MandelInfo->Width - 1, MandelInfo->Height - 1);
