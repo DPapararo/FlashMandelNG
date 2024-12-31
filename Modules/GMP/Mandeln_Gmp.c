@@ -60,7 +60,6 @@ uint32 Mandeln_GMP (uint32 Iterations, int16 Power)
 		mpf_add (gzr, gzr, gcre);
       	mpf_add (gzi, gzi, gcim);
 
-
     } while (--Iterations);
 
   	return Iterations;

@@ -27,6 +27,9 @@
  *	  Revision 1.7 10/11/2024 dpapararo
  *	  Added benchmark mode fail control
  *
+ *	  Revision 1.8 22/12/2024 dpapararo
+ *	  modified coloring algorithm
+ *
  */
 
 #include <exec/types.h>
@@ -45,16 +48,16 @@ extern void AddQueue (uint32, uint32);
 extern int32 AllocateBoundary (uint32, uint32);
 extern void DeallocateBoundary (void); 
 
-extern uint32 LinearRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 LogRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 RepeatedRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 SquareRootRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 OneRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 TwoRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 ThreeRemap (const float64, const float64, const float64, const float64, const float64);
-extern uint32 FourRemap (const float64, const float64, const float64, const float64, const float64);
+extern uint32 (*COLORREMAP) (const uint32, const uint32, const uint32);
 
-extern uint32 (*COLORREMAP) (const float64, const float64, const float64, const float64, const float64);
+extern uint32 LinearRemap (const uint32, const uint32, const uint32);
+extern uint32 LogRemap (const uint32, const uint32, const uint32);
+extern uint32 RepeatedRemap (const uint32, const uint32, const uint32);
+extern uint32 SquareRootRemap (const uint32, const uint32, const uint32);
+extern uint32 OneRemap (const uint32, const uint32, const uint32);
+extern uint32 TwoRemap (const uint32, const uint32, const uint32);
+extern uint32 ThreeRemap (const uint32, const uint32, const uint32);
+extern uint32 FourRemap (const uint32, const uint32, const uint32);
 
 extern int16 CheckBox (struct RastPort *, const int16, const int16, const int16, const int16);
 extern int16 CheckBoxMem (struct MandelChunk *, uint32 *, const int16, const int16, const int16, const int16);
@@ -744,7 +747,7 @@ static void MCPoint_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, co
 
   	Iteration = Mandeln_GMP (MandelInfo->Iterations, MandelInfo->Power);
 
-  	if (Iteration) Color = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+  	if (Iteration) Color = COLORREMAP (Iteration, MandelInfo->Iterations, 252L);
   
   	SetAPen (Rp, Color);		  
   	WritePixel (Rp, x, y);
@@ -769,7 +772,7 @@ static void MVLine_GMP (struct RastPort *Rp, struct MandelChunk *MandelInfo, uin
     {
       	Iteration = Mandeln_GMP (MandelInfo->Iterations, MandelInfo->Power);
 
-      	if (Iteration) *TmpArray-- = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+      	if (Iteration) *TmpArray-- = COLORREMAP (Iteration, MandelInfo->Iterations, 252L);
       	else *TmpArray-- = 0;
 
       	/* Cim += gincremimag; */
@@ -798,7 +801,7 @@ static void MHLine_GMP (struct RastPort *Rp, struct MandelChunk *MandelInfo, uin
     {
       	Iteration = Mandeln_GMP (MandelInfo->Iterations, MandelInfo->Power);
 
-      	if (Iteration) *TmpArray++ = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+      	if (Iteration) *TmpArray++ = COLORREMAP (Iteration, MandelInfo->Iterations, 252L);
 	  	else *TmpArray++ = 0;
 
       	/* Cre += gincremreal; */
@@ -823,7 +826,7 @@ static void JCPoint_GMP (struct MandelChunk *MandelInfo, struct RastPort *Rp, co
 
   	Iteration = Julian_GMP (MandelInfo->Iterations, MandelInfo->Power);
 
-  	if (Iteration) Color = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+  	if (Iteration) Color = COLORREMAP (Iteration, MandelInfo->Iterations, 252L);
 
   	SetAPen (Rp, Color);		  
   	WritePixel (Rp, x, y);
@@ -848,7 +851,7 @@ static void JVLine_GMP (struct RastPort *Rp, struct MandelChunk *MandelInfo, uin
     {
       	Iteration = Julian_GMP (MandelInfo->Iterations, MandelInfo->Power);
 
-      	if (Iteration) *TmpArray-- = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+      	if (Iteration) *TmpArray-- = COLORREMAP (Iteration, MandelInfo->Iterations, 252L);
       	else *TmpArray-- = 0;
       
 	  	/* Cim += gincremimag; */
@@ -877,7 +880,7 @@ static void JHLine_GMP (struct RastPort *Rp, struct MandelChunk *MandelInfo, uin
     {
       	Iteration = Julian_GMP (MandelInfo->Iterations, MandelInfo->Power);
 
-      	if (Iteration) *TmpArray++ = COLORREMAP ((float64) Iteration, 1.0, (float64) MandelInfo->Iterations, 4.0, 255.0);
+      	if (Iteration) *TmpArray++ = COLORREMAP (Iteration, MandelInfo->Iterations, 252L);
 	  	else *TmpArray++ = 0;
 
       	/* Cre += gincremreal; */
@@ -907,11 +910,11 @@ static void MCPoint_GMP_16_32bit (struct MandelChunk *MandelInfo, struct RastPor
 
   	if (Iteration)
   	{
-        	r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
+        	r = (uint8) lround (cos (0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f);
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
+			g = (uint8) lround (cos (0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f);
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
+			b = (uint8) lround (cos (0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f);
 			Color_ARGB |= b;
   	}
 
@@ -940,11 +943,11 @@ static void MVLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *Mandel
 
       	if (Iteration)
       	{
-	    	r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
+	    	r = (uint8) lround (cos (0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f);
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
+			g = (uint8) lround (cos (0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f);
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
+			b = (uint8) lround (cos (0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f);
 			Color_ARGB |= b;
       	}
 
@@ -977,11 +980,11 @@ static void MHLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *Mandel
 
       	if (Iteration)
       	{
-	        r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
+	        r = (uint8) lround (cos (0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f);
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
+			g = (uint8) lround (cos (0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f);
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
+			b = (uint8) lround (cos (0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f);
 			Color_ARGB |= b;
 	  	}
 		
@@ -1010,11 +1013,11 @@ static void JCPoint_GMP_16_32bit (struct MandelChunk *MandelInfo, struct RastPor
 
   	if (Iteration)
   	{
-        r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
+        r = (uint8) lround (cos (0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f);
 		Color_ARGB |= (r << 16);
-		g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
+		g = (uint8) lround (cos (0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f);
 		Color_ARGB |= (g << 8);
-		b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
+		b = (uint8) lround (cos (0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f);
 		Color_ARGB |= b;
   	}
 
@@ -1043,11 +1046,11 @@ static void JVLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *Mandel
 
 	  	if (Iteration)
       	{
-	    	r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
+	    	r = (uint8) lround (cos (0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f);
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
+			g = (uint8) lround (cos (0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f);
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
+			b = (uint8) lround (cos (0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f);
 			Color_ARGB |= b;
       	}
 
@@ -1080,11 +1083,11 @@ static void JHLine_GMP_16_32bit (struct RastPort *Rp, struct MandelChunk *Mandel
 
       	if (Iteration)
       	{
-	        r = (uint8) lround ((sin(0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f));
+	        r = (uint8) lround (cos (0.016f * (float64) Iteration + 0.20f) * 127.5f + 127.5f);
 			Color_ARGB |= (r << 16);
-			g = (uint8) lround ((sin(0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f));
+			g = (uint8) lround (cos (0.013f * (float64) Iteration + 0.15f) * 127.5f + 127.5f);
 			Color_ARGB |= (g << 8);
-			b = (uint8) lround ((sin(0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f));
+			b = (uint8) lround (cos (0.010f * (float64) Iteration + 0.10f) * 127.5f + 127.5f);
 			Color_ARGB |= b;
 	  	}
 		
