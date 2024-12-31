@@ -5,6 +5,7 @@
 /* fixes and enanchements - dpapararo 24-02-21 */
 /* rewritten query, load and save functions for dataypes usage - dpapararo 18.04.2021 */
 /* saved username and copyright infos inside coordinates file and palette ilbm - dpapararo 24.04.2021 */
+/* fixed load 16bit pictures - 22 dec 2024 dpapararo */
 
 #define __USE_INLINE__
 
@@ -36,7 +37,7 @@ int32 alloccolortable (struct ILBMInfo *ilbm);
 int32 loadcmap (struct ILBMInfo *ilbm);
 int32 setcolors (struct ILBMInfo *ilbm, struct ViewPort *vp);
 int32 putcmap (struct IFFHandle *iff, APTR colortable, uint16 ncolors, uint16 bitspergun);
-int32 openifile (struct ParseInfo *pi, UBYTE * filename, uint32 iffopenmode);
+int32 openifile (struct ParseInfo *pi, uint8 * filename, uint32 iffopenmode);
 int32 parseifile (struct ParseInfo *pi, int32 groupid, int32 grouptype, int32 * propchks, int32 * collectchks, int32 * stopchks);
 int32 chkcnt (int32 * taggedarray);
 int32 currentchunkis (struct IFFHandle *iff, int32 type, int32 id);
@@ -74,7 +75,7 @@ extern struct Chunk USERNAME_CHUNK;
 ******************************************************************************/
 int32 QueryMandFile (struct ILBMInfo *ilbm,struct LoadSaveFMChunk *LSFMChunk, STRPTR FileName)
 {
-BPTR InFile;
+BPTR InFile = NULL;
 char MYPATH2[MAX_PATHLEN+5];
 int32 Error = TRUE;
 
@@ -107,9 +108,9 @@ int32 Error = TRUE;
  * finds specified chunk parsed from IFF file, and
  *   returns pointer to its sp_Data (or 0 for not found)
  */
-UBYTE *findpropdata (struct IFFHandle * iff, int32 type, int32 id)
+uint8 *findpropdata (struct IFFHandle * iff, int32 type, int32 id)
 {
-  register struct StoredProperty *sp;
+  register struct StoredProperty *sp = NULL;
 
   	if (sp = FindProp (iff, type, id)) return (sp->sp_Data);
   	return (0);
@@ -128,7 +129,7 @@ UBYTE *findpropdata (struct IFFHandle * iff, int32 type, int32 id)
 int32 QueryMandPic (struct ILBMInfo * ilbm, struct LoadSaveFMChunk * LSFMManChk, STRPTR filename)
 {
   int32 error = 0L;
-  struct LoadSaveFMChunk *TmpLSFMChk;
+  struct LoadSaveFMChunk *TmpLSFMChk = NULL;
 
   	if (!(ilbm->ParseInfo.iff)) return (CLIENT_ERROR);
 
@@ -136,7 +137,7 @@ int32 QueryMandPic (struct ILBMInfo * ilbm, struct LoadSaveFMChunk * LSFMManChk,
     {
       	error =	parseifile ((struct ParseInfo *) ilbm, ID_FORM, ID_ILBM, ilbm->ParseInfo.propchks, ilbm->ParseInfo.collectchks, ilbm->ParseInfo.stopchks);
 
-      	if ((error == NULL) || (error == IFFERR_EOC) || (error == IFFERR_EOF))
+      	if ((error == 0L) || (error == IFFERR_EOC) || (error == IFFERR_EOF))
 		{
 	  		if (contextis (ilbm->ParseInfo.iff, ID_ILBM, ID_FORM))
 	    	{
@@ -162,8 +163,8 @@ int32 QueryMandPic (struct ILBMInfo * ilbm, struct LoadSaveFMChunk * LSFMManChk,
 }
 
 /* LoadMandPic
- * Passed an initialized ILBMInfo, and filename, and a boolean value
- * for fading will load an ILBM into your already opened ilbm->win, 
+ * Passed an initialized ILBMInfo and a filename, 
+ * will load an ILBM into your already opened ilbm->win, 
  * Function uses datatypes library. 
  *
  * Returns 0 for success.
@@ -176,16 +177,16 @@ int32 LoadMandPic (struct ILBMInfo *ilbm, STRPTR filename)
   struct BitMapHeader *bmhd = NULL;
   uint32 *cregs = NULL;
   uint32 num_colors = 0;
-  uint32 colortable[3*256+2];
+  uint32 colortable32 [3*256+2];
 
   	Error = TRUE;
   	Width = ilbm->Bmhd.w;
   	Height = ilbm->Bmhd.h;
   	Depth = ilbm->Bmhd.nPlanes;
 
-  	if ((Depth == MIN_DEPTH) || (Depth == MAX_DEPTH))
+  	if ((Depth >= MIN_DEPTH) || (Depth <= MAX_DEPTH))
   	{
-     	if((dto = NewDTObject(filename,
+     	if((dto = NewDTObject (filename,
                            		DTA_SourceType, DTST_FILE,
                            		DTA_GroupID, GID_PICTURE,
      					   		PDTA_Screen,ilbm->scr,
@@ -202,7 +203,8 @@ int32 LoadMandPic (struct ILBMInfo *ilbm, STRPTR filename)
 		
 			if (bmhd)
 			{		
-				SetDTAttrs(dto,NULL,NULL,
+				SetDTAttrs (dto,
+							NULL, NULL,
 		    				GA_Left, 0,
 		    				GA_Top, 0,
 		    				GA_Width, Width,
@@ -210,21 +212,20 @@ int32 LoadMandPic (struct ILBMInfo *ilbm, STRPTR filename)
 		    				ICA_TARGET, ICTARGET_IDCMP,
 		    				TAG_DONE);
 			
-		    		AddDTObject(ilbm->win,NULL,dto,-1);
-		    		RefreshDTObjects(dto,ilbm->win,NULL,NULL);
-					RemoveDTObject(ilbm->win,dto);
+		    		AddDTObject (ilbm->win, NULL, dto, -1);
+		    		RefreshDTObjects (dto, ilbm->win, NULL, TAG_DONE);
+					RemoveDTObject (ilbm->win, dto);
 				
-				if (Depth == MIN_DEPTH)
+				if (Depth <= MIN_DEPTH)
 				{
- 					colortable[0] = num_colors << 16;
-					CopyMem ((APTR) (cregs),(APTR) (&colortable[1]),(uint32) (3 * sizeof (uint32) * num_colors));
-					colortable[3*num_colors+1] = 0;
-						
-					LoadRGB32 (ViewPortAddress (ilbm->win),colortable);
+					colortable32 [0] = num_colors << 16 + 0;
+					CopyMem ((APTR) (cregs),(APTR) (&colortable32 [1]),(uint32) (sizeof (Color32) * num_colors));
+					colortable32 [3 * num_colors + 1] = 0;
+					LoadRGB32 (ViewPortAddress (ilbm->win), colortable32);		
 				}
 			}
 		
-			DisposeDTObject(dto);
+			DisposeDTObject (dto);
 			Error = FALSE;
 	 	}		
   	}			
@@ -239,7 +240,7 @@ struct BitMap *gzzarea (struct Window *win)
 {
 int32 w,h,d;
 struct BitMap *winbm = win->RPort->BitMap;
-struct BitMap *bm;
+struct BitMap *bm = NULL;
 struct RastPort rp;
 
 	w = win->GZZWidth;
@@ -265,16 +266,16 @@ struct RastPort rp;
 /*----------------------------------------------------------------------------*/
 int32 savewindow (char *name,struct Window *win)
 {
-  struct BitMap *bm;
-  Object *o;
-  struct BitMapHeader *bmhd;
-  UBYTE *cmap;
-  uint32 *cregs;
+  struct BitMap *bm = NULL;
+  Object *o = NULL;
+  struct BitMapHeader *bmhd = NULL;
+  uint8 *cmap = NULL;
+  uint32 *cregs = NULL;
   int32 i;
   int32 w,h,d;
   int32 ncols;
   BPTR fhand;
-  struct ViewPort *vp;
+  struct ViewPort *vp = NULL;
   int32 Error;
 
     Error = TRUE;
@@ -312,15 +313,15 @@ int32 savewindow (char *name,struct Window *win)
 
 			if (ncols)
 			{
-				GetDTAttrs (o,PDTA_ColorRegisters,&cmap,PDTA_CRegs,&cregs,TAG_DONE);
-				GetRGB32 (vp->ColorMap,0,ncols,cregs);
+				GetDTAttrs (o, PDTA_ColorRegisters, &cmap, PDTA_CRegs, &cregs, TAG_DONE);
+				GetRGB32 (vp->ColorMap, 0, ncols, cregs);
 				for (i = 3*ncols; i; i--)
 					*cmap++ = (*cregs++) >> 24;
 			}
 
 			if (fhand = Open (name,MODE_NEWFILE))
 			{
-				i = DoDTMethod (o,NULL,NULL,DTM_WRITE,NULL,fhand,DTWM_IFF,NULL);
+				i = DoDTMethod (o, NULL, NULL, DTM_WRITE, NULL, fhand, DTWM_IFF, NULL);
 				Close (fhand);
 				if (i)
 					Error = FALSE;
@@ -358,7 +359,7 @@ int32 savewindow (char *name,struct Window *win)
 
 int32 SaveMandPic (struct ILBMInfo *ilbm, struct LoadSaveFMChunk *LSFMChunk,STRPTR UserName,STRPTR Copyright,STRPTR FileName)
 {
-BPTR OutFile;
+BPTR OutFile = NULL;
 char MYPATH2[MAX_PATHLEN+5];
 int32 Error;
 
@@ -400,7 +401,8 @@ int32 LoadPalette (struct ILBMInfo * ilbm, STRPTR filename)
 	  		if (!(error = getcolors (ilbm)))
 	    	{
 	      		setcolors (ilbm, ilbm->vp);
-      			freecolors (ilbm);
+
+				freecolors (ilbm);
 	    	}
 		}
 
@@ -412,8 +414,8 @@ int32 LoadPalette (struct ILBMInfo * ilbm, STRPTR filename)
 
 int32 SavePalette (struct ILBMInfo *ilbm, struct Chunk *chunk1, struct Chunk *chunk2, STRPTR filename)
 {
-  struct IFFHandle *iff;
-  Color32 *colortable32;
+  struct IFFHandle *iff = NULL;
+  Color32 *colortable32 = NULL;
   uint16 ncolors;
   int32 size, error;
 
@@ -456,7 +458,7 @@ int32 SavePalette (struct ILBMInfo *ilbm, struct Chunk *chunk1, struct Chunk *ch
  */
 int32 getcolors (struct ILBMInfo * ilbm)
 {
-  struct IFFHandle *iff;
+  struct IFFHandle *iff = NULL;
   int32 error;
 
   	if (!(iff = ilbm->ParseInfo.iff)) return (CLIENT_ERROR);
@@ -476,8 +478,8 @@ int32 getcolors (struct ILBMInfo * ilbm)
  */
 int32 alloccolortable (struct ILBMInfo * ilbm)
 {
-  struct IFFHandle *iff;
-  struct StoredProperty *sp;
+  struct IFFHandle *iff = NULL;
+  struct StoredProperty *sp = NULL;
 
   int32 error = CLIENT_ERROR;
   uint32 ctabsize;
@@ -502,13 +504,18 @@ int32 alloccolortable (struct ILBMInfo * ilbm)
 
 	  		if ((!(ilbm->IFFPFlags & IFFPF_NOCOLOR32)))
 	    	{
-	      		ctabsize = (ncolors * sizeof (Color32)) + (4 * sizeof (int16));
-	      		if (ilbm->colorrecord = (int16 *) AllocVecTags (ctabsize,AVT_Type,MEMF_PRIVATE,TAG_DONE))
+	      		ctabsize = (ncolors * sizeof (Color32)) + (2 * sizeof (int32));
+	      		if (ilbm->colorrecord = (uint16 *) AllocVecTags (ctabsize,
+												AVT_Type, MEMF_PRIVATE,
+												AVT_Contiguous, TRUE, 
+												AVT_Lock, TRUE,  
+												AVT_Alignment, 16,
+                        						AVT_ClearWithValue, 0, TAG_DONE))
 				{
 		  			ilbm->crecsize = ctabsize;
-		  			ilbm->colortable32 = (Color32 *) (&ilbm->colorrecord[2]);
-		  			ilbm->colorrecord[0] = ncolors; /* For LoadRGB32 */
-		  			ilbm->colorrecord[1] = 0;
+		  			ilbm->colortable32 = (Color32 *) (&ilbm->colorrecord [2]);
+		  			ilbm->colorrecord [0] = ncolors; /* For LoadRGB32 */
+		  			ilbm->colorrecord [1] = 0;
 				}
 	      		
 				else error = IFFERR_NOMEM;
@@ -560,12 +567,12 @@ void freecolors (struct ILBMInfo *ilbm)
  */
 int32 loadcmap (struct ILBMInfo *ilbm)
 {
-  struct StoredProperty *sp;
+  struct StoredProperty *sp = NULL;
   int32 k;
   uint32 ncolors, gun, ncheck;
-  UBYTE *rgb, rb, gb, bb;
+  uint8 *rgb= NULL, rb, gb, bb;
   uint32 nc, r, g, b;
-  struct IFFHandle *iff;
+  struct IFFHandle *iff = NULL;
   int16 AllShifted;
 
   	if (!(iff = ilbm->ParseInfo.iff)) return (CLIENT_ERROR);
@@ -576,7 +583,7 @@ int32 loadcmap (struct ILBMInfo *ilbm)
       	return (1);
     }
 
-  	if (!(sp = FindProp (iff, ID_ILBM, ID_CMAP))) return (1);
+  	if (!(sp = FindProp (iff, ID_ILBM, ID_CMAP))) return (1L);
 
   	rgb = sp->sp_Data;
 
@@ -649,7 +656,7 @@ int32 loadcmap (struct ILBMInfo *ilbm)
       	k++;
     }
   
-  	return (0);
+  	return (0L);
 }
 
 /* setcolors - sets vp to ilbm->colortable or ilbm->colortable32
@@ -659,8 +666,8 @@ int32 loadcmap (struct ILBMInfo *ilbm)
  *
  * Returns client error if there is no ilbm->vp
  */
-int32 setcolors (struct ILBMInfo * ilbm, struct ViewPort * vp)
-{
+int32 setcolors (struct ILBMInfo *ilbm, struct ViewPort *vp)
+{  
   int32 nc;
   int32 error = 0L;
 
@@ -669,7 +676,7 @@ int32 setcolors (struct ILBMInfo * ilbm, struct ViewPort * vp)
   	nc = MIN (ilbm->ncolors, vp->ColorMap->Count);
   	
 	if ((!(ilbm->IFFPFlags & IFFPF_NOCOLOR32)) && (ilbm->colorrecord))
-    {
+    { 
       	LoadRGB32 (vp, (uint32 *) ilbm->colorrecord);
     }
   
@@ -693,8 +700,8 @@ int32 setcolors (struct ILBMInfo * ilbm, struct ViewPort * vp)
 int32 putcmap (struct IFFHandle *iff, APTR colortable, uint16 ncolors, uint16 bitspergun)
 {
   int32 error, offs;
-  uint16 *tabw;
-  UBYTE *tab8;
+  uint16 *tabw = NULL;
+  uint8 *tab8 = NULL;
   ColorRegister cmapReg;
 
   	D (bug ("In PutCMAP\n"));
@@ -728,7 +735,7 @@ int32 putcmap (struct IFFHandle *iff, APTR colortable, uint16 ncolors, uint16 bi
   	
 	else if ((bitspergun == 8) || (bitspergun == 32))
     {
-      	tab8 = (UBYTE *) colortable;
+      	tab8 = (uint8 *) colortable;
       	offs = (bitspergun == 8) ? 1 : 4;
       	for (; ncolors; --ncolors)
 		{
@@ -760,13 +767,13 @@ int32 putcmap (struct IFFHandle *iff, APTR colortable, uint16 ncolors, uint16 bi
  *
  * Returns 0 for success or an IFFERR (libraries/iffparse.h)
  */
-int32 openifile (struct ParseInfo * pi, UBYTE * filename, uint32 iffopenmode)
+int32 openifile (struct ParseInfo * pi, uint8 * filename, uint32 iffopenmode)
 {
-  struct IFFHandle *iff;
+  struct IFFHandle *iff = NULL;
   int16 cboard;
   uint32 unit = PRIMARY_CLIP;
   int32 error;
-  UBYTE *omodes[2] = { "r", "w" };
+  uint8 *omodes[2] = { "r", "w" };
 
   	if (!pi) return (CLIENT_ERROR);
   	if (!(iff = pi->iff)) return (CLIENT_ERROR);
@@ -827,7 +834,7 @@ int32 openifile (struct ParseInfo * pi, UBYTE * filename, uint32 iffopenmode)
  */
 void closeifile (struct ParseInfo *pi)
 {
-  struct IFFHandle *iff;
+  struct IFFHandle *iff = NULL;
 
   	D (bug ("closeifile:\n"));
 
@@ -873,8 +880,8 @@ void closeifile (struct ParseInfo *pi)
  */
 int32 parseifile (struct ParseInfo *pi, int32 groupid, int32 grouptype, int32 * propchks, int32 * collectchks, int32 * stopchks)
 {
-  struct IFFHandle *iff;
-  register struct ContextNode *cn;
+  struct IFFHandle *iff= NULL;
+  register struct ContextNode *cn = NULL;
   int32 error = 0L;
 
   	D (bug ("parseifile:\n"));
@@ -936,7 +943,7 @@ int32 parseifile (struct ParseInfo *pi, int32 groupid, int32 grouptype, int32 * 
  */
 int32 chkcnt (int32 * taggedarray)
 {
-  int32 k = 0;
+  int32 k = 0L;
 
   	while (taggedarray[k] != TAG_DONE) k++;
   	return (k >> 1);
@@ -948,12 +955,12 @@ int32 chkcnt (int32 * taggedarray)
  */
 int32 currentchunkis (struct IFFHandle * iff, int32 type, int32 id)
 {
-  register struct ContextNode *cn;
-  int32 result = 0;
+  register struct ContextNode *cn = NULL;
+  int32 result = 0L;
 
   	if (cn = CurrentChunk (iff))
     {
-      	if ((cn->cn_Type == type) && (cn->cn_ID == id))	result = 1;
+      	if ((cn->cn_Type == type) && (cn->cn_ID == id))	result = 1L;
     }
   
   	return (result);
@@ -965,14 +972,14 @@ int32 currentchunkis (struct IFFHandle * iff, int32 type, int32 id)
  */
 int32 contextis (struct IFFHandle * iff, int32 type, int32 id)
 {
-  register struct ContextNode *cn;
-  int32 result = 0;
+  register struct ContextNode *cn = NULL;
+  int32 result = 0L;
 
   	if (cn = (CurrentChunk (iff)))
     {
       	if (cn = (ParentChunk (cn)))
 		{
-	  		if ((cn->cn_Type == type) && (cn->cn_ID == id)) result = 1;
+	  		if ((cn->cn_Type == type) && (cn->cn_ID == id)) result = 1L;
 		}
     }
 
@@ -1029,17 +1036,17 @@ int32 nextcontext (struct IFFHandle * iff)
  */
 static int32 stdio_stream (struct Hook *hook, struct IFFHandle *iff, struct IFFStreamCmd *actionpkt)
 {
-  register FILE *stream;
+  register FILE *stream = NULL;
   register int32 nbytes;
   register int actual;
-  register UBYTE *buf;
+  register uint8 *buf;
   int32 len;
 
   	stream = (FILE *) iff->iff_Stream;
-  	if (!stream) return (1);
+  	if (!stream) return (1L);
 
   	nbytes = actionpkt->sc_NBytes;
-  	buf = (UBYTE *) actionpkt->sc_Buf;
+  	buf = (uint8 *) actionpkt->sc_Buf;
 
   	switch (actionpkt->sc_Command)
     {
@@ -1053,7 +1060,7 @@ static int32 stdio_stream (struct Hook *hook, struct IFFHandle *iff, struct IFFS
 			}
       		while (nbytes > 0);
       
-	  		return (nbytes ? IFFERR_READ : 0);
+	  		return (nbytes ? IFFERR_READ : 0L);
 
     	case IFFCMD_WRITE:
       		do
@@ -1068,11 +1075,11 @@ static int32 stdio_stream (struct Hook *hook, struct IFFHandle *iff, struct IFFS
 	  		return (nbytes ? IFFERR_WRITE : 0);
 
     	case IFFCMD_SEEK:
-      		return ((fseek (stream, nbytes, 1) == -1) ? IFFERR_SEEK : 0);
+      		return ((fseek (stream, nbytes, 1) == -1) ? IFFERR_SEEK : 0L);
 
     	default:
       		/*  No _INIT or _CLEANUP required.  */
-      		return (0);
+      		return (0L);
     }
 }
 
