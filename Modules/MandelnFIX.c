@@ -1,20 +1,21 @@
 /*
    Mandelbrot Fixed point main loop, C function for OS4 version
 
-   $Ver 1.0 Dino Papararo 15 Nov 2024
+   Ver 1.0 First version - Dino Papararo 15 Nov 2024
+   $Ver:1.1 Fixed regression speed - Dino Papararo 15 Dec 2024
 */
 
 #include <math.h>
 #include <exec/types.h>
 
-#define MAXPERIOD 25              // Periodicity check interval
-#define TOLERANCE (1)             // Tolerance in 4.28 fixed-point format (~0.00000000372529)
-#define MAXDIST (4 << 28)         // 4.0 in 4.28 fixed-point format
+#define MAXPERIOD 20 // Periodicity check interval
+#define TOLERANCE (1) // Tolerance in 4.28 fixed-point format (~0.00000000372529)
+#define MAXDIST ((uint64) 4LL << 28) // 4.0 in 4.28 fixed-point format
 
 // Convert float64 constant to 4.28 fixed-point
 static inline int64 Flt2Fix (float64 x) 
 {
-    int64 conversion = (int64) (x * (1 << 28));
+    int64 conversion = (int64) (x * ((uint32) 1L << 28));
     return conversion;
 }
 
@@ -48,37 +49,38 @@ uint32 MandelnFixed (uint32 Iterations, int16 Power, float64 Cre, float64 Cim)
     Zi = Cim_fixed;
 
     do 
-    {
-        for (Exp = Power; Exp > 0; Exp--) 
-        {
-            Zr2 = fixed_mul (Zr, Zr);      // Zr^2 in fixed-point
+    {   Exp = Power;
+
+        do
+        {   Zr2 = fixed_mul (Zr, Zr);      // Zr^2 in fixed-point
             Zi2x2 = fixed_mul (Zi, Zi);   // Zi^2 in fixed-point
             ZrZi = fixed_mul (Zr, Zi);    // Zr * Zi in fixed-point
             Zr = Zr2 - Zi2x2;            // Zr^2 - Zi^2
             Zi = ZrZi + ZrZi;            // 2 * Zr * Zi
-        }
+        } while (--Exp > 0);
 
         // Check for escape condition
         if ((Zr2 + Zi2x2) > MAXDIST) break;
-
-        // Periodicity check
-        if (PLoop-- <= 0) 
-        {
-            if ((fixed_abs_diff (Zr, PZr) < TOLERANCE) && (fixed_abs_diff (Zi, PZi) < TOLERANCE))
-            {
-                Iterations = 0L; // return 0L or 254L for debug
-                break;                
-            }
-
-            PZr = Zr;
-            PLoop = MAXPERIOD;
-            PZi = Zi;
-        }
 
         // Add the constant Cre and Cim
         Zr += Cre_fixed;
         Zi += Cim_fixed;
         
+        // Periodicity check 
+        //if ((fixed_abs_diff (Zr, PZr) < TOLERANCE) && (fixed_abs_diff (Zi, PZi) < TOLERANCE))
+        if ((Zr == PZr) && (Zi == PZi))
+        {
+            Iterations = 0L; // return 0L or 254L for debug
+            break;                
+        }
+
+        if (PLoop-- <= 0) 
+        {
+            PZr = Zr;
+            PLoop = MAXPERIOD;
+            PZi = Zi;
+        }        
+    
     } while (--Iterations);
 
     return Iterations;

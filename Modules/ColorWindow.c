@@ -71,24 +71,24 @@ struct NewGadget BUTTON_GAD, SLIDER_GAD, PALETTE_GAD;
 
 int16 ModifyPalette (struct Window *Win, int16 LeftEdge, int16 TopEdge, uint32 * Palette32)
 {
-  struct Window *ColorWin;
-  struct IntuiMessage *Message;
-  struct Gadget *GadList = NULL, *MyButtonGad, *MyPaletteGad;
-  struct Gadget *RedSliderGad, *GreenSliderGad, *BlueSliderGad, *MyGad;
+  struct Window *ColorWin = NULL;
+  struct IntuiMessage *Message = NULL;
+  struct Gadget *GadList = NULL, *MyButtonGad = NULL, *MyPaletteGad = NULL;
+  struct Gadget *RedSliderGad = NULL, *GreenSliderGad = NULL, *BlueSliderGad = NULL, *MyGad = NULL;
   int16 Copy_Msg = FALSE, Swap_Msg = FALSE, Spread_Msg = FALSE, Exit = FALSE;
   uint32 SelectedPen = STARTPEN, OldPen = NULL, NewPen;
   uint16 MyCode, i;
   uint32 MyClass, Colors, ColorBase = 3L * STARTPEN + 1L;
   uint32 RedLevel, GreenLevel, BlueLevel;
-  CPTR *VInfo;
+  CPTR *VInfo = NULL;
 
   	Colors = 1L << Win->RPort->BitMap->Depth;
   	if (Colors < 2L) return FALSE;
   	VInfo = GetVisualInfo (Win->WScreen, TAG_DONE);
   	if (!VInfo) return FALSE;
   	COLOR_RGB[0L] = UNDO_RGB[0L] = Colors << 16L;
-  	COLOR_RGB[3L * Colors + 1L] = UNDO_RGB[3L * Colors + 1L] = NULL;
-  	COPY_RGB[0L] = COPY_RGB[1L] = COPY_RGB[2L] = NULL;
+  	COLOR_RGB[3L * Colors + 1L] = UNDO_RGB[3L * Colors + 1L] = 0L;
+  	COPY_RGB[0L] = COPY_RGB[1L] = COPY_RGB[2L] = 0L;
   	GetRGB32 (((struct ViewPort *) ViewPortAddress (Win))->ColorMap, 0L, Colors, &COLOR_RGB[1L]);
   	GetRGB32 (((struct ViewPort *) ViewPortAddress (Win))->ColorMap, 0L, Colors, &UNDO_RGB[1L]);
   	RedLevel = (COLOR_RGB[ColorBase] >> 24L);

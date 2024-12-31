@@ -78,7 +78,7 @@ int16 Fade (struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint32 *PaletteSr
   int16 Success = FALSE;
   uint32 Var, Step, Rows, Cols, Modulo;
   uint32 DstWinWidth, DstWinHeight, Depth, Color, Range, ModeID;
-  struct RandomState State;
+  struct RandomState State = {0};
 
 /*
    	ModeID = GetVPModeID (ViewPortAddress (Win));
@@ -98,7 +98,7 @@ int16 Fade (struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint32 *PaletteSr
       		Range = (1L << Depth) - 4L;
       		PaletteTmp [0L] = (Range << 16L) + 4L;
       		GetRGB32 (((struct ViewPort *) ViewPortAddress (Win))->ColorMap, 4L, Range, &PaletteTmp [1L]);
-      		PaletteTmp [3L * Range + 1L] = NULL;
+      		PaletteTmp [3L * Range + 1L] = 0L;
 			PaletteSrc += (3 * RESERVED_PENS); /* exclude reserved pens for GUI */
 			
  	  		for (Step = 0L; Step <= MaxStep; Step++)
@@ -132,10 +132,13 @@ int16 Fade (struct Window *Win, uint8 *ARGBMem, uint8 *RGBMem, uint32 *PaletteSr
 
       	else
 		{
-		  	State.rs_High = time (NULL);
-  			State.rs_Low  = time (NULL);
+			uint32 Secs = 3L, Micros = 1L; // initiazize != 0
 			
-			for (Var = 0; Var < ((DstWinWidth * DstWinHeight) / 3); Var++)
+			CurrentTime (&Secs, &Micros);
+		  	State.rs_High = Secs;
+  			State.rs_Low  = Micros;
+			
+			for (Var = 0L; Var < ((DstWinWidth * DstWinHeight) / 3); Var++)
 					WritePixelColor (Win->RPort, Random (&State) % (DstWinWidth - 1), Random (&State) % (DstWinHeight - 1), 0xff000000);
 		}
 
@@ -255,12 +258,12 @@ ExitFade:
 int16 Cycle (struct Window * Win, uint32 MyTimeDelay, int16 Left)
 {
   DisplayInfoHandle DHandle;
-  struct DimensionInfo DimInfo;
+  struct DimensionInfo DimInfo = {0};
   struct IntuiMessage *Message = NULL;
   static uint32 Palette_Tmp [2L * 3L * 252L + 2L];
   int16 Loop = TRUE, Success = FALSE;
   uint16 MyCode;
-  uint32 MyClass, Counter = NULL, OldBlue, OldRed, Tmp_1, Tmp_2, HalfRange;
+  uint32 MyClass, Counter = 0L, OldBlue, OldRed, Tmp_1, Tmp_2, HalfRange;
   uint32 ModeID, Range;
 
 	ModeID = GetVPModeID (ViewPortAddress (Win));
@@ -271,7 +274,7 @@ int16 Cycle (struct Window * Win, uint32 MyTimeDelay, int16 Left)
 		Range = (1L << DimInfo.MaxDepth) - 4L; 
       	GetRGB32 (((struct ViewPort *) ViewPortAddress (Win))->ColorMap, 4L, Range, &Palette_Tmp [1L]);
       	GetRGB32 (((struct ViewPort *) ViewPortAddress (Win))->ColorMap, 4L, Range, &Palette_Tmp [3L * Range + 1L]);
-      	Palette_Tmp [2L * 3L * Range + 1L] = NULL;
+      	Palette_Tmp [2L * 3L * Range + 1L] = 0L;
       	Palette_Tmp [0L] = (Range << 16L) + 4L;
       	if (!Left) Counter = Range + 1L;
 
@@ -320,7 +323,7 @@ int16 Cycle (struct Window * Win, uint32 MyTimeDelay, int16 Left)
 	  		OldBlue = Palette_Tmp [Tmp_1];
 	  		OldRed = Palette_Tmp [Tmp_2];
 	  		Palette_Tmp [Tmp_1] = (Range << 16L) + 4L;
-	  		Palette_Tmp [Tmp_2] = NULL;
+	  		Palette_Tmp [Tmp_2] = 0L;
 	  		WaitTOF ();
 	  		LoadRGB32 (ViewPortAddress (Win), &Palette_Tmp [3L * Counter]);
 	  		Delay (MyTimeDelay);
